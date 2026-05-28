@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spark Todo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>✦ Spark Todo</h1>
+      <p class="subtitle">今日のタスクを管理しよう</p>
+    </header>
+
+    <div class="input-area">
+      <input
+        type="text"
+        id="taskInput"
+        placeholder="新しいタスクを入力..."
+        autocomplete="off"
+      />
+      <button id="addBtn">追加</button>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">すべて</button>
+      <button class="filter-btn" data-filter="active">未完了</button>
+      <button class="filter-btn" data-filter="done">完了済み</button>
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <footer class="stats">
+      <span id="statsText">タスクはまだありません</span>
+      <button id="clearDoneBtn" class="clear-btn">完了済みを削除</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

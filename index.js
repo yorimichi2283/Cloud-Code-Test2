@@ -14,6 +14,7 @@ const els = {
   loadSelectionBtn: document.getElementById("loadSelectionBtn"),
   centerHBtn: document.getElementById("centerHBtn"),
   resetBtn: document.getElementById("resetBtn"),
+  inspectBtn: document.getElementById("inspectBtn"),
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
@@ -361,6 +362,7 @@ function setControlsEnabled(enabled) {
     els.scalePlus,
     els.centerHBtn,
     els.resetBtn,
+    els.inspectBtn,
   ]) {
     el.disabled = !enabled;
   }
@@ -617,6 +619,49 @@ let applyTimer = null;
 let lastApplyAt = 0;
 const APPLY_MIN_INTERVAL_MS = 150;
 
+// Dumps the first loaded clip's whole effect structure — every component
+// with its display name, match name and parameter names. Which layers and
+// parameters a Graphic clip actually exposes can't be inferred from the
+// Effect Controls screenshots alone (the same stored Position value puts one
+// telop off the left edge and another right of centre), so this prints the
+// ground truth instead of guessing at it.
+async function logClipStructure() {
+  if (loadedClips.length === 0 || !currentProject) {
+    log("先に「読み込む」を押してください。");
+    return;
+  }
+
+  const clip = loadedClips[0];
+  const componentChain = await clip.trackItem.getComponentChain();
+
+  const components = [];
+  currentProject.lockedAccess(() => {
+    const componentCount = componentChain.getComponentCount();
+    for (let c = 0; c < componentCount; c += 1) {
+      const component = componentChain.getComponentAtIndex(c);
+      const paramCount = component.getParamCount();
+      const paramNames = [];
+      for (let p = 0; p < paramCount; p += 1) {
+        paramNames.push(component.getParam(p).displayName || "(名前なし)");
+      }
+      components.push({ index: c, component, paramNames });
+    }
+  });
+
+  log(`--- 「${clip.name}」の構造: ${components.length}個のエフェクト ---`);
+  for (const entry of components) {
+    let displayName = "?";
+    let matchName = "?";
+    try {
+      displayName = await entry.component.getDisplayName();
+      matchName = await entry.component.getMatchName();
+    } catch (err) {
+      // Keep going; a name we can't read still leaves the params useful.
+    }
+    log(`[${entry.index}] ${displayName} <${matchName}> : ${entry.paramNames.join(" / ")}`);
+  }
+}
+
 function scheduleApply() {
   const elapsed = Date.now() - lastApplyAt;
   if (elapsed >= APPLY_MIN_INTERVAL_MS) {
@@ -719,6 +764,11 @@ bindArrowButton(els.scalePlus, "scale", 1);
 els.centerHBtn.addEventListener("click", () => {
   if (els.centerHBtn.disabled) return;
   applyHorizontalCenter();
+});
+
+els.inspectBtn.addEventListener("click", () => {
+  if (els.inspectBtn.disabled) return;
+  logClipStructure();
 });
 
 els.resetBtn.addEventListener("click", () => {

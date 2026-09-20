@@ -195,7 +195,7 @@ select {
 .log {
   font-family: monospace;
   font-size: 11px;
-  max-height: 72px;
+  max-height: 180px;
   overflow-y: auto;
   color: #909090;
   white-space: pre-wrap;

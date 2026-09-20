@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Telop Shifter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- The panel and the scroll bar sit side by side, so the bar is always
+       drawn even when the host doesn't render a native scrollbar. -->
+  <div class="panelWrap">
+    <div class="panel" id="panel">
+      <div class="content">
+
+        <section class="card">
+          <h2 class="cardTitle">対象</h2>
+          <div class="cardBody">
+            <select id="trackSelect">
+              <option value="selection">タイムラインで選択中のクリップ</option>
+            </select>
+            <label class="checkboxRow">
+              <input type="checkbox" id="telopOnly" checked />
+              テロップだけを対象にする
+            </label>
+            <button id="loadSelectionBtn" class="primary">読み込む</button>
+            <div id="statusLine" class="status">対象を選んでから、上のボタンを押してください。</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="cardTitle">調整</h2>
+          <div class="cardBody">
+            <div class="field">
+              <span class="fieldLabel">X座標</span>
+              <button type="button" class="arrowBtn" id="xMinus" disabled>◀</button>
+              <input type="number" id="xInput" value="0" step="1" disabled />
+              <button type="button" class="arrowBtn" id="xPlus" disabled>▶</button>
+              <span class="unit">px</span>
+            </div>
+
+            <div class="field">
+              <span class="fieldLabel">Y座標</span>
+              <button type="button" class="arrowBtn" id="yMinus" disabled>◀</button>
+              <input type="number" id="yInput" value="0" step="1" disabled />
+              <button type="button" class="arrowBtn" id="yPlus" disabled>▶</button>
+              <span class="unit">px</span>
+            </div>
+
+            <div class="field">
+              <span class="fieldLabel">スケール</span>
+              <button type="button" class="arrowBtn" id="scaleMinus" disabled>◀</button>
+              <input type="number" id="scaleInput" value="0" step="1" disabled />
+              <button type="button" class="arrowBtn" id="scalePlus" disabled>▶</button>
+              <span class="unit">%</span>
+            </div>
+
+            <div class="hint">
+              矢印＝5ずつ / Shift＋クリック＝1ずつ<br />
+              スケールは文字そのものを拡大縮小するので、テロップの位置は動きません。
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="cardTitle">一括操作</h2>
+          <div class="cardBody">
+            <button id="centerHBtn" disabled>テロップを画面の中央にそろえる</button>
+            <button id="resetBtn" disabled>リセット（読み込んだ時点に戻す）</button>
+            <details class="sub">
+              <summary>使い方</summary>
+              <div class="subBody">
+                <div class="hint">
+                  各テロップの文字が実際に画面のどこにあるかを1件ずつ測って、まとめて中央に動かします。
+                  縦動画でも横動画でも、テロップごとに文字の位置がバラバラでも大丈夫です。縦の位置は
+                  変わりません。<br />
+                  X座標に数値を入れてから押すと、「中央から◯px」の位置にそろえられます。
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <details class="card">
+          <summary class="cardTitle">読み込んだクリップ（<span id="clipCount">0</span>件）</summary>
+          <div class="cardBody">
+            <ul id="clipList" class="clipList"></ul>
+          </div>
+        </details>
+
+        <details class="card">
+          <summary class="cardTitle">ログ</summary>
+          <div class="cardBody">
+            <button id="inspectBtn" disabled>診断: 1件目のクリップの構造を出力</button>
+            <div id="logBox" class="log"></div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+
+    <div class="scrollBar" id="scrollBar">
+      <div class="scrollThumb" id="scrollThumb"></div>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>

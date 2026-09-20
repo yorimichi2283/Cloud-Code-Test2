@@ -1,0 +1,292 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #2c2c2c;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+/* The scrolling area and the scroll bar are flex siblings, so the bar is
+   always drawn, never scrolls away with the content, and needs no
+   position:fixed (which is unreliable inside a UXP panel). */
+.panelWrap {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+}
+
+.panel {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Generous right padding keeps the content off the scroll bar. */
+  padding: 4px 18px 28px 16px;
+}
+
+/* The native scrollbar is hidden in favour of the always-visible one drawn
+   on the right, so there is only ever one bar. */
+.panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* In a wide panel, stretching every control to the full width leaves the UI
+   looking both sparse and awkward, so the column has a comfortable maximum. */
+.content {
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll bar                                                          */
+/* ------------------------------------------------------------------ */
+
+.scrollBar {
+  position: relative;
+  flex: none;
+  width: 14px;
+  padding: 4px 0;
+  background: #252525;
+  border-left: 1px solid #3f3f3f;
+  touch-action: none;
+}
+
+.scrollThumb {
+  position: absolute;
+  left: 3px;
+  width: 8px;
+  min-height: 28px;
+  border-radius: 4px;
+  background: #6a6a6a;
+}
+
+.scrollThumb:hover {
+  background: #8f8f8f;
+}
+
+/* No overflow: the thumb is hidden but the track stays, so nothing shifts. */
+.scrollBar.idle .scrollThumb {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sections                                                            */
+/* ------------------------------------------------------------------ */
+
+/* NOTE: a <details> must NOT be display:flex here — UXP then lays the
+   summary and the content on top of each other. Sections are plain blocks,
+   and the inner .cardBody does the stacking instead. */
+.card {
+  display: block;
+  min-width: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid #3f3f3f;
+}
+
+.card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding-top: 10px;
+}
+
+.cardTitle {
+  display: block;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9a9a9a;
+  letter-spacing: 0.06em;
+}
+
+/* Collapsible sections keep the panel short by default: the clip list and
+   the log only take up room when they're actually being read. */
+details > summary {
+  cursor: pointer;
+  list-style: revert;
+}
+
+.sub {
+  display: block;
+  margin-top: 2px;
+}
+
+.sub > summary {
+  color: #808080;
+  font-size: 11px;
+}
+
+.subBody {
+  padding-top: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls                                                            */
+/* ------------------------------------------------------------------ */
+
+button {
+  background: #454545;
+  color: #e0e0e0;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button:hover:not(:disabled) {
+  background: #565656;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: #1473e6;
+  border-color: #1473e6;
+  color: white;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #0d66d0;
+}
+
+.status {
+  color: #b0b0b0;
+  line-height: 1.6;
+}
+
+.clipList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+  border: 1px solid #454545;
+  border-radius: 4px;
+}
+
+.clipList li {
+  padding: 5px 8px;
+  border-bottom: 1px solid #3a3a3a;
+  /* Long unbroken clip names (DJI_20260623214456_0077_D.MP4) would otherwise
+     push the panel sideways. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.clipList li.warn {
+  color: #e0a030;
+}
+
+.clipList li:last-child {
+  border-bottom: none;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #b0b0b0;
+}
+
+.checkboxRow input {
+  flex: none;
+}
+
+/* Label, arrows and value share one line so three controls fit in a short
+   panel without scrolling. */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  width: 54px;
+  flex: none;
+  color: #b0b0b0;
+}
+
+.unit {
+  width: 20px;
+  flex: none;
+  color: #808080;
+}
+
+.arrowBtn {
+  width: 30px;
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  padding: 8px 0;
+  user-select: none;
+  touch-action: none;
+}
+
+input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  padding: 7px 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+select {
+  width: 100%;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  padding: 7px 8px;
+  font-size: 12px;
+}
+
+.hint {
+  color: #808080;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.log {
+  font-family: monospace;
+  font-size: 11px;
+  max-height: 220px;
+  overflow-y: auto;
+  color: #909090;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

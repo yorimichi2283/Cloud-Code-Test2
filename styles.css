@@ -106,6 +106,18 @@ button.primary:hover:not(:disabled) {
   justify-content: space-between;
 }
 
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #b0b0b0;
+}
+
+.checkboxRow input {
+  flex: none;
+}
+
 .arrowRow {
   display: flex;
   align-items: center;

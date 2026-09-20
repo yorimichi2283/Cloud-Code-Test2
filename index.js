@@ -5,6 +5,7 @@ const SCALE_NAME_RE = /scale|スケール/i;
 
 const els = {
   trackSelect: document.getElementById("trackSelect"),
+  telopOnly: document.getElementById("telopOnly"),
   loadSelectionBtn: document.getElementById("loadSelectionBtn"),
   centerHBtn: document.getElementById("centerHBtn"),
   resetBtn: document.getElementById("resetBtn"),
@@ -87,7 +88,8 @@ async function populateTrackOptions(sequence) {
   const tracks = [];
   for (let apiIndex = 0; apiIndex < trackCount; apiIndex += 1) {
     const track = await sequence.getVideoTrack(apiIndex);
-    tracks.push({ apiIndex, name: track.name || `(index ${apiIndex})` });
+    const clipCount = track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false).length;
+    tracks.push({ apiIndex, name: track.name || `(index ${apiIndex})`, clipCount });
   }
   // Show them in timeline order (V1 first) regardless of the API's ordering.
   tracks.sort((a, b) => {
@@ -102,10 +104,12 @@ async function populateTrackOptions(sequence) {
   selectionOption.textContent = "タイムラインで選択中のクリップ";
   els.trackSelect.appendChild(selectionOption);
 
-  for (const { apiIndex, name } of tracks) {
+  // The clip count makes it obvious which track actually holds the telops,
+  // so an empty or wrong track is visible before loading.
+  for (const { apiIndex, name, clipCount } of tracks) {
     const option = document.createElement("option");
     option.value = String(apiIndex);
-    option.textContent = name;
+    option.textContent = `${name}（${clipCount}件）`;
     els.trackSelect.appendChild(option);
   }
 
@@ -121,8 +125,9 @@ async function resolveVideoClips(sequence) {
     return items.filter(isVideoClipTrackItem);
   }
   const track = await sequence.getVideoTrack(Number(chosen));
-  log(`対象トラック: 「${track.name}」`);
-  return track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+  const items = track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+  log(`対象トラック: 「${track.name}」(index ${chosen}) / クリップ${items.length}件`);
+  return items;
 }
 
 async function fetchFrameSize(sequence) {
@@ -203,7 +208,7 @@ async function collectEditableParams(project, trackItem) {
   });
 
   if (rawGroups.length === 0) {
-    return { editableParams: [], skippedKeyframed: 0, chosenEffectName: null };
+    return { editableParams: [], skippedKeyframed: 0, chosenEffectName: null, isBaseMotion: true };
   }
 
   // A Graphic/Text clip has its own content transform ("Vector Motion") in
@@ -298,7 +303,7 @@ async function collectEditableParams(project, trackItem) {
     });
   }
 
-  return { editableParams, skippedKeyframed, chosenEffectName };
+  return { editableParams, skippedKeyframed, chosenEffectName, isBaseMotion };
 }
 
 function renderClipList() {
@@ -378,26 +383,46 @@ async function handleLoadSelection() {
     state.frameHeight = frameSize.height;
     log(`シーケンスのフレームサイズ: ${state.frameWidth} x ${state.frameHeight}`);
 
+    const telopOnly = els.telopOnly.checked;
     loadedClips = [];
+    let skippedPlainClips = 0;
     for (const trackItem of videoClips) {
       const name = await trackItem.getName();
-      const { editableParams, skippedKeyframed, chosenEffectName } = await collectEditableParams(
-        project,
-        trackItem
-      );
+      const { editableParams, skippedKeyframed, chosenEffectName, isBaseMotion } =
+        await collectEditableParams(project, trackItem);
+
+      // A plain video/image clip only ever carries the generic "Motion"
+      // effect; a telop (Graphic/Text or MOGRT) has its own content
+      // transform on top. So "base Motion only" is the signal for "this is
+      // footage, not a telop" — skip it rather than dragging the footage
+      // around by mistake.
+      if (telopOnly && isBaseMotion) {
+        skippedPlainClips += 1;
+        continue;
+      }
+
       loadedClips.push({ trackItem, name, editableParams, skippedKeyframed, chosenEffectName });
       if (chosenEffectName) {
         log(`${name}: 調整対象エフェクト = 「${chosenEffectName}」`);
       }
     }
 
+    if (skippedPlainClips > 0) {
+      log(`テロップ以外のクリップ ${skippedPlainClips}件は対象外にしました。`);
+    }
+
     resetOffsets();
     renderClipList();
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
-    els.statusLine.textContent = anyEditable
-      ? "◀▶ボタン、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
-      : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
+    if (loadedClips.length === 0 && skippedPlainClips > 0) {
+      els.statusLine.textContent =
+        "このトラックには動画などのクリップしかありませんでした。テロップのあるトラックを選ぶか、上のチェックを外してください。";
+    } else {
+      els.statusLine.textContent = anyEditable
+        ? "◀▶ボタン、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+        : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
+    }
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
     els.statusLine.textContent = `エラー: ${err.message || err}`;

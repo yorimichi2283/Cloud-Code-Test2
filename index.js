@@ -10,8 +10,6 @@ const els = {
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
-  xyPad: document.getElementById("xyPad"),
-  xyPadDot: document.getElementById("xyPadDot"),
   xLabel: document.getElementById("xLabel"),
   yLabel: document.getElementById("yLabel"),
   scaleLabel: document.getElementById("scaleLabel"),
@@ -28,10 +26,10 @@ const els = {
   logBox: document.getElementById("logBox"),
 };
 
-const PAD_MAX_WIDTH = 260;
-const PAD_MAX_HEIGHT = 160;
 const DEFAULT_FRAME_WIDTH = 1920;
 const DEFAULT_FRAME_HEIGHT = 1080;
+const SCALE_MIN = -95;
+const SCALE_MAX = 300;
 
 // One entry per loaded clip: { name, editableParams: [{ param, kind, baseline }] }
 let loadedClips = [];
@@ -50,6 +48,19 @@ const state = {
 function getStepSize() {
   const checked = els.stepSizeGroup.querySelector('input[name="stepSize"]:checked');
   return checked ? Number(checked.value) : 1;
+}
+
+// Keeps a value within a sane range for its axis, so a stray drag, a held
+// button, or a typo in the number field can't send the offset to an
+// unrecoverable-looking extreme (e.g. thousands of pixels on a 1080px frame).
+function clampAxisValue(axis, value) {
+  if (axis === "x") {
+    return Math.max(-state.frameWidth, Math.min(state.frameWidth, value));
+  }
+  if (axis === "y") {
+    return Math.max(-state.frameHeight, Math.min(state.frameHeight, value));
+  }
+  return Math.max(SCALE_MIN, Math.min(SCALE_MAX, value));
 }
 
 function log(message) {
@@ -249,35 +260,12 @@ function setControlsEnabled(enabled) {
   ]) {
     el.disabled = !enabled;
   }
-  els.xyPad.classList.toggle("disabled", !enabled);
-}
-
-function layoutPad() {
-  const aspect = state.frameWidth / state.frameHeight || 16 / 9;
-  let width = PAD_MAX_WIDTH;
-  let height = width / aspect;
-  if (height > PAD_MAX_HEIGHT) {
-    height = PAD_MAX_HEIGHT;
-    width = height * aspect;
-  }
-  els.xyPad.style.width = `${width}px`;
-  els.xyPad.style.height = `${height}px`;
-}
-
-function updateDotFromState() {
-  const padWidth = els.xyPad.clientWidth || PAD_MAX_WIDTH;
-  const padHeight = els.xyPad.clientHeight || PAD_MAX_HEIGHT;
-  const nx = Math.min(1, Math.max(0, 0.5 + state.x / state.frameWidth));
-  const ny = Math.min(1, Math.max(0, 0.5 + state.y / state.frameHeight));
-  els.xyPadDot.style.left = `${nx * padWidth}px`;
-  els.xyPadDot.style.top = `${ny * padHeight}px`;
 }
 
 function syncControls() {
   els.xInput.value = String(state.x);
   els.yInput.value = String(state.y);
   els.scaleInput.value = String(state.scale);
-  updateDotFromState();
 }
 
 function resetOffsets() {
@@ -309,7 +297,6 @@ async function handleLoadSelection() {
     const frameSize = await fetchFrameSize(sequence);
     state.frameWidth = frameSize.width;
     state.frameHeight = frameSize.height;
-    layoutPad();
 
     loadedClips = [];
     for (const trackItem of videoClips) {
@@ -329,7 +316,7 @@ async function handleLoadSelection() {
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "パッドのドラッグ、＋/−ボタン、数値入力のいずれでも、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "＋/−ボタン、ラベルのドラッグ、数値入力のいずれでも、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -382,8 +369,7 @@ function bindNumberInput(inputEl, axis) {
   inputEl.addEventListener("input", () => {
     const value = Number(inputEl.value);
     if (Number.isNaN(value)) return;
-    state[axis] = value;
-    updateDotFromState();
+    state[axis] = clampAxisValue(axis, value);
     scheduleApply();
   });
 }
@@ -401,8 +387,7 @@ function bindStepButton(buttonEl, axis, direction) {
 
   function step() {
     const delta = direction * getStepSize();
-    const next = state[axis] + delta;
-    state[axis] = axis === "scale" ? Math.max(-95, next) : next;
+    state[axis] = clampAxisValue(axis, state[axis] + delta);
     syncControls();
     scheduleApply();
   }
@@ -440,8 +425,10 @@ bindStepButton(els.scaleMinus, "scale", -1);
 bindStepButton(els.scalePlus, "scale", 1);
 
 // Click-drag directly on a label (left/right) to scrub its value, the way
-// Premiere's own numeric fields work. Sensitivity follows the same
-// "movement step" (1/10/50) used by the +/- buttons.
+// Premiere's own numeric fields work. Sensitivity is always 1px = 1 unit,
+// independent of the +/- buttons' "movement step" — using that step size as
+// a per-pixel multiplier made dragging wildly oversensitive (a normal drag
+// with the step set to 50 could add thousands of units in an instant).
 function bindScrubLabel(labelEl, axis) {
   let dragging = false;
   let startClientX = 0;
@@ -457,9 +444,8 @@ function bindScrubLabel(labelEl, axis) {
   });
   labelEl.addEventListener("pointermove", (event) => {
     if (!dragging) return;
-    const deltaPx = event.clientX - startClientX;
-    const next = startValue + deltaPx * getStepSize();
-    state[axis] = axis === "scale" ? Math.max(-95, next) : Math.round(next);
+    const deltaPx = Math.round(event.clientX - startClientX);
+    state[axis] = clampAxisValue(axis, startValue + deltaPx);
     syncControls();
     scheduleApply();
   });
@@ -476,37 +462,6 @@ bindScrubLabel(els.xLabel, "x");
 bindScrubLabel(els.yLabel, "y");
 bindScrubLabel(els.scaleLabel, "scale");
 
-// Drag directly on the pad (which represents the full video frame) to move
-// X/Y by cursor. setPointerCapture keeps the drag tracking even if the
-// pointer slips outside the pad's small area while moving fast.
-function updateStateFromPointer(event) {
-  const rect = els.xyPad.getBoundingClientRect();
-  const nx = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-  const ny = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
-  state.x = Math.round((nx - 0.5) * state.frameWidth);
-  state.y = Math.round((ny - 0.5) * state.frameHeight);
-  syncControls();
-  scheduleApply();
-}
-
-let padDragging = false;
-els.xyPad.addEventListener("pointerdown", (event) => {
-  if (loadedClips.length === 0) return;
-  padDragging = true;
-  els.xyPad.setPointerCapture(event.pointerId);
-  updateStateFromPointer(event);
-});
-els.xyPad.addEventListener("pointermove", (event) => {
-  if (!padDragging) return;
-  updateStateFromPointer(event);
-});
-function endPadDrag() {
-  padDragging = false;
-}
-els.xyPad.addEventListener("pointerup", endPadDrag);
-els.xyPad.addEventListener("pointercancel", endPadDrag);
-els.xyPad.addEventListener("lostpointercapture", endPadDrag);
-
 els.resetBtn.addEventListener("click", () => {
   resetOffsets();
   applyDelta(0, 0, 0);
@@ -514,6 +469,4 @@ els.resetBtn.addEventListener("click", () => {
 
 els.loadSelectionBtn.addEventListener("click", handleLoadSelection);
 
-layoutPad();
-updateDotFromState();
 log("Telop Shifter パネルを起動しました。");

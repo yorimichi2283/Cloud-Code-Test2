@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, "Segoe UI", sans-serif;
@@ -13,28 +18,44 @@ body {
   overflow-x: hidden;
 }
 
+/* The panel itself scrolls, so a short docked panel still reaches every
+   control instead of clipping the bottom of the UI. */
 .panel {
-  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   min-width: 0;
   max-width: 100%;
 }
 
-/* Every row stacks vertically, so a narrow docked panel never forces its
-   contents side by side or off the edge. */
-.row {
+/* Each section is separated by a rule, so the panel stays readable even
+   when everything is packed tightly together. */
+.card {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid #3f3f3f;
 }
 
-button {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.card:last-child {
+  border-bottom: none;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9a9a9a;
+  letter-spacing: 0.04em;
+}
+
+.logCard > summary {
+  cursor: pointer;
+  list-style: revert;
 }
 
 button {
@@ -44,6 +65,9 @@ button {
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button:hover:not(:disabled) {
@@ -70,22 +94,18 @@ button.primary:hover:not(:disabled) {
   line-height: 1.4;
 }
 
-.clipListLabel {
-  color: #b0b0b0;
-}
-
 .clipList {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 110px;
+  max-height: 72px;
   overflow-y: auto;
   border: 1px solid #454545;
   border-radius: 4px;
 }
 
 .clipList li {
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-bottom: 1px solid #3a3a3a;
   /* Long unbroken clip names (DJI_20260623214456_0077_D.MP4) would otherwise
      push the panel sideways. */
@@ -101,11 +121,6 @@ button.primary:hover:not(:disabled) {
   border-bottom: none;
 }
 
-.control label {
-  display: flex;
-  justify-content: space-between;
-}
-
 .checkboxRow {
   display: flex;
   align-items: center;
@@ -118,16 +133,31 @@ button.primary:hover:not(:disabled) {
   flex: none;
 }
 
-.arrowRow {
+/* Label, arrows and value share one line so three controls fit in a short
+   panel without scrolling. */
+.field {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  width: 52px;
+  flex: none;
+  color: #b0b0b0;
+}
+
+.unit {
+  width: 18px;
+  flex: none;
+  color: #808080;
 }
 
 .arrowBtn {
-  width: 30px;
+  width: 26px;
   flex: none;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   padding: 6px 0;
   user-select: none;
@@ -141,7 +171,7 @@ input[type="number"] {
   color: #e0e0e0;
   border: 1px solid #5a5a5a;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 5px 6px;
   font-size: 13px;
   text-align: center;
 }
@@ -151,21 +181,21 @@ select {
   color: #e0e0e0;
   border: 1px solid #5a5a5a;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 5px 6px;
   font-size: 12px;
+  max-width: 100%;
 }
 
 .hint {
   color: #808080;
   font-size: 11px;
-  text-align: center;
   line-height: 1.5;
 }
 
 .log {
   font-family: monospace;
   font-size: 11px;
-  max-height: 90px;
+  max-height: 72px;
   overflow-y: auto;
   color: #909090;
   white-space: pre-wrap;

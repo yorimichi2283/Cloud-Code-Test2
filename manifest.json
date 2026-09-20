@@ -15,8 +15,8 @@
       "type": "panel",
       "id": "telopShifterPanel",
       "minimumSize": {
-        "width": 300,
-        "height": 420
+        "width": 220,
+        "height": 180
       },
       "maximumSize": {
         "width": 900,

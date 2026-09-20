@@ -524,14 +524,20 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
-// Horizontal centring is per-clip and absolute, unlike the shared offset the
-// rest of the panel applies: every clip's X goes to its own neutral value
-// (frame centre for the base Motion effect, "no offset" for a content
-// transform like Vector Motion, which returns the graphic to the horizontal
-// position it was authored at). The current vertical offset is preserved.
-// Afterwards the centred X becomes each clip's new baseline and the X field
-// resets to 0, so later nudges start from centre instead of re-applying the
-// old offset on top.
+// Aligning horizontally is per-clip and absolute, unlike the shared offset
+// the rest of the panel applies: every clip's X goes to its own neutral
+// value — the frame centre for the base Motion effect, or zero offset for a
+// content transform like Vector Motion, which puts a graphic back at the
+// horizontal position it was authored at.
+//
+// Note this is NOT the same as Essential Graphics' "align horizontally
+// centred": that measures the text's bounding box, and the UXP API exposes
+// no bounds/extent for a graphic, so a true measured centring can't be
+// reproduced here. For telops authored centred the result is the same; for
+// ones authored off to a side it returns them to that authored position.
+//
+// The vertical offset is preserved, the aligned X becomes each clip's new
+// baseline, and the X field resets to 0 so later nudges start from there.
 function applyHorizontalCenter() {
   if (loadedClips.length === 0 || !currentProject) return;
 
@@ -565,7 +571,7 @@ function applyHorizontalCenter() {
   }
   state.x = 0;
   syncControls();
-  log(`${centered.length}件の位置を水平方向に中央揃えしました。`);
+  log(`${centered.length}件の横位置を基準位置にそろえました。`);
 }
 
 // Every write to Premiere becomes its own undo step, so writing on each

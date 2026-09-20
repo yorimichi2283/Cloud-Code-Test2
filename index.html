@@ -7,8 +7,8 @@
 </head>
 <body>
   <div class="panel">
-    <section class="row">
-      <label for="trackSelect">対象</label>
+    <section class="card">
+      <h2 class="cardTitle">対象</h2>
       <select id="trackSelect">
         <option value="selection">タイムラインで選択中のクリップ</option>
       </select>
@@ -16,57 +16,61 @@
         <input type="checkbox" id="telopOnly" checked />
         テロップ（グラフィック）だけを対象にする
       </label>
-    </section>
-
-    <section class="row">
       <button id="loadSelectionBtn" class="primary">読み込む</button>
       <div id="statusLine" class="status">対象を選んでから、上のボタンを押してください。</div>
     </section>
 
-    <section class="row">
-      <div class="clipListLabel">読み込んだクリップ (<span id="clipCount">0</span>件)</div>
+    <section class="card">
+      <h2 class="cardTitle">読み込んだクリップ（<span id="clipCount">0</span>件）</h2>
       <ul id="clipList" class="clipList"></ul>
     </section>
 
-    <section class="row control">
-      <label for="xInput">X座標 (px)</label>
-      <div class="arrowRow">
+    <section class="card">
+      <h2 class="cardTitle">調整</h2>
+
+      <div class="field">
+        <span class="fieldLabel">X座標</span>
         <button type="button" class="arrowBtn" id="xMinus" disabled>◀</button>
         <input type="number" id="xInput" value="0" step="1" disabled />
         <button type="button" class="arrowBtn" id="xPlus" disabled>▶</button>
+        <span class="unit">px</span>
       </div>
-    </section>
 
-    <section class="row control">
-      <label for="yInput">Y座標 (px)</label>
-      <div class="arrowRow">
+      <div class="field">
+        <span class="fieldLabel">Y座標</span>
         <button type="button" class="arrowBtn" id="yMinus" disabled>◀</button>
         <input type="number" id="yInput" value="0" step="1" disabled />
         <button type="button" class="arrowBtn" id="yPlus" disabled>▶</button>
+        <span class="unit">px</span>
       </div>
-    </section>
 
-    <section class="row control">
-      <label for="scaleInput">スケール (%)</label>
-      <div class="arrowRow">
+      <div class="field">
+        <span class="fieldLabel">スケール</span>
         <button type="button" class="arrowBtn" id="scaleMinus" disabled>◀</button>
         <input type="number" id="scaleInput" value="0" step="1" disabled />
         <button type="button" class="arrowBtn" id="scalePlus" disabled>▶</button>
+        <span class="unit">%</span>
+      </div>
+
+      <div class="hint">
+        矢印＝5ずつ / Shift＋クリック＝1ずつ（押しっぱなしで連続移動）
       </div>
     </section>
-    <div class="hint">
-      矢印ボタン＝5ずつ / Shift＋クリック＝1ずつ（押しっぱなしで連続移動）。数値欄への直接入力も可。<br />
-      元に戻すときは下の「リセット」が確実です（Cmd+Zはタイムラインをクリックしてから）
-    </div>
 
-    <section class="row buttons">
-      <button id="centerHBtn" disabled>水平方向に中央揃え</button>
-      <button id="resetBtn" disabled>リセット（元の位置に戻す）</button>
+    <section class="card">
+      <h2 class="cardTitle">一括操作</h2>
+      <button id="centerHBtn" disabled>横位置をそろえる（基準位置に戻す）</button>
+      <button id="resetBtn" disabled>リセット（読み込んだ時点に戻す）</button>
+      <div class="hint">
+        Premiereの拡張機能では文字の幅を測れないため、「そろえる」は各テロップを作成時の基準位置に戻す
+        動作です（中央にデザインされたテロップなら中央に戻ります）
+      </div>
     </section>
 
-    <section class="row">
+    <details class="card logCard">
+      <summary class="cardTitle">ログ</summary>
       <div id="logBox" class="log"></div>
-    </section>
+    </details>
   </div>
   <script src="index.js"></script>
 </body>

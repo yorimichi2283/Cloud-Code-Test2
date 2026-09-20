@@ -75,11 +75,26 @@ async function getActiveProjectAndSequence() {
   return { project, sequence };
 }
 
-// Keeps the "V1".."V8" options in sync with the sequence's current track
-// count, while preserving whatever the user had selected if it's still valid.
+// Builds the track dropdown from each track's OWN name — the same "V1",
+// "V2", ... labels Premiere shows in the timeline — and stores the API index
+// as the option value. Earlier versions guessed at how getVideoTrack()'s
+// index maps onto those labels and got it wrong in both directions; reading
+// the real name removes the guesswork entirely.
 async function populateTrackOptions(sequence) {
   const trackCount = await sequence.getVideoTrackCount();
   const previous = els.trackSelect.value;
+
+  const tracks = [];
+  for (let apiIndex = 0; apiIndex < trackCount; apiIndex += 1) {
+    const track = await sequence.getVideoTrack(apiIndex);
+    tracks.push({ apiIndex, name: track.name || `(index ${apiIndex})` });
+  }
+  // Show them in timeline order (V1 first) regardless of the API's ordering.
+  tracks.sort((a, b) => {
+    const an = Number((a.name.match(/\d+/) || [Number.MAX_SAFE_INTEGER])[0]);
+    const bn = Number((b.name.match(/\d+/) || [Number.MAX_SAFE_INTEGER])[0]);
+    return an - bn;
+  });
 
   els.trackSelect.innerHTML = "";
   const selectionOption = document.createElement("option");
@@ -87,14 +102,10 @@ async function populateTrackOptions(sequence) {
   selectionOption.textContent = "タイムラインで選択中のクリップ";
   els.trackSelect.appendChild(selectionOption);
 
-  // Option values are the on-screen track number (V1 = bottom track, as
-  // shown in the timeline). getVideoTrack()'s own index numbers tracks the
-  // other way around (index 0 = the topmost track), so the conversion
-  // happens in resolveVideoClips() below, not here.
-  for (let displayNumber = 1; displayNumber <= trackCount; displayNumber += 1) {
+  for (const { apiIndex, name } of tracks) {
     const option = document.createElement("option");
-    option.value = String(displayNumber);
-    option.textContent = `V${displayNumber}`;
+    option.value = String(apiIndex);
+    option.textContent = name;
     els.trackSelect.appendChild(option);
   }
 
@@ -109,9 +120,8 @@ async function resolveVideoClips(sequence) {
     const items = await selection.getTrackItems();
     return items.filter(isVideoClipTrackItem);
   }
-  const trackCount = await sequence.getVideoTrackCount();
-  const apiIndex = trackCount - Number(chosen);
-  const track = await sequence.getVideoTrack(apiIndex);
+  const track = await sequence.getVideoTrack(Number(chosen));
+  log(`対象トラック: 「${track.name}」`);
   return track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
 }
 
@@ -130,6 +140,24 @@ async function fetchFrameSize(sequence) {
 
 const BASE_MOTION_MATCH_NAME = "AE.ADBE Motion";
 const VECTOR_MOTION_NAME_RE = /vector\s*motion|ベクトルモーション/i;
+
+// IMPORTANT: Premiere's Position params are stored as a FRACTION OF THE
+// FRAME, not in pixels. A clip sitting dead centre of a 1080x1920 sequence
+// reads back as {x: 0.5, y: 0.5} even though Effect Controls displays it as
+// "540.0, 960.0". Adding a pixel offset straight onto that fraction moved
+// clips by hundreds of frame-widths at a time — which is what produced every
+// flavour of "it vanishes", "it jumps somewhere random", and the 32767 /
+// -32768 values (Premiere's own 16-bit clamp on an absurd result).
+// So: offsets entered in this panel are pixels, and get divided by the frame
+// size before being added to the stored fraction.
+function pixelsToFraction(pixels, frameSize) {
+  return frameSize > 0 ? pixels / frameSize : 0;
+}
+
+// Converts a value in frame-fraction units back to pixels, for display.
+function fractionToPixels(fraction, frameSize) {
+  return Math.round(fraction * frameSize);
+}
 
 // Normalizes a Position-like value to a plain {x, y}, regardless of whether
 // the underlying param returned a PointF-shaped object or a plain [x, y]
@@ -212,6 +240,7 @@ async function collectEditableParams(project, trackItem) {
   }
 
   const chosenEffectName = await chosen.component.getDisplayName();
+  const isBaseMotion = (await chosen.component.getMatchName()) === BASE_MOTION_MATCH_NAME;
 
   const editableParams = [];
   let skippedKeyframed = 0;
@@ -231,17 +260,22 @@ async function collectEditableParams(project, trackItem) {
       continue;
     }
     // A clip touched by an earlier, buggier version of this tool can already
-    // have an absurd Position/Scale baked in (e.g. exactly 32767/-32768 —
+    // have an absurd Position baked in (e.g. exactly 32767/-32768 —
     // Premiere's own 16-bit clamp kicking in on a runaway write). Adding a
-    // small, sane offset on top of a broken baseline just produces another
-    // broken value, so treat a wildly out-of-range baseline as corrupted and
-    // reset it to a sane default instead of building on top of it.
+    // sane offset on top of a broken baseline just produces another broken
+    // value, so treat a wildly out-of-range baseline as corrupted and reset
+    // it. Position is in frame fractions, so anything past a few frames out
+    // is nonsense; the base Motion effect's neutral is the frame centre
+    // (0.5, 0.5) while a content transform like Vector Motion offsets from
+    // zero.
     if (candidate.kind === "position") {
-      const limitX = state.frameWidth * 5;
-      const limitY = state.frameHeight * 5;
-      if (Math.abs(baseline.x) > limitX || Math.abs(baseline.y) > limitY) {
-        log(`警告: 位置の元の値が異常でした (${baseline.x}, ${baseline.y})。0,0として扱います。`);
-        baseline = { x: 0, y: 0 };
+      if (Math.abs(baseline.x) > 5 || Math.abs(baseline.y) > 5) {
+        const neutral = isBaseMotion ? { x: 0.5, y: 0.5 } : { x: 0, y: 0 };
+        log(
+          `警告: 位置の元の値が異常でした (${baseline.x}, ${baseline.y})。` +
+            `${neutral.x}, ${neutral.y} として扱います。`
+        );
+        baseline = neutral;
       }
     } else if (baseline <= 0 || baseline > 2000) {
       log(`警告: スケールの元の値が異常でした (${baseline})。100として扱います。`);
@@ -331,6 +365,7 @@ async function handleLoadSelection() {
     const frameSize = await fetchFrameSize(sequence);
     state.frameWidth = frameSize.width;
     state.frameHeight = frameSize.height;
+    log(`シーケンスのフレームサイズ: ${state.frameWidth} x ${state.frameHeight}`);
 
     loadedClips = [];
     for (const trackItem of videoClips) {
@@ -384,8 +419,16 @@ async function logWriteConfirmation(intendedByParam) {
     let intendedText;
     if (editable.kind === "position") {
       const actualXY = toXY(rawActual);
-      actualText = actualXY ? `(${actualXY.x}, ${actualXY.y})` : `解析不能:${JSON.stringify(rawActual)}`;
-      intendedText = `(${intended.x}, ${intended.y})`;
+      actualText = actualXY
+        ? `${fractionToPixels(actualXY.x, state.frameWidth)}, ${fractionToPixels(
+            actualXY.y,
+            state.frameHeight
+          )} px`
+        : `解析不能:${JSON.stringify(rawActual)}`;
+      intendedText = `${fractionToPixels(intended.x, state.frameWidth)}, ${fractionToPixels(
+        intended.y,
+        state.frameHeight
+      )} px`;
     } else {
       actualText = String(rawActual);
       intendedText = String(intended);
@@ -414,10 +457,13 @@ function applyDelta(dx, dy, scalePercent) {
                 log(`警告: ${clip.name} の位置ベースラインが不正です: ${JSON.stringify(base)}`);
                 continue;
               }
-              // Belt-and-suspenders: clamp the value we're about to write too,
-              // regardless of how sane the baseline looked at load time.
-              const finalX = Math.max(-state.frameWidth * 3, Math.min(state.frameWidth * 3, base.x + dx));
-              const finalY = Math.max(-state.frameHeight * 3, Math.min(state.frameHeight * 3, base.y + dy));
+              // dx/dy are in pixels; the stored value is a fraction of the
+              // frame, so convert before adding. Then clamp to a few frames'
+              // worth so no single write can land somewhere absurd.
+              const rawX = base.x + pixelsToFraction(dx, state.frameWidth);
+              const rawY = base.y + pixelsToFraction(dy, state.frameHeight);
+              const finalX = Math.max(-2, Math.min(3, rawX));
+              const finalY = Math.max(-2, Math.min(3, rawY));
               newValue = new ppro.PointF(finalX, finalY);
             } else {
               if (typeof base !== "number") {

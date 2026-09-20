@@ -2,6 +2,11 @@ const ppro = require("premierepro");
 
 const POSITION_NAME_RE = /position|位置/i;
 const SCALE_NAME_RE = /scale|スケール/i;
+// "Anchor Point" / "アンカーポイント" — never written to, only read, because
+// Position places the anchor: Position == AnchorPoint means "no shift", so
+// the anchor is what tells us where the frame's centre actually is for this
+// clip. (Neither name matches the two regexes above.)
+const ANCHOR_NAME_RE = /anchor|アンカー/i;
 
 const els = {
   trackSelect: document.getElementById("trackSelect"),
@@ -192,6 +197,7 @@ async function collectEditableParams(project, trackItem) {
       const component = componentChain.getComponentAtIndex(c);
       const paramCount = component.getParamCount();
       const params = [];
+      let anchorParam = null;
       for (let p = 0; p < paramCount; p += 1) {
         const param = component.getParam(p);
         const name = param.displayName || "";
@@ -199,10 +205,12 @@ async function collectEditableParams(project, trackItem) {
           params.push({ param, kind: "position" });
         } else if (SCALE_NAME_RE.test(name)) {
           params.push({ param, kind: "scale" });
+        } else if (ANCHOR_NAME_RE.test(name)) {
+          anchorParam = param;
         }
       }
       if (params.length > 0) {
-        rawGroups.push({ component, params });
+        rawGroups.push({ component, params, anchorParam });
       }
     }
   });
@@ -247,6 +255,27 @@ async function collectEditableParams(project, trackItem) {
   const chosenEffectName = await chosen.component.getDisplayName();
   const isBaseMotion = (await chosen.component.getMatchName()) === BASE_MOTION_MATCH_NAME;
 
+  // Position places the anchor point, so Position == AnchorPoint is the
+  // "sitting where it was designed" value, and the anchor of a graphic sits
+  // at the frame centre. That makes the anchor the correct target for
+  // horizontal centring — and it is expressed in the same frame-fraction
+  // units, so it works for vertical and horizontal sequences alike.
+  // The base Motion effect is skipped here because its anchor is in the
+  // source media's own pixel space (e.g. 1920x1080 for 4K footage in a
+  // 1080x1920 sequence), not the frame's — for that, frame centre is 0.5.
+  let centerXY = { x: 0.5, y: 0.5 };
+  if (!isBaseMotion && chosen.anchorParam) {
+    try {
+      const anchorKeyframe = await chosen.anchorParam.getStartValue();
+      const anchor = toXY(anchorKeyframe.value.value);
+      if (anchor && Math.abs(anchor.x) <= 2 && Math.abs(anchor.y) <= 2) {
+        centerXY = anchor;
+      }
+    } catch (err) {
+      log(`アンカーポイントの取得に失敗しました（中央=0.5として扱います）: ${err.message || err}`);
+    }
+  }
+
   const editableParams = [];
   let skippedKeyframed = 0;
   for (const candidate of chosen.params) {
@@ -264,22 +293,13 @@ async function collectEditableParams(project, trackItem) {
       log(`警告: 位置の値の形式を認識できません（スキップします）: ${JSON.stringify(rawValue)}`);
       continue;
     }
-    // A clip touched by an earlier, buggier version of this tool can already
-    // have an absurd Position baked in (e.g. exactly 32767/-32768 —
-    // Premiere's own 16-bit clamp kicking in on a runaway write). Adding a
-    // sane offset on top of a broken baseline just produces another broken
-    // value, so treat a wildly out-of-range baseline as corrupted and reset
-    // it. Position is in frame fractions, so anything past a few frames out
-    // is nonsense; the base Motion effect's neutral is the frame centre
-    // (0.5, 0.5) while a content transform like Vector Motion offsets from
-    // zero.
-    // The "neutral" position: what this param reads when the clip sits where
-    // it naturally belongs. The base Motion effect positions the anchor in
-    // absolute frame fractions, so its centre is 0.5; a content transform
-    // like Vector Motion is an offset, so its neutral is 0 (= wherever the
-    // graphic was authored). Used both to recover corrupted values and to
-    // centre horizontally.
-    const neutral = isBaseMotion ? { x: 0.5, y: 0.5 } : { x: 0, y: 0 };
+    // Where this clip sits when nothing is shifting it (the anchor point,
+    // i.e. frame centre for a graphic). Doubles as the recovery value for a
+    // clip left with an absurd Position by an earlier, buggier version of
+    // this tool — e.g. exactly 32767/-32768, Premiere's own 16-bit clamp on
+    // a runaway write. Position is in frame fractions, so anything more than
+    // a few frames out is nonsense rather than a real placement.
+    const neutral = centerXY;
     if (candidate.kind === "position") {
       if (Math.abs(baseline.x) > 5 || Math.abs(baseline.y) > 5) {
         log(
@@ -524,19 +544,19 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
-// Aligning horizontally is per-clip and absolute, unlike the shared offset
-// the rest of the panel applies: every clip's X goes to its own neutral
-// value — the frame centre for the base Motion effect, or zero offset for a
-// content transform like Vector Motion, which puts a graphic back at the
-// horizontal position it was authored at.
+// Horizontal centring is per-clip and absolute, unlike the shared offset the
+// rest of the panel applies: each clip's Position X goes to its anchor
+// point's X — frame centre — because Position places the anchor. Reading the
+// anchor rather than assuming a number keeps this correct for vertical and
+// horizontal sequences alike.
 //
-// Note this is NOT the same as Essential Graphics' "align horizontally
-// centred": that measures the text's bounding box, and the UXP API exposes
-// no bounds/extent for a graphic, so a true measured centring can't be
-// reproduced here. For telops authored centred the result is the same; for
-// ones authored off to a side it returns them to that authored position.
+// This is still not Essential Graphics' measured "align horizontally
+// centred": the UXP API exposes no bounds for a graphic, so if the text was
+// authored off to one side inside its own layer, it stays off to that side.
+// What it does guarantee is that every clip ends up on the same, frame-
+// centred axis.
 //
-// The vertical offset is preserved, the aligned X becomes each clip's new
+// The vertical offset is preserved, the centred X becomes each clip's new
 // baseline, and the X field resets to 0 so later nudges start from there.
 function applyHorizontalCenter() {
   if (loadedClips.length === 0 || !currentProject) return;
@@ -571,7 +591,8 @@ function applyHorizontalCenter() {
   }
   state.x = 0;
   syncControls();
-  log(`${centered.length}件の横位置を基準位置にそろえました。`);
+  const samplePx = centered.length > 0 ? fractionToPixels(centered[0].centeredX, state.frameWidth) : 0;
+  log(`${centered.length}件を横方向の中央（X=${samplePx}px）にそろえました。`);
 }
 
 // Every write to Premiere becomes its own undo step, so writing on each

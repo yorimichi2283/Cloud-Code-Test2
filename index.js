@@ -331,12 +331,19 @@ async function handleLoadSelection() {
 }
 
 let diagnosticInFlight = false;
+let lastDiagnosticAt = 0;
+const DIAGNOSTIC_MIN_INTERVAL_MS = 500;
 
 // Reads the first position/scale param back right after we write to it, so
 // we can tell from the log whether Premiere actually kept our value or
-// silently reset it — instead of guessing from screenshots.
+// silently reset it — instead of guessing from screenshots. Throttled so a
+// continuous label-drag (many applyDelta calls per second) doesn't spam the
+// log or add a getStartValue() round trip on every single tick.
 async function logWriteConfirmation(intendedByParam) {
+  const now = Date.now();
   if (diagnosticInFlight || intendedByParam.length === 0) return;
+  if (now - lastDiagnosticAt < DIAGNOSTIC_MIN_INTERVAL_MS) return;
+  lastDiagnosticAt = now;
   diagnosticInFlight = true;
   try {
     const [{ editable, intended }] = intendedByParam;

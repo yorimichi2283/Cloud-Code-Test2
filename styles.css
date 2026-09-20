@@ -84,8 +84,46 @@ button.primary:hover:not(:disabled) {
   justify-content: space-between;
 }
 
-input[type="range"] {
-  width: 100%;
+.stepGroupLabel {
+  color: #b0b0b0;
+}
+
+.stepGroup {
+  display: flex;
+  gap: 14px;
+}
+
+.stepGroup label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stepper input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.stepBtn {
+  width: 36px;
+  flex: none;
+  font-size: 16px;
+  line-height: 1;
+  user-select: none;
 }
 
 .log {

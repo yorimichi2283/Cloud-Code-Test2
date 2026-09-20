@@ -18,18 +18,39 @@
     </section>
 
     <section class="row control">
-      <label for="xSlider">X座標 <span id="xValue">0</span>px</label>
-      <input type="range" id="xSlider" min="-500" max="500" value="0" step="1" disabled />
+      <span class="stepGroupLabel">移動幅</span>
+      <div class="stepGroup" id="stepSizeGroup">
+        <label><input type="radio" name="stepSize" value="1" checked /> 1</label>
+        <label><input type="radio" name="stepSize" value="10" /> 10</label>
+        <label><input type="radio" name="stepSize" value="50" /> 50</label>
+      </div>
     </section>
 
     <section class="row control">
-      <label for="ySlider">Y座標 <span id="yValue">0</span>px</label>
-      <input type="range" id="ySlider" min="-500" max="500" value="0" step="1" disabled />
+      <label for="xInput">X座標 (px)</label>
+      <div class="stepper">
+        <button type="button" class="stepBtn" id="xMinus" disabled>−</button>
+        <input type="number" id="xInput" value="0" step="1" disabled />
+        <button type="button" class="stepBtn" id="xPlus" disabled>＋</button>
+      </div>
     </section>
 
     <section class="row control">
-      <label for="scaleSlider">スケール <span id="scaleValue">0</span>%</label>
-      <input type="range" id="scaleSlider" min="-90" max="200" value="0" step="1" disabled />
+      <label for="yInput">Y座標 (px)</label>
+      <div class="stepper">
+        <button type="button" class="stepBtn" id="yMinus" disabled>−</button>
+        <input type="number" id="yInput" value="0" step="1" disabled />
+        <button type="button" class="stepBtn" id="yPlus" disabled>＋</button>
+      </div>
+    </section>
+
+    <section class="row control">
+      <label for="scaleInput">スケール (%)</label>
+      <div class="stepper">
+        <button type="button" class="stepBtn" id="scaleMinus" disabled>−</button>
+        <input type="number" id="scaleInput" value="0" step="1" disabled />
+        <button type="button" class="stepBtn" id="scalePlus" disabled>＋</button>
+      </div>
     </section>
 
     <section class="row buttons">

@@ -9,12 +9,16 @@ const els = {
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
-  xSlider: document.getElementById("xSlider"),
-  ySlider: document.getElementById("ySlider"),
-  scaleSlider: document.getElementById("scaleSlider"),
-  xValue: document.getElementById("xValue"),
-  yValue: document.getElementById("yValue"),
-  scaleValue: document.getElementById("scaleValue"),
+  xInput: document.getElementById("xInput"),
+  yInput: document.getElementById("yInput"),
+  scaleInput: document.getElementById("scaleInput"),
+  xMinus: document.getElementById("xMinus"),
+  xPlus: document.getElementById("xPlus"),
+  yMinus: document.getElementById("yMinus"),
+  yPlus: document.getElementById("yPlus"),
+  scaleMinus: document.getElementById("scaleMinus"),
+  scalePlus: document.getElementById("scalePlus"),
+  stepSizeGroup: document.getElementById("stepSizeGroup"),
   logBox: document.getElementById("logBox"),
 };
 
@@ -22,6 +26,14 @@ const els = {
 let loadedClips = [];
 let currentProject = null;
 let rafScheduled = false;
+
+// Current offset from each param's baseline, applied to every loaded clip.
+const state = { x: 0, y: 0, scale: 0 };
+
+function getStepSize() {
+  const checked = els.stepSizeGroup.querySelector('input[name="stepSize"]:checked');
+  return checked ? Number(checked.value) : 1;
+}
 
 function log(message) {
   const time = new Date().toLocaleTimeString();
@@ -114,19 +126,33 @@ function renderClipList() {
 }
 
 function setControlsEnabled(enabled) {
-  els.xSlider.disabled = !enabled;
-  els.ySlider.disabled = !enabled;
-  els.scaleSlider.disabled = !enabled;
-  els.resetBtn.disabled = !enabled;
+  for (const el of [
+    els.xInput,
+    els.yInput,
+    els.scaleInput,
+    els.xMinus,
+    els.xPlus,
+    els.yMinus,
+    els.yPlus,
+    els.scaleMinus,
+    els.scalePlus,
+    els.resetBtn,
+  ]) {
+    el.disabled = !enabled;
+  }
 }
 
-function resetSliders() {
-  els.xSlider.value = "0";
-  els.ySlider.value = "0";
-  els.scaleSlider.value = "0";
-  els.xValue.textContent = "0";
-  els.yValue.textContent = "0";
-  els.scaleValue.textContent = "0";
+function updateInputsFromState() {
+  els.xInput.value = String(state.x);
+  els.yInput.value = String(state.y);
+  els.scaleInput.value = String(state.scale);
+}
+
+function resetOffsets() {
+  state.x = 0;
+  state.y = 0;
+  state.scale = 0;
+  updateInputsFromState();
 }
 
 async function handleLoadSelection() {
@@ -150,12 +176,12 @@ async function handleLoadSelection() {
       loadedClips.push({ trackItem, name, editableParams, skippedKeyframed });
     }
 
-    resetSliders();
+    resetOffsets();
     renderClipList();
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "スライダーを動かすと、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "＋/−ボタンや数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -199,28 +225,66 @@ function scheduleApply() {
   rafScheduled = true;
   requestAnimationFrame(() => {
     rafScheduled = false;
-    const dx = Number(els.xSlider.value);
-    const dy = Number(els.ySlider.value);
-    const scalePercent = Number(els.scaleSlider.value);
-    applyDelta(dx, dy, scalePercent);
+    applyDelta(state.x, state.y, state.scale);
   });
 }
 
-els.xSlider.addEventListener("input", () => {
-  els.xValue.textContent = els.xSlider.value;
-  scheduleApply();
-});
-els.ySlider.addEventListener("input", () => {
-  els.yValue.textContent = els.ySlider.value;
-  scheduleApply();
-});
-els.scaleSlider.addEventListener("input", () => {
-  els.scaleValue.textContent = els.scaleSlider.value;
-  scheduleApply();
-});
+// Manual typing in the number fields.
+function bindNumberInput(inputEl, axis) {
+  inputEl.addEventListener("input", () => {
+    const value = Number(inputEl.value);
+    if (Number.isNaN(value)) return;
+    state[axis] = value;
+    scheduleApply();
+  });
+}
+bindNumberInput(els.xInput, "x");
+bindNumberInput(els.yInput, "y");
+bindNumberInput(els.scaleInput, "scale");
+
+// +/- buttons: one immediate step per click, and repeated stepping while held down.
+const HOLD_INITIAL_DELAY_MS = 400;
+const HOLD_REPEAT_INTERVAL_MS = 80;
+
+function bindStepButton(buttonEl, axis, direction) {
+  let repeatTimer = null;
+  let initialTimer = null;
+
+  function step() {
+    const delta = direction * getStepSize();
+    const next = state[axis] + delta;
+    state[axis] = axis === "scale" ? Math.max(-95, next) : next;
+    updateInputsFromState();
+    scheduleApply();
+  }
+
+  function stopHold() {
+    clearTimeout(initialTimer);
+    clearInterval(repeatTimer);
+    initialTimer = null;
+    repeatTimer = null;
+  }
+
+  buttonEl.addEventListener("mousedown", () => {
+    if (buttonEl.disabled) return;
+    step();
+    initialTimer = setTimeout(() => {
+      repeatTimer = setInterval(step, HOLD_REPEAT_INTERVAL_MS);
+    }, HOLD_INITIAL_DELAY_MS);
+  });
+  buttonEl.addEventListener("mouseup", stopHold);
+  buttonEl.addEventListener("mouseleave", stopHold);
+}
+
+bindStepButton(els.xMinus, "x", -1);
+bindStepButton(els.xPlus, "x", 1);
+bindStepButton(els.yMinus, "y", -1);
+bindStepButton(els.yPlus, "y", 1);
+bindStepButton(els.scaleMinus, "scale", -1);
+bindStepButton(els.scalePlus, "scale", 1);
 
 els.resetBtn.addEventListener("click", () => {
-  resetSliders();
+  resetOffsets();
   applyDelta(0, 0, 0);
 });
 

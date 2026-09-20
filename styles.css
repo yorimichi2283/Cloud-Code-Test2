@@ -84,6 +84,16 @@ button.primary:hover:not(:disabled) {
   justify-content: space-between;
 }
 
+.scrubLabel {
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.scrubLabel.scrubbing {
+  color: #1473e6;
+}
+
 .stepGroupLabel {
   color: #b0b0b0;
 }

@@ -12,6 +12,9 @@ const els = {
   clipList: document.getElementById("clipList"),
   xyPad: document.getElementById("xyPad"),
   xyPadDot: document.getElementById("xyPadDot"),
+  xLabel: document.getElementById("xLabel"),
+  yLabel: document.getElementById("yLabel"),
+  scaleLabel: document.getElementById("scaleLabel"),
   xInput: document.getElementById("xInput"),
   yInput: document.getElementById("yInput"),
   scaleInput: document.getElementById("scaleInput"),
@@ -117,32 +120,64 @@ async function fetchFrameSize(sequence) {
   return { width: DEFAULT_FRAME_WIDTH, height: DEFAULT_FRAME_HEIGHT };
 }
 
+const BASE_MOTION_MATCH_NAME = "AE.ADBE Motion";
+
 // Scans one clip's effect stack and returns the Position/Scale params
 // that are safe to overwrite directly (i.e. not keyframed).
 async function collectEditableParams(project, trackItem) {
   const componentChain = await trackItem.getComponentChain();
 
-  const candidates = [];
+  // Group candidate Position/Scale params by which component (effect) they
+  // belong to, rather than flattening everything into one list.
+  const rawGroups = [];
   project.lockedAccess(() => {
     const componentCount = componentChain.getComponentCount();
     for (let c = 0; c < componentCount; c += 1) {
       const component = componentChain.getComponentAtIndex(c);
       const paramCount = component.getParamCount();
+      const params = [];
       for (let p = 0; p < paramCount; p += 1) {
         const param = component.getParam(p);
         const name = param.displayName || "";
         if (POSITION_NAME_RE.test(name)) {
-          candidates.push({ param, kind: "position", name });
+          params.push({ param, kind: "position" });
         } else if (SCALE_NAME_RE.test(name)) {
-          candidates.push({ param, kind: "scale", name });
+          params.push({ param, kind: "scale" });
         }
+      }
+      if (params.length > 0) {
+        rawGroups.push({ component, params });
       }
     }
   });
 
+  if (rawGroups.length === 0) {
+    return { editableParams: [], skippedKeyframed: 0 };
+  }
+
+  // A Graphic/Text clip has its own content transform (e.g. "Vector Motion")
+  // in ADDITION to the generic per-clip "Motion" fixed effect every track
+  // item has. Adjusting both at once compounds the movement (shifting the
+  // clip AND its content inside the clip by the same amount), which is what
+  // sent things flying off to unexpected places. So only ONE component's
+  // Position/Scale is touched per clip: prefer whichever component isn't the
+  // generic base Motion effect, and only fall back to Motion when it's the
+  // only match (e.g. a plain video/image clip).
+  let chosen = null;
+  for (const group of rawGroups) {
+    const matchName = await group.component.getMatchName();
+    if (matchName !== BASE_MOTION_MATCH_NAME) {
+      chosen = group;
+      break;
+    }
+  }
+  if (!chosen) {
+    chosen = rawGroups[0];
+  }
+
   const editableParams = [];
   let skippedKeyframed = 0;
-  for (const candidate of candidates) {
+  for (const candidate of chosen.params) {
     const timeVarying = candidate.param.isTimeVarying();
     if (timeVarying) {
       // Already keyframed: overwriting the static value would be unsafe/ambiguous,
@@ -381,6 +416,43 @@ bindStepButton(els.yMinus, "y", -1);
 bindStepButton(els.yPlus, "y", 1);
 bindStepButton(els.scaleMinus, "scale", -1);
 bindStepButton(els.scalePlus, "scale", 1);
+
+// Click-drag directly on a label (left/right) to scrub its value, the way
+// Premiere's own numeric fields work. Sensitivity follows the same
+// "movement step" (1/10/50) used by the +/- buttons.
+function bindScrubLabel(labelEl, axis) {
+  let dragging = false;
+  let startClientX = 0;
+  let startValue = 0;
+
+  labelEl.addEventListener("pointerdown", (event) => {
+    if (loadedClips.length === 0) return;
+    dragging = true;
+    startClientX = event.clientX;
+    startValue = state[axis];
+    labelEl.setPointerCapture(event.pointerId);
+    labelEl.classList.add("scrubbing");
+  });
+  labelEl.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    const deltaPx = event.clientX - startClientX;
+    const next = startValue + deltaPx * getStepSize();
+    state[axis] = axis === "scale" ? Math.max(-95, next) : Math.round(next);
+    syncControls();
+    scheduleApply();
+  });
+  function stopDrag() {
+    dragging = false;
+    labelEl.classList.remove("scrubbing");
+  }
+  labelEl.addEventListener("pointerup", stopDrag);
+  labelEl.addEventListener("pointercancel", stopDrag);
+  labelEl.addEventListener("lostpointercapture", stopDrag);
+}
+
+bindScrubLabel(els.xLabel, "x");
+bindScrubLabel(els.yLabel, "y");
+bindScrubLabel(els.scaleLabel, "scale");
 
 // Drag directly on the pad (which represents the full video frame) to move
 // X/Y by cursor. setPointerCapture keeps the drag tracking even if the

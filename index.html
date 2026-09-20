@@ -46,7 +46,7 @@
     </section>
 
     <section class="row control">
-      <label for="xInput">X座標 (px)</label>
+      <label for="xInput" id="xLabel" class="scrubLabel">⇔ X座標 (px)</label>
       <div class="stepper">
         <button type="button" class="stepBtn" id="xMinus" disabled>−</button>
         <input type="number" id="xInput" value="0" step="1" disabled />
@@ -55,7 +55,7 @@
     </section>
 
     <section class="row control">
-      <label for="yInput">Y座標 (px)</label>
+      <label for="yInput" id="yLabel" class="scrubLabel">⇔ Y座標 (px)</label>
       <div class="stepper">
         <button type="button" class="stepBtn" id="yMinus" disabled>−</button>
         <input type="number" id="yInput" value="0" step="1" disabled />
@@ -64,13 +64,14 @@
     </section>
 
     <section class="row control">
-      <label for="scaleInput">スケール (%)</label>
+      <label for="scaleInput" id="scaleLabel" class="scrubLabel">⇔ スケール (%)</label>
       <div class="stepper">
         <button type="button" class="stepBtn" id="scaleMinus" disabled>−</button>
         <input type="number" id="scaleInput" value="0" step="1" disabled />
         <button type="button" class="stepBtn" id="scalePlus" disabled>＋</button>
       </div>
     </section>
+    <div class="hint">⇔のラベルは左右にドラッグしても値を動かせます（移動幅の倍率が適用されます）</div>
 
     <section class="row buttons">
       <button id="resetBtn" disabled>リセット（元の位置に戻す）</button>

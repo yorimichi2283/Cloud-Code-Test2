@@ -265,15 +265,22 @@ function bindStepButton(buttonEl, axis, direction) {
     repeatTimer = null;
   }
 
-  buttonEl.addEventListener("mousedown", () => {
+  // Uses Pointer Events + setPointerCapture so that releasing the mouse
+  // anywhere (not just while still over the button) reliably stops the
+  // repeat. Without capture, a fast click/drag can leave mouseup/mouseleave
+  // un-fired and the interval running forever, which is what made the
+  // value race up to an extreme number.
+  buttonEl.addEventListener("pointerdown", (event) => {
     if (buttonEl.disabled) return;
+    buttonEl.setPointerCapture(event.pointerId);
     step();
     initialTimer = setTimeout(() => {
       repeatTimer = setInterval(step, HOLD_REPEAT_INTERVAL_MS);
     }, HOLD_INITIAL_DELAY_MS);
   });
-  buttonEl.addEventListener("mouseup", stopHold);
-  buttonEl.addEventListener("mouseleave", stopHold);
+  buttonEl.addEventListener("pointerup", stopHold);
+  buttonEl.addEventListener("pointercancel", stopHold);
+  buttonEl.addEventListener("lostpointercapture", stopHold);
 }
 
 bindStepButton(els.xMinus, "x", -1);

@@ -121,6 +121,7 @@ async function fetchFrameSize(sequence) {
 }
 
 const BASE_MOTION_MATCH_NAME = "AE.ADBE Motion";
+const VECTOR_MOTION_NAME_RE = /vector\s*motion|ベクトルモーション/i;
 
 // Scans one clip's effect stack and returns the Position/Scale params
 // that are safe to overwrite directly (i.e. not keyframed).
@@ -152,28 +153,43 @@ async function collectEditableParams(project, trackItem) {
   });
 
   if (rawGroups.length === 0) {
-    return { editableParams: [], skippedKeyframed: 0 };
+    return { editableParams: [], skippedKeyframed: 0, chosenEffectName: null };
   }
 
-  // A Graphic/Text clip has its own content transform (e.g. "Vector Motion")
-  // in ADDITION to the generic per-clip "Motion" fixed effect every track
-  // item has. Adjusting both at once compounds the movement (shifting the
-  // clip AND its content inside the clip by the same amount), which is what
-  // sent things flying off to unexpected places. So only ONE component's
-  // Position/Scale is touched per clip: prefer whichever component isn't the
-  // generic base Motion effect, and only fall back to Motion when it's the
-  // only match (e.g. a plain video/image clip).
+  // A Graphic/Text clip has its own content transform ("Vector Motion") in
+  // ADDITION to the generic per-clip "Motion" fixed effect every track item
+  // has. Adjusting both at once compounds the movement (shifting the clip
+  // AND its content inside the clip by the same amount), which is what sent
+  // things flying off to unexpected places. So only ONE component's
+  // Position/Scale is touched per clip, in priority order:
+  //   1. A component explicitly named "Vector Motion" — the one that
+  //      actually moves a Graphic clip's visible content.
+  //   2. Otherwise, any component that isn't the generic base "Motion"
+  //      effect (e.g. a real MOGRT's own per-layer parameters).
+  //   3. Otherwise, the base "Motion" effect itself (plain video/image clips
+  //      only ever have this one).
   let chosen = null;
   for (const group of rawGroups) {
-    const matchName = await group.component.getMatchName();
-    if (matchName !== BASE_MOTION_MATCH_NAME) {
+    const displayName = await group.component.getDisplayName();
+    if (VECTOR_MOTION_NAME_RE.test(displayName)) {
       chosen = group;
       break;
     }
   }
   if (!chosen) {
+    for (const group of rawGroups) {
+      const matchName = await group.component.getMatchName();
+      if (matchName !== BASE_MOTION_MATCH_NAME) {
+        chosen = group;
+        break;
+      }
+    }
+  }
+  if (!chosen) {
     chosen = rawGroups[0];
   }
+
+  const chosenEffectName = await chosen.component.getDisplayName();
 
   const editableParams = [];
   let skippedKeyframed = 0;
@@ -193,7 +209,7 @@ async function collectEditableParams(project, trackItem) {
     });
   }
 
-  return { editableParams, skippedKeyframed };
+  return { editableParams, skippedKeyframed, chosenEffectName };
 }
 
 function renderClipList() {
@@ -207,7 +223,7 @@ function renderClipList() {
       li.className = "warn";
       li.textContent = `${clip.name} — 位置/スケールの調整対象パラメータが見つかりません`;
     } else {
-      let note = `位置x${posCount} / スケールx${scaleCount}`;
+      let note = `[${clip.chosenEffectName}] 位置x${posCount} / スケールx${scaleCount}`;
       if (clip.skippedKeyframed > 0) {
         li.className = "warn";
         note += `（キーフレーム済みのため対象外: ${clip.skippedKeyframed}件）`;
@@ -298,8 +314,14 @@ async function handleLoadSelection() {
     loadedClips = [];
     for (const trackItem of videoClips) {
       const name = await trackItem.getName();
-      const { editableParams, skippedKeyframed } = await collectEditableParams(project, trackItem);
-      loadedClips.push({ trackItem, name, editableParams, skippedKeyframed });
+      const { editableParams, skippedKeyframed, chosenEffectName } = await collectEditableParams(
+        project,
+        trackItem
+      );
+      loadedClips.push({ trackItem, name, editableParams, skippedKeyframed, chosenEffectName });
+      if (chosenEffectName) {
+        log(`${name}: 調整対象エフェクト = 「${chosenEffectName}」`);
+      }
     }
 
     resetOffsets();

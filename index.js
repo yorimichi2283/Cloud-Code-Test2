@@ -327,32 +327,67 @@ async function handleLoadSelection() {
   }
 }
 
+let diagnosticInFlight = false;
+
+// Reads the first position/scale param back right after we write to it, so
+// we can tell from the log whether Premiere actually kept our value or
+// silently reset it — instead of guessing from screenshots.
+async function logWriteConfirmation(intendedByParam) {
+  if (diagnosticInFlight || intendedByParam.length === 0) return;
+  diagnosticInFlight = true;
+  try {
+    const [{ editable, intended }] = intendedByParam;
+    const confirmed = await editable.param.getStartValue();
+    const actual = confirmed.value.value;
+    const actualText =
+      editable.kind === "position" ? `(${actual.x}, ${actual.y})` : String(actual);
+    const intendedText =
+      editable.kind === "position" ? `(${intended.x}, ${intended.y})` : String(intended);
+    log(`確認[${editable.kind}]: 書き込み後の実際値=${actualText} / 狙った値=${intendedText}`);
+  } catch (err) {
+    log(`確認読み取りエラー: ${err.message || err}`);
+  } finally {
+    diagnosticInFlight = false;
+  }
+}
+
 function applyDelta(dx, dy, scalePercent) {
   if (loadedClips.length === 0 || !currentProject) return;
 
+  const intendedByParam = [];
   try {
     currentProject.lockedAccess(() => {
       currentProject.executeTransaction((compoundAction) => {
         for (const clip of loadedClips) {
           for (const editable of clip.editableParams) {
+            const base = editable.baseline;
             let newValue;
             if (editable.kind === "position") {
-              const base = editable.baseline;
+              if (!base || typeof base.x !== "number" || typeof base.y !== "number") {
+                log(`警告: ${clip.name} の位置ベースラインが不正です: ${JSON.stringify(base)}`);
+                continue;
+              }
               newValue = new ppro.PointF(base.x + dx, base.y + dy);
             } else {
-              const base = editable.baseline;
+              if (typeof base !== "number") {
+                log(`警告: ${clip.name} のスケールベースラインが不正です: ${JSON.stringify(base)}`);
+                continue;
+              }
               newValue = base * (1 + scalePercent / 100);
             }
             const keyframe = editable.param.createKeyframe(newValue);
             const action = editable.param.createSetValueAction(keyframe, true);
             compoundAction.addAction(action);
+            intendedByParam.push({ editable, intended: newValue });
           }
         }
       }, "Telop Shifter: adjust position/scale");
     });
   } catch (err) {
     log(`Error applying change: ${err.message || err}`);
+    return;
   }
+  logWriteConfirmation(intendedByParam);
 }
 
 function scheduleApply() {

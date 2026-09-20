@@ -1,9 +1,16 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, "Segoe UI", sans-serif;
   font-size: 12px;
   background: #2c2c2c;
   color: #e0e0e0;
+  overflow-x: hidden;
 }
 
 .panel {
@@ -11,12 +18,23 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
+/* Every row stacks vertically, so a narrow docked panel never forces its
+   contents side by side or off the edge. */
 .row {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+}
+
+button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button {
@@ -69,6 +87,10 @@ button.primary:hover:not(:disabled) {
 .clipList li {
   padding: 4px 8px;
   border-bottom: 1px solid #3a3a3a;
+  /* Long unbroken clip names (DJI_20260623214456_0077_D.MP4) would otherwise
+     push the panel sideways. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .clipList li.warn {
@@ -135,4 +157,5 @@ select {
   overflow-y: auto;
   color: #909090;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

@@ -6,6 +6,7 @@ const SCALE_NAME_RE = /scale|スケール/i;
 const els = {
   trackSelect: document.getElementById("trackSelect"),
   loadSelectionBtn: document.getElementById("loadSelectionBtn"),
+  centerHBtn: document.getElementById("centerHBtn"),
   resetBtn: document.getElementById("resetBtn"),
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
@@ -267,14 +268,20 @@ async function collectEditableParams(project, trackItem) {
     // is nonsense; the base Motion effect's neutral is the frame centre
     // (0.5, 0.5) while a content transform like Vector Motion offsets from
     // zero.
+    // The "neutral" position: what this param reads when the clip sits where
+    // it naturally belongs. The base Motion effect positions the anchor in
+    // absolute frame fractions, so its centre is 0.5; a content transform
+    // like Vector Motion is an offset, so its neutral is 0 (= wherever the
+    // graphic was authored). Used both to recover corrupted values and to
+    // centre horizontally.
+    const neutral = isBaseMotion ? { x: 0.5, y: 0.5 } : { x: 0, y: 0 };
     if (candidate.kind === "position") {
       if (Math.abs(baseline.x) > 5 || Math.abs(baseline.y) > 5) {
-        const neutral = isBaseMotion ? { x: 0.5, y: 0.5 } : { x: 0, y: 0 };
         log(
           `警告: 位置の元の値が異常でした (${baseline.x}, ${baseline.y})。` +
             `${neutral.x}, ${neutral.y} として扱います。`
         );
-        baseline = neutral;
+        baseline = { x: neutral.x, y: neutral.y };
       }
     } else if (baseline <= 0 || baseline > 2000) {
       log(`警告: スケールの元の値が異常でした (${baseline})。100として扱います。`);
@@ -284,6 +291,10 @@ async function collectEditableParams(project, trackItem) {
       param: candidate.param,
       kind: candidate.kind,
       baseline,
+      // Kept separately so "リセット" can still return to the value this clip
+      // had at load time even after centring rebased the baseline.
+      original: candidate.kind === "position" ? { x: baseline.x, y: baseline.y } : baseline,
+      neutral: candidate.kind === "position" ? neutral : null,
     });
   }
 
@@ -323,6 +334,7 @@ function setControlsEnabled(enabled) {
     els.yPlus,
     els.scaleMinus,
     els.scalePlus,
+    els.centerHBtn,
     els.resetBtn,
   ]) {
     el.disabled = !enabled;
@@ -487,6 +499,50 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
+// Horizontal centring is per-clip and absolute, unlike the shared offset the
+// rest of the panel applies: every clip's X goes to its own neutral value
+// (frame centre for the base Motion effect, "no offset" for a content
+// transform like Vector Motion, which returns the graphic to the horizontal
+// position it was authored at). The current vertical offset is preserved.
+// Afterwards the centred X becomes each clip's new baseline and the X field
+// resets to 0, so later nudges start from centre instead of re-applying the
+// old offset on top.
+function applyHorizontalCenter() {
+  if (loadedClips.length === 0 || !currentProject) return;
+
+  const centered = [];
+  try {
+    currentProject.lockedAccess(() => {
+      currentProject.executeTransaction((compoundAction) => {
+        for (const clip of loadedClips) {
+          for (const editable of clip.editableParams) {
+            if (editable.kind !== "position" || !editable.neutral) continue;
+            const base = editable.baseline;
+            if (!base || typeof base.x !== "number" || typeof base.y !== "number") continue;
+
+            const centeredX = editable.neutral.x;
+            const rawY = base.y + pixelsToFraction(state.y, state.frameHeight);
+            const finalY = Math.max(-2, Math.min(3, rawY));
+            const keyframe = editable.param.createKeyframe(new ppro.PointF(centeredX, finalY));
+            compoundAction.addAction(editable.param.createSetValueAction(keyframe, true));
+            centered.push({ editable, centeredX });
+          }
+        }
+      }, "Telop Shifter: center horizontally");
+    });
+  } catch (err) {
+    log(`Error centering: ${err.message || err}`);
+    return;
+  }
+
+  for (const { editable, centeredX } of centered) {
+    editable.baseline = { x: centeredX, y: editable.baseline.y };
+  }
+  state.x = 0;
+  syncControls();
+  log(`${centered.length}件の位置を水平方向に中央揃えしました。`);
+}
+
 // Every write to Premiere becomes its own undo step, so writing on each
 // animation frame buried the undo stack under dozens of 1px entries and made
 // Cmd+Z look like it did nothing. Writes are throttled instead, with a
@@ -594,7 +650,21 @@ bindArrowButton(els.yPlus, "y", 1);
 bindArrowButton(els.scaleMinus, "scale", -1);
 bindArrowButton(els.scalePlus, "scale", 1);
 
+els.centerHBtn.addEventListener("click", () => {
+  if (els.centerHBtn.disabled) return;
+  applyHorizontalCenter();
+});
+
 els.resetBtn.addEventListener("click", () => {
+  // Restore the load-time values, undoing any centring that rebased them.
+  for (const clip of loadedClips) {
+    for (const editable of clip.editableParams) {
+      editable.baseline =
+        editable.kind === "position"
+          ? { x: editable.original.x, y: editable.original.y }
+          : editable.original;
+    }
+  }
   resetOffsets();
   applyDelta(0, 0, 0);
 });

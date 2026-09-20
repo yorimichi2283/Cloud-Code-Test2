@@ -26,37 +26,31 @@
 
     <section class="row control">
       <label for="xInput">X座標 (px)</label>
-      <div class="sliderRow">
-        <div class="sliderTrack disabled" id="xTrack">
-          <div class="sliderCenterMark"></div>
-          <div class="sliderThumb" id="xThumb"></div>
-        </div>
+      <div class="arrowRow">
+        <button type="button" class="arrowBtn" id="xMinus" disabled>◀</button>
         <input type="number" id="xInput" value="0" step="1" disabled />
+        <button type="button" class="arrowBtn" id="xPlus" disabled>▶</button>
       </div>
     </section>
 
     <section class="row control">
       <label for="yInput">Y座標 (px)</label>
-      <div class="sliderRow">
-        <div class="sliderTrack disabled" id="yTrack">
-          <div class="sliderCenterMark"></div>
-          <div class="sliderThumb" id="yThumb"></div>
-        </div>
+      <div class="arrowRow">
+        <button type="button" class="arrowBtn" id="yMinus" disabled>◀</button>
         <input type="number" id="yInput" value="0" step="1" disabled />
+        <button type="button" class="arrowBtn" id="yPlus" disabled>▶</button>
       </div>
     </section>
 
     <section class="row control">
       <label for="scaleInput">スケール (%)</label>
-      <div class="sliderRow">
-        <div class="sliderTrack disabled" id="scaleTrack">
-          <div class="sliderCenterMark"></div>
-          <div class="sliderThumb" id="scaleThumb"></div>
-        </div>
+      <div class="arrowRow">
+        <button type="button" class="arrowBtn" id="scaleMinus" disabled>◀</button>
         <input type="number" id="scaleInput" value="0" step="1" disabled />
+        <button type="button" class="arrowBtn" id="scalePlus" disabled>▶</button>
       </div>
     </section>
-    <div class="hint">丸いつまみをドラッグすると動きます（トラックの他の場所をクリックしても飛びません）</div>
+    <div class="hint">矢印ボタンで1単位ずつ調整できます（押しっぱなしで連続移動）。数値欄への直接入力も可</div>
 
     <section class="row buttons">
       <button id="resetBtn" disabled>リセット（元の位置に戻す）</button>

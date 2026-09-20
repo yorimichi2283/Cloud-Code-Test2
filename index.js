@@ -10,12 +10,12 @@ const els = {
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
-  xTrack: document.getElementById("xTrack"),
-  xThumb: document.getElementById("xThumb"),
-  yTrack: document.getElementById("yTrack"),
-  yThumb: document.getElementById("yThumb"),
-  scaleTrack: document.getElementById("scaleTrack"),
-  scaleThumb: document.getElementById("scaleThumb"),
+  xMinus: document.getElementById("xMinus"),
+  xPlus: document.getElementById("xPlus"),
+  yMinus: document.getElementById("yMinus"),
+  yPlus: document.getElementById("yPlus"),
+  scaleMinus: document.getElementById("scaleMinus"),
+  scalePlus: document.getElementById("scalePlus"),
   xInput: document.getElementById("xInput"),
   yInput: document.getElementById("yInput"),
   scaleInput: document.getElementById("scaleInput"),
@@ -40,22 +40,6 @@ const state = {
   frameWidth: DEFAULT_FRAME_WIDTH,
   frameHeight: DEFAULT_FRAME_HEIGHT,
 };
-
-// The slider for X/Y covers +/- half the sequence frame; refreshed once the
-// real frame size is known (see fetchFrameSize). Scale always uses the same
-// fixed range as its hard clamp.
-const sliderRange = {
-  x: { min: -DEFAULT_FRAME_WIDTH / 2, max: DEFAULT_FRAME_WIDTH / 2 },
-  y: { min: -DEFAULT_FRAME_HEIGHT / 2, max: DEFAULT_FRAME_HEIGHT / 2 },
-  scale: { min: SCALE_MIN, max: SCALE_MAX },
-};
-
-function updateSliderRangesFromFrame() {
-  sliderRange.x.min = -state.frameWidth / 2;
-  sliderRange.x.max = state.frameWidth / 2;
-  sliderRange.y.min = -state.frameHeight / 2;
-  sliderRange.y.max = state.frameHeight / 2;
-}
 
 // Keeps a value within a sane range for its axis, so a stray drag, a held
 // button, or a typo in the number field can't send the offset to an
@@ -296,27 +280,26 @@ function renderClipList() {
 }
 
 function setControlsEnabled(enabled) {
-  for (const el of [els.xInput, els.yInput, els.scaleInput, els.resetBtn]) {
+  for (const el of [
+    els.xInput,
+    els.yInput,
+    els.scaleInput,
+    els.xMinus,
+    els.xPlus,
+    els.yMinus,
+    els.yPlus,
+    els.scaleMinus,
+    els.scalePlus,
+    els.resetBtn,
+  ]) {
     el.disabled = !enabled;
   }
-  for (const track of [els.xTrack, els.yTrack, els.scaleTrack]) {
-    track.classList.toggle("disabled", !enabled);
-  }
-}
-
-function updateThumb(thumbEl, axis) {
-  const { min, max } = sliderRange[axis];
-  const ratio = Math.min(1, Math.max(0, (state[axis] - min) / (max - min)));
-  thumbEl.style.left = `${ratio * 100}%`;
 }
 
 function syncControls() {
   els.xInput.value = String(state.x);
   els.yInput.value = String(state.y);
   els.scaleInput.value = String(state.scale);
-  updateThumb(els.xThumb, "x");
-  updateThumb(els.yThumb, "y");
-  updateThumb(els.scaleThumb, "scale");
 }
 
 function resetOffsets() {
@@ -348,7 +331,6 @@ async function handleLoadSelection() {
     const frameSize = await fetchFrameSize(sequence);
     state.frameWidth = frameSize.width;
     state.frameHeight = frameSize.height;
-    updateSliderRangesFromFrame();
 
     loadedClips = [];
     for (const trackItem of videoClips) {
@@ -368,7 +350,7 @@ async function handleLoadSelection() {
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "スライダーのつまみをドラッグ、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "◀▶ボタン、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -482,45 +464,50 @@ bindNumberInput(els.xInput, "x");
 bindNumberInput(els.yInput, "y");
 bindNumberInput(els.scaleInput, "scale");
 
-// A custom slider where only the round thumb responds to pointerdown —
-// clicking elsewhere on the track does nothing. A plain <input type="range">
-// jumps the thumb straight to wherever you click, which is what made the
-// very first version of this panel feel like it was "jumping to a random
-// position": one careless click near an edge and the value shot off. Only
-// dragging the thumb itself changes the value, so movement is always
-// gradual and predictable.
-function bindSlider(trackEl, thumbEl, axis) {
-  let dragging = false;
+// ◀/▶ arrow buttons: one immediate 1-unit step per click, and repeated
+// stepping while held down. Uses Pointer Events + setPointerCapture so that
+// releasing anywhere (not just while still over the button) reliably stops
+// the repeat — without capture, a fast click/drag can leave
+// pointerup/pointercancel un-fired and the interval running forever.
+const HOLD_INITIAL_DELAY_MS = 400;
+const HOLD_REPEAT_INTERVAL_MS = 80;
 
-  function valueFromClientX(clientX) {
-    const rect = trackEl.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    const { min, max } = sliderRange[axis];
-    return Math.round(min + ratio * (max - min));
-  }
+function bindArrowButton(buttonEl, axis, direction) {
+  let repeatTimer = null;
+  let initialTimer = null;
 
-  thumbEl.addEventListener("pointerdown", (event) => {
-    if (loadedClips.length === 0) return;
-    dragging = true;
-    thumbEl.setPointerCapture(event.pointerId);
-  });
-  thumbEl.addEventListener("pointermove", (event) => {
-    if (!dragging) return;
-    state[axis] = clampAxisValue(axis, valueFromClientX(event.clientX));
+  function step() {
+    state[axis] = clampAxisValue(axis, state[axis] + direction);
     syncControls();
     scheduleApply();
-  });
-  function stopDrag() {
-    dragging = false;
   }
-  thumbEl.addEventListener("pointerup", stopDrag);
-  thumbEl.addEventListener("pointercancel", stopDrag);
-  thumbEl.addEventListener("lostpointercapture", stopDrag);
+
+  function stopHold() {
+    clearTimeout(initialTimer);
+    clearInterval(repeatTimer);
+    initialTimer = null;
+    repeatTimer = null;
+  }
+
+  buttonEl.addEventListener("pointerdown", (event) => {
+    if (buttonEl.disabled) return;
+    buttonEl.setPointerCapture(event.pointerId);
+    step();
+    initialTimer = setTimeout(() => {
+      repeatTimer = setInterval(step, HOLD_REPEAT_INTERVAL_MS);
+    }, HOLD_INITIAL_DELAY_MS);
+  });
+  buttonEl.addEventListener("pointerup", stopHold);
+  buttonEl.addEventListener("pointercancel", stopHold);
+  buttonEl.addEventListener("lostpointercapture", stopHold);
 }
 
-bindSlider(els.xTrack, els.xThumb, "x");
-bindSlider(els.yTrack, els.yThumb, "y");
-bindSlider(els.scaleTrack, els.scaleThumb, "scale");
+bindArrowButton(els.xMinus, "x", -1);
+bindArrowButton(els.xPlus, "x", 1);
+bindArrowButton(els.yMinus, "y", -1);
+bindArrowButton(els.yPlus, "y", 1);
+bindArrowButton(els.scaleMinus, "scale", -1);
+bindArrowButton(els.scalePlus, "scale", 1);
 
 els.resetBtn.addEventListener("click", () => {
   resetOffsets();

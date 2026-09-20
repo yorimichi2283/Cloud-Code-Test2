@@ -13,30 +13,29 @@ body {
   margin: 0;
   font-family: -apple-system, "Segoe UI", sans-serif;
   font-size: 12px;
+  line-height: 1.5;
   background: #2c2c2c;
   color: #e0e0e0;
   overflow: hidden;
 }
 
-/* The scrolling area and the scroll bar are flex siblings, so the bar never
-   scrolls away with the content and never needs position:fixed. */
+/* The scrolling area and the scroll bar are flex siblings, so the bar is
+   always drawn, never scrolls away with the content, and needs no
+   position:fixed (which is unreliable inside a UXP panel). */
 .panelWrap {
   display: flex;
   height: 100%;
   min-width: 0;
 }
 
-/* The panel itself scrolls, so a short docked panel still reaches every
-   control instead of clipping the bottom of the UI. */
 .panel {
   flex: 1;
   min-width: 0;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 8px 16px 10px;
-  display: flex;
-  flex-direction: column;
+  /* Generous right padding keeps the content off the scroll bar. */
+  padding: 4px 18px 28px 16px;
 }
 
 /* The native scrollbar is hidden in favour of the always-visible one drawn
@@ -46,29 +45,40 @@ body {
   height: 0;
 }
 
-/* Always-visible scroll bar: the track is drawn even when the content fits,
-   so the panel's right edge stays a predictable width and it's obvious at a
-   glance whether there's more below. */
+/* In a wide panel, stretching every control to the full width leaves the UI
+   looking both sparse and awkward, so the column has a comfortable maximum. */
+.content {
+  display: flex;
+  flex-direction: column;
+  max-width: 460px;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll bar                                                          */
+/* ------------------------------------------------------------------ */
+
 .scrollBar {
   position: relative;
   flex: none;
-  width: 10px;
-  background: #262626;
+  width: 14px;
+  padding: 4px 0;
+  background: #252525;
   border-left: 1px solid #3f3f3f;
   touch-action: none;
 }
 
 .scrollThumb {
   position: absolute;
-  left: 2px;
-  width: 6px;
-  min-height: 24px;
-  border-radius: 3px;
+  left: 3px;
+  width: 8px;
+  min-height: 28px;
+  border-radius: 4px;
   background: #6a6a6a;
 }
 
 .scrollThumb:hover {
-  background: #8a8a8a;
+  background: #8f8f8f;
 }
 
 /* No overflow: the thumb is hidden but the track stays, so nothing shifts. */
@@ -76,27 +86,40 @@ body {
   display: none;
 }
 
-/* Each section is separated by a rule, so the panel stays readable even
-   when everything is packed tightly together. */
+/* ------------------------------------------------------------------ */
+/* Sections                                                            */
+/* ------------------------------------------------------------------ */
+
+/* NOTE: a <details> must NOT be display:flex here — UXP then lays the
+   summary and the content on top of each other. Sections are plain blocks,
+   and the inner .cardBody does the stacking instead. */
 .card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: block;
   min-width: 0;
-  padding: 9px 0;
+  padding: 14px 0;
   border-bottom: 1px solid #3f3f3f;
 }
 
 .card:last-child {
   border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding-top: 10px;
 }
 
 .cardTitle {
+  display: block;
   margin: 0;
   font-size: 11px;
   font-weight: 600;
   color: #9a9a9a;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 /* Collapsible sections keep the panel short by default: the clip list and
@@ -106,8 +129,9 @@ details > summary {
   list-style: revert;
 }
 
-details.card > summary {
-  margin-bottom: 2px;
+.sub {
+  display: block;
+  margin-top: 2px;
 }
 
 .sub > summary {
@@ -115,12 +139,20 @@ details.card > summary {
   font-size: 11px;
 }
 
+.subBody {
+  padding-top: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls                                                            */
+/* ------------------------------------------------------------------ */
+
 button {
   background: #454545;
   color: #e0e0e0;
   border: 1px solid #5a5a5a;
   border-radius: 4px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -148,21 +180,21 @@ button.primary:hover:not(:disabled) {
 
 .status {
   color: #b0b0b0;
-  line-height: 1.4;
+  line-height: 1.6;
 }
 
 .clipList {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 120px;
+  max-height: 140px;
   overflow-y: auto;
   border: 1px solid #454545;
   border-radius: 4px;
 }
 
 .clipList li {
-  padding: 3px 6px;
+  padding: 5px 8px;
   border-bottom: 1px solid #3a3a3a;
   /* Long unbroken clip names (DJI_20260623214456_0077_D.MP4) would otherwise
      push the panel sideways. */
@@ -181,7 +213,7 @@ button.primary:hover:not(:disabled) {
 .checkboxRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   color: #b0b0b0;
 }
@@ -195,28 +227,28 @@ button.primary:hover:not(:disabled) {
 .field {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   min-width: 0;
 }
 
 .fieldLabel {
-  width: 52px;
+  width: 54px;
   flex: none;
   color: #b0b0b0;
 }
 
 .unit {
-  width: 18px;
+  width: 20px;
   flex: none;
   color: #808080;
 }
 
 .arrowBtn {
-  width: 26px;
+  width: 30px;
   flex: none;
   font-size: 10px;
   line-height: 1;
-  padding: 6px 0;
+  padding: 8px 0;
   user-select: none;
   touch-action: none;
 }
@@ -228,31 +260,31 @@ input[type="number"] {
   color: #e0e0e0;
   border: 1px solid #5a5a5a;
   border-radius: 4px;
-  padding: 5px 6px;
+  padding: 7px 8px;
   font-size: 13px;
   text-align: center;
 }
 
 select {
+  width: 100%;
   background: #1e1e1e;
   color: #e0e0e0;
   border: 1px solid #5a5a5a;
   border-radius: 4px;
-  padding: 5px 6px;
+  padding: 7px 8px;
   font-size: 12px;
-  max-width: 100%;
 }
 
 .hint {
   color: #808080;
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .log {
   font-family: monospace;
   font-size: 11px;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   color: #909090;
   white-space: pre-wrap;

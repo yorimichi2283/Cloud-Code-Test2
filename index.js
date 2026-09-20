@@ -341,11 +341,17 @@ async function logWriteConfirmation(intendedByParam) {
   try {
     const [{ editable, intended }] = intendedByParam;
     const confirmed = await editable.param.getStartValue();
-    const actual = confirmed.value.value;
-    const actualText =
-      editable.kind === "position" ? `(${actual.x}, ${actual.y})` : String(actual);
-    const intendedText =
-      editable.kind === "position" ? `(${intended.x}, ${intended.y})` : String(intended);
+    const rawActual = confirmed.value.value;
+    let actualText;
+    let intendedText;
+    if (editable.kind === "position") {
+      const actualXY = toXY(rawActual);
+      actualText = actualXY ? `(${actualXY.x}, ${actualXY.y})` : `解析不能:${JSON.stringify(rawActual)}`;
+      intendedText = `(${intended.x}, ${intended.y})`;
+    } else {
+      actualText = String(rawActual);
+      intendedText = String(intended);
+    }
     log(`確認[${editable.kind}]: 書き込み後の実際値=${actualText} / 狙った値=${intendedText}`);
   } catch (err) {
     log(`確認読み取りエラー: ${err.message || err}`);

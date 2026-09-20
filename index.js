@@ -10,9 +10,12 @@ const els = {
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
-  xLabel: document.getElementById("xLabel"),
-  yLabel: document.getElementById("yLabel"),
-  scaleLabel: document.getElementById("scaleLabel"),
+  xTrack: document.getElementById("xTrack"),
+  xThumb: document.getElementById("xThumb"),
+  yTrack: document.getElementById("yTrack"),
+  yThumb: document.getElementById("yThumb"),
+  scaleTrack: document.getElementById("scaleTrack"),
+  scaleThumb: document.getElementById("scaleThumb"),
   xInput: document.getElementById("xInput"),
   yInput: document.getElementById("yInput"),
   scaleInput: document.getElementById("scaleInput"),
@@ -37,6 +40,22 @@ const state = {
   frameWidth: DEFAULT_FRAME_WIDTH,
   frameHeight: DEFAULT_FRAME_HEIGHT,
 };
+
+// The slider for X/Y covers +/- half the sequence frame; refreshed once the
+// real frame size is known (see fetchFrameSize). Scale always uses the same
+// fixed range as its hard clamp.
+const sliderRange = {
+  x: { min: -DEFAULT_FRAME_WIDTH / 2, max: DEFAULT_FRAME_WIDTH / 2 },
+  y: { min: -DEFAULT_FRAME_HEIGHT / 2, max: DEFAULT_FRAME_HEIGHT / 2 },
+  scale: { min: SCALE_MIN, max: SCALE_MAX },
+};
+
+function updateSliderRangesFromFrame() {
+  sliderRange.x.min = -state.frameWidth / 2;
+  sliderRange.x.max = state.frameWidth / 2;
+  sliderRange.y.min = -state.frameHeight / 2;
+  sliderRange.y.max = state.frameHeight / 2;
+}
 
 // Keeps a value within a sane range for its axis, so a stray drag, a held
 // button, or a typo in the number field can't send the offset to an
@@ -222,10 +241,27 @@ async function collectEditableParams(project, trackItem) {
     }
     const startKeyframe = await candidate.param.getStartValue();
     const rawValue = startKeyframe.value.value;
-    const baseline = candidate.kind === "position" ? toXY(rawValue) : rawValue;
+    let baseline = candidate.kind === "position" ? toXY(rawValue) : rawValue;
     if (candidate.kind === "position" && !baseline) {
       log(`警告: 位置の値の形式を認識できません（スキップします）: ${JSON.stringify(rawValue)}`);
       continue;
+    }
+    // A clip touched by an earlier, buggier version of this tool can already
+    // have an absurd Position/Scale baked in (e.g. exactly 32767/-32768 —
+    // Premiere's own 16-bit clamp kicking in on a runaway write). Adding a
+    // small, sane offset on top of a broken baseline just produces another
+    // broken value, so treat a wildly out-of-range baseline as corrupted and
+    // reset it to a sane default instead of building on top of it.
+    if (candidate.kind === "position") {
+      const limitX = state.frameWidth * 5;
+      const limitY = state.frameHeight * 5;
+      if (Math.abs(baseline.x) > limitX || Math.abs(baseline.y) > limitY) {
+        log(`警告: 位置の元の値が異常でした (${baseline.x}, ${baseline.y})。0,0として扱います。`);
+        baseline = { x: 0, y: 0 };
+      }
+    } else if (baseline <= 0 || baseline > 2000) {
+      log(`警告: スケールの元の値が異常でした (${baseline})。100として扱います。`);
+      baseline = 100;
     }
     editableParams.push({
       param: candidate.param,
@@ -263,12 +299,24 @@ function setControlsEnabled(enabled) {
   for (const el of [els.xInput, els.yInput, els.scaleInput, els.resetBtn]) {
     el.disabled = !enabled;
   }
+  for (const track of [els.xTrack, els.yTrack, els.scaleTrack]) {
+    track.classList.toggle("disabled", !enabled);
+  }
+}
+
+function updateThumb(thumbEl, axis) {
+  const { min, max } = sliderRange[axis];
+  const ratio = Math.min(1, Math.max(0, (state[axis] - min) / (max - min)));
+  thumbEl.style.left = `${ratio * 100}%`;
 }
 
 function syncControls() {
   els.xInput.value = String(state.x);
   els.yInput.value = String(state.y);
   els.scaleInput.value = String(state.scale);
+  updateThumb(els.xThumb, "x");
+  updateThumb(els.yThumb, "y");
+  updateThumb(els.scaleThumb, "scale");
 }
 
 function resetOffsets() {
@@ -300,6 +348,7 @@ async function handleLoadSelection() {
     const frameSize = await fetchFrameSize(sequence);
     state.frameWidth = frameSize.width;
     state.frameHeight = frameSize.height;
+    updateSliderRangesFromFrame();
 
     loadedClips = [];
     for (const trackItem of videoClips) {
@@ -319,7 +368,7 @@ async function handleLoadSelection() {
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "ラベルのドラッグ、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "スライダーのつまみをドラッグ、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -383,13 +432,18 @@ function applyDelta(dx, dy, scalePercent) {
                 log(`警告: ${clip.name} の位置ベースラインが不正です: ${JSON.stringify(base)}`);
                 continue;
               }
-              newValue = new ppro.PointF(base.x + dx, base.y + dy);
+              // Belt-and-suspenders: clamp the value we're about to write too,
+              // regardless of how sane the baseline looked at load time.
+              const finalX = Math.max(-state.frameWidth * 3, Math.min(state.frameWidth * 3, base.x + dx));
+              const finalY = Math.max(-state.frameHeight * 3, Math.min(state.frameHeight * 3, base.y + dy));
+              newValue = new ppro.PointF(finalX, finalY);
             } else {
               if (typeof base !== "number") {
                 log(`警告: ${clip.name} のスケールベースラインが不正です: ${JSON.stringify(base)}`);
                 continue;
               }
-              newValue = base * (1 + scalePercent / 100);
+              const rawScale = base * (1 + scalePercent / 100);
+              newValue = Math.max(1, Math.min(2000, rawScale));
             }
             const keyframe = editable.param.createKeyframe(newValue);
             const action = editable.param.createSetValueAction(keyframe, true);
@@ -428,40 +482,45 @@ bindNumberInput(els.xInput, "x");
 bindNumberInput(els.yInput, "y");
 bindNumberInput(els.scaleInput, "scale");
 
-// Click-drag directly on a label (left/right) to scrub its value, the way
-// Premiere's own numeric fields work. Sensitivity is always 1px = 1 unit.
-function bindScrubLabel(labelEl, axis) {
+// A custom slider where only the round thumb responds to pointerdown —
+// clicking elsewhere on the track does nothing. A plain <input type="range">
+// jumps the thumb straight to wherever you click, which is what made the
+// very first version of this panel feel like it was "jumping to a random
+// position": one careless click near an edge and the value shot off. Only
+// dragging the thumb itself changes the value, so movement is always
+// gradual and predictable.
+function bindSlider(trackEl, thumbEl, axis) {
   let dragging = false;
-  let startClientX = 0;
-  let startValue = 0;
 
-  labelEl.addEventListener("pointerdown", (event) => {
+  function valueFromClientX(clientX) {
+    const rect = trackEl.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const { min, max } = sliderRange[axis];
+    return Math.round(min + ratio * (max - min));
+  }
+
+  thumbEl.addEventListener("pointerdown", (event) => {
     if (loadedClips.length === 0) return;
     dragging = true;
-    startClientX = event.clientX;
-    startValue = state[axis];
-    labelEl.setPointerCapture(event.pointerId);
-    labelEl.classList.add("scrubbing");
+    thumbEl.setPointerCapture(event.pointerId);
   });
-  labelEl.addEventListener("pointermove", (event) => {
+  thumbEl.addEventListener("pointermove", (event) => {
     if (!dragging) return;
-    const deltaPx = Math.round(event.clientX - startClientX);
-    state[axis] = clampAxisValue(axis, startValue + deltaPx);
+    state[axis] = clampAxisValue(axis, valueFromClientX(event.clientX));
     syncControls();
     scheduleApply();
   });
   function stopDrag() {
     dragging = false;
-    labelEl.classList.remove("scrubbing");
   }
-  labelEl.addEventListener("pointerup", stopDrag);
-  labelEl.addEventListener("pointercancel", stopDrag);
-  labelEl.addEventListener("lostpointercapture", stopDrag);
+  thumbEl.addEventListener("pointerup", stopDrag);
+  thumbEl.addEventListener("pointercancel", stopDrag);
+  thumbEl.addEventListener("lostpointercapture", stopDrag);
 }
 
-bindScrubLabel(els.xLabel, "x");
-bindScrubLabel(els.yLabel, "y");
-bindScrubLabel(els.scaleLabel, "scale");
+bindSlider(els.xTrack, els.xThumb, "x");
+bindSlider(els.yTrack, els.yThumb, "y");
+bindSlider(els.scaleTrack, els.scaleThumb, "scale");
 
 els.resetBtn.addEventListener("click", () => {
   resetOffsets();
@@ -470,4 +529,5 @@ els.resetBtn.addEventListener("click", () => {
 
 els.loadSelectionBtn.addEventListener("click", handleLoadSelection);
 
+syncControls();
 log("Telop Shifter パネルを起動しました。");

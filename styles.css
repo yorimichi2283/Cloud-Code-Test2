@@ -84,17 +84,57 @@ button.primary:hover:not(:disabled) {
   justify-content: space-between;
 }
 
-.scrubLabel {
-  cursor: ew-resize;
-  touch-action: none;
-  user-select: none;
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.scrubLabel.scrubbing {
-  color: #1473e6;
+.sliderTrack {
+  position: relative;
+  flex: 1;
+  height: 22px;
+  background: #1e1e1e;
+  border: 1px solid #5a5a5a;
+  border-radius: 11px;
+}
+
+.sliderTrack.disabled {
+  opacity: 0.5;
+}
+
+.sliderCenterMark {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: #4a4a4a;
+}
+
+.sliderThumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: #1473e6;
+  border: 1px solid #dceaff;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.sliderTrack.disabled .sliderThumb {
+  cursor: default;
+  pointer-events: none;
 }
 
 input[type="number"] {
+  width: 60px;
+  flex: none;
   background: #1e1e1e;
   color: #e0e0e0;
   border: 1px solid #5a5a5a;

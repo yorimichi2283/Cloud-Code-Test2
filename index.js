@@ -4,11 +4,14 @@ const POSITION_NAME_RE = /position|位置/i;
 const SCALE_NAME_RE = /scale|スケール/i;
 
 const els = {
+  trackSelect: document.getElementById("trackSelect"),
   loadSelectionBtn: document.getElementById("loadSelectionBtn"),
   resetBtn: document.getElementById("resetBtn"),
   statusLine: document.getElementById("statusLine"),
   clipCount: document.getElementById("clipCount"),
   clipList: document.getElementById("clipList"),
+  xyPad: document.getElementById("xyPad"),
+  xyPadDot: document.getElementById("xyPadDot"),
   xInput: document.getElementById("xInput"),
   yInput: document.getElementById("yInput"),
   scaleInput: document.getElementById("scaleInput"),
@@ -22,13 +25,24 @@ const els = {
   logBox: document.getElementById("logBox"),
 };
 
+const PAD_MAX_WIDTH = 260;
+const PAD_MAX_HEIGHT = 160;
+const DEFAULT_FRAME_WIDTH = 1920;
+const DEFAULT_FRAME_HEIGHT = 1080;
+
 // One entry per loaded clip: { name, editableParams: [{ param, kind, baseline }] }
 let loadedClips = [];
 let currentProject = null;
 let rafScheduled = false;
 
 // Current offset from each param's baseline, applied to every loaded clip.
-const state = { x: 0, y: 0, scale: 0 };
+const state = {
+  x: 0,
+  y: 0,
+  scale: 0,
+  frameWidth: DEFAULT_FRAME_WIDTH,
+  frameHeight: DEFAULT_FRAME_HEIGHT,
+};
 
 function getStepSize() {
   const checked = els.stepSizeGroup.querySelector('input[name="stepSize"]:checked');
@@ -44,7 +58,7 @@ function isVideoClipTrackItem(trackItem) {
   return trackItem instanceof ppro.VideoClipTrackItem;
 }
 
-async function getSelectedVideoClips() {
+async function getActiveProjectAndSequence() {
   const project = await ppro.Project.getActiveProject();
   if (!project) {
     throw new Error("開いているプロジェクトがありません。");
@@ -53,10 +67,54 @@ async function getSelectedVideoClips() {
   if (!sequence) {
     throw new Error("アクティブなシーケンスがありません。");
   }
-  const selection = await sequence.getSelection();
-  const items = await selection.getTrackItems();
-  const videoClips = items.filter(isVideoClipTrackItem);
-  return { project, sequence, videoClips };
+  return { project, sequence };
+}
+
+// Keeps the "V1".."V8" options in sync with the sequence's current track
+// count, while preserving whatever the user had selected if it's still valid.
+async function populateTrackOptions(sequence) {
+  const trackCount = await sequence.getVideoTrackCount();
+  const previous = els.trackSelect.value;
+
+  els.trackSelect.innerHTML = "";
+  const selectionOption = document.createElement("option");
+  selectionOption.value = "selection";
+  selectionOption.textContent = "タイムラインで選択中のクリップ";
+  els.trackSelect.appendChild(selectionOption);
+
+  for (let i = 0; i < trackCount; i += 1) {
+    const option = document.createElement("option");
+    option.value = String(i);
+    option.textContent = `V${i + 1}`;
+    els.trackSelect.appendChild(option);
+  }
+
+  const stillValid = Array.from(els.trackSelect.options).some((o) => o.value === previous);
+  els.trackSelect.value = stillValid ? previous : "selection";
+}
+
+async function resolveVideoClips(sequence) {
+  const chosen = els.trackSelect.value;
+  if (chosen === "selection") {
+    const selection = await sequence.getSelection();
+    const items = await selection.getTrackItems();
+    return items.filter(isVideoClipTrackItem);
+  }
+  const track = await sequence.getVideoTrack(Number(chosen));
+  return track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
+}
+
+async function fetchFrameSize(sequence) {
+  try {
+    const settings = await sequence.getSettings();
+    const rect = await settings.getVideoFrameRect();
+    if (rect && rect.width > 0 && rect.height > 0) {
+      return { width: rect.width, height: rect.height };
+    }
+  } catch (err) {
+    log(`フレームサイズの取得に失敗しました（既定値を使用）: ${err.message || err}`);
+  }
+  return { width: DEFAULT_FRAME_WIDTH, height: DEFAULT_FRAME_HEIGHT };
 }
 
 // Scans one clip's effect stack and returns the Position/Scale params
@@ -140,28 +198,56 @@ function setControlsEnabled(enabled) {
   ]) {
     el.disabled = !enabled;
   }
+  els.xyPad.classList.toggle("disabled", !enabled);
 }
 
-function updateInputsFromState() {
+function layoutPad() {
+  const aspect = state.frameWidth / state.frameHeight || 16 / 9;
+  let width = PAD_MAX_WIDTH;
+  let height = width / aspect;
+  if (height > PAD_MAX_HEIGHT) {
+    height = PAD_MAX_HEIGHT;
+    width = height * aspect;
+  }
+  els.xyPad.style.width = `${width}px`;
+  els.xyPad.style.height = `${height}px`;
+}
+
+function updateDotFromState() {
+  const padWidth = els.xyPad.clientWidth || PAD_MAX_WIDTH;
+  const padHeight = els.xyPad.clientHeight || PAD_MAX_HEIGHT;
+  const nx = Math.min(1, Math.max(0, 0.5 + state.x / state.frameWidth));
+  const ny = Math.min(1, Math.max(0, 0.5 + state.y / state.frameHeight));
+  els.xyPadDot.style.left = `${nx * padWidth}px`;
+  els.xyPadDot.style.top = `${ny * padHeight}px`;
+}
+
+function syncControls() {
   els.xInput.value = String(state.x);
   els.yInput.value = String(state.y);
   els.scaleInput.value = String(state.scale);
+  updateDotFromState();
 }
 
 function resetOffsets() {
   state.x = 0;
   state.y = 0;
   state.scale = 0;
-  updateInputsFromState();
+  syncControls();
 }
 
 async function handleLoadSelection() {
   els.loadSelectionBtn.disabled = true;
   try {
-    const { project, videoClips } = await getSelectedVideoClips();
+    const { project, sequence } = await getActiveProjectAndSequence();
+    await populateTrackOptions(sequence);
+
+    const videoClips = await resolveVideoClips(sequence);
     if (videoClips.length === 0) {
       els.statusLine.textContent =
-        "タイムライン上でテロップのクリップを選択してから、もう一度ボタンを押してください。";
+        els.trackSelect.value === "selection"
+          ? "タイムライン上でテロップのクリップを選択してから、もう一度ボタンを押してください。"
+          : "このトラックにはクリップがありません。";
       loadedClips = [];
       renderClipList();
       setControlsEnabled(false);
@@ -169,6 +255,11 @@ async function handleLoadSelection() {
     }
 
     currentProject = project;
+    const frameSize = await fetchFrameSize(sequence);
+    state.frameWidth = frameSize.width;
+    state.frameHeight = frameSize.height;
+    layoutPad();
+
     loadedClips = [];
     for (const trackItem of videoClips) {
       const name = await trackItem.getName();
@@ -181,7 +272,7 @@ async function handleLoadSelection() {
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "＋/−ボタンや数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "パッドのドラッグ、＋/−ボタン、数値入力のいずれでも、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -235,6 +326,7 @@ function bindNumberInput(inputEl, axis) {
     const value = Number(inputEl.value);
     if (Number.isNaN(value)) return;
     state[axis] = value;
+    updateDotFromState();
     scheduleApply();
   });
 }
@@ -254,7 +346,7 @@ function bindStepButton(buttonEl, axis, direction) {
     const delta = direction * getStepSize();
     const next = state[axis] + delta;
     state[axis] = axis === "scale" ? Math.max(-95, next) : next;
-    updateInputsFromState();
+    syncControls();
     scheduleApply();
   }
 
@@ -290,6 +382,37 @@ bindStepButton(els.yPlus, "y", 1);
 bindStepButton(els.scaleMinus, "scale", -1);
 bindStepButton(els.scalePlus, "scale", 1);
 
+// Drag directly on the pad (which represents the full video frame) to move
+// X/Y by cursor. setPointerCapture keeps the drag tracking even if the
+// pointer slips outside the pad's small area while moving fast.
+function updateStateFromPointer(event) {
+  const rect = els.xyPad.getBoundingClientRect();
+  const nx = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+  const ny = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+  state.x = Math.round((nx - 0.5) * state.frameWidth);
+  state.y = Math.round((ny - 0.5) * state.frameHeight);
+  syncControls();
+  scheduleApply();
+}
+
+let padDragging = false;
+els.xyPad.addEventListener("pointerdown", (event) => {
+  if (loadedClips.length === 0) return;
+  padDragging = true;
+  els.xyPad.setPointerCapture(event.pointerId);
+  updateStateFromPointer(event);
+});
+els.xyPad.addEventListener("pointermove", (event) => {
+  if (!padDragging) return;
+  updateStateFromPointer(event);
+});
+function endPadDrag() {
+  padDragging = false;
+}
+els.xyPad.addEventListener("pointerup", endPadDrag);
+els.xyPad.addEventListener("pointercancel", endPadDrag);
+els.xyPad.addEventListener("lostpointercapture", endPadDrag);
+
 els.resetBtn.addEventListener("click", () => {
   resetOffsets();
   applyDelta(0, 0, 0);
@@ -297,4 +420,6 @@ els.resetBtn.addEventListener("click", () => {
 
 els.loadSelectionBtn.addEventListener("click", handleLoadSelection);
 
+layoutPad();
+updateDotFromState();
 log("Telop Shifter パネルを起動しました。");

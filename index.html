@@ -8,13 +8,32 @@
 <body>
   <div class="panel">
     <section class="row">
-      <button id="loadSelectionBtn" class="primary">タイムラインの選択クリップを読み込む</button>
-      <div id="statusLine" class="status">Premiereでテロップ（テキスト/グラフィック）クリップを選択してから、上のボタンを押してください。</div>
+      <label for="trackSelect">対象</label>
+      <select id="trackSelect">
+        <option value="selection">タイムラインで選択中のクリップ</option>
+      </select>
+    </section>
+
+    <section class="row">
+      <button id="loadSelectionBtn" class="primary">読み込む</button>
+      <div id="statusLine" class="status">対象を選んでから、上のボタンを押してください。</div>
     </section>
 
     <section class="row">
       <div class="clipListLabel">読み込んだクリップ (<span id="clipCount">0</span>件)</div>
       <ul id="clipList" class="clipList"></ul>
+    </section>
+
+    <section class="row control">
+      <label>ドラッグで位置調整</label>
+      <div class="xyPadOuter">
+        <div class="xyPad" id="xyPad">
+          <div class="xyPadCrosshairV"></div>
+          <div class="xyPadCrosshairH"></div>
+          <div class="xyPadDot" id="xyPadDot"></div>
+        </div>
+      </div>
+      <div class="hint">枠＝映像フレーム全体。枠の端が画面の端です。</div>
     </section>
 
     <section class="row control">

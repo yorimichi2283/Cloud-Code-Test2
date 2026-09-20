@@ -9,6 +9,9 @@ const SCALE_NAME_RE = /scale|スケール/i;
 const ANCHOR_NAME_RE = /anchor|アンカー/i;
 
 const els = {
+  panel: document.getElementById("panel"),
+  scrollBar: document.getElementById("scrollBar"),
+  scrollThumb: document.getElementById("scrollThumb"),
   trackSelect: document.getElementById("trackSelect"),
   telopOnly: document.getElementById("telopOnly"),
   loadSelectionBtn: document.getElementById("loadSelectionBtn"),
@@ -63,7 +66,103 @@ function clampAxisValue(axis, value) {
 
 function log(message) {
   const time = new Date().toLocaleTimeString();
-  els.logBox.textContent = `[${time}] ${message}\n${els.logBox.textContent}`.slice(0, 4000);
+  els.logBox.textContent = `[${time}] ${message}\n${els.logBox.textContent}`.slice(0, 20000);
+}
+
+// ---------------------------------------------------------------------------
+// Always-visible scroll bar.
+//
+// A docked Premiere panel is usually short and narrow, and the host doesn't
+// reliably draw a scrollbar for the scrolling area — so it looks like the UI
+// is simply cut off rather than scrollable. This draws one next to the panel:
+// the track is always there (so the layout never shifts), and the thumb shows
+// how much is off-screen. It can be dragged, and clicking the track jumps.
+// ---------------------------------------------------------------------------
+const SCROLL_THUMB_MIN_PX = 24;
+
+function updateScrollBar() {
+  const { panel, scrollBar, scrollThumb } = els;
+  if (!panel || !scrollBar || !scrollThumb) return;
+
+  const viewHeight = panel.clientHeight;
+  const contentHeight = panel.scrollHeight;
+  const maxScroll = contentHeight - viewHeight;
+  // 1px of slack: sub-pixel layout rounding shouldn't make the thumb flicker
+  // in and out when the content only just fits.
+  if (maxScroll <= 1) {
+    scrollBar.classList.add("idle");
+    return;
+  }
+  scrollBar.classList.remove("idle");
+
+  const trackHeight = scrollBar.clientHeight;
+  const thumbHeight = Math.max(
+    SCROLL_THUMB_MIN_PX,
+    Math.round((trackHeight * viewHeight) / contentHeight)
+  );
+  const travel = Math.max(0, trackHeight - thumbHeight);
+  scrollThumb.style.height = `${thumbHeight}px`;
+  scrollThumb.style.top = `${Math.round(travel * (panel.scrollTop / maxScroll))}px`;
+}
+
+// Moves the panel so the thumb's top lands under the pointer, keeping the
+// grab point fixed relative to the thumb (so dragging doesn't jump).
+function scrollToPointer(clientY, grabOffset) {
+  const { panel, scrollBar, scrollThumb } = els;
+  const maxScroll = panel.scrollHeight - panel.clientHeight;
+  const travel = scrollBar.clientHeight - scrollThumb.offsetHeight;
+  if (maxScroll <= 0 || travel <= 0) return;
+  const barTop = scrollBar.getBoundingClientRect().top;
+  const thumbTop = Math.max(0, Math.min(travel, clientY - barTop - grabOffset));
+  panel.scrollTop = (thumbTop / travel) * maxScroll;
+  updateScrollBar();
+}
+
+function bindScrollBar() {
+  const { panel, scrollBar, scrollThumb } = els;
+  if (!panel || !scrollBar || !scrollThumb) return;
+
+  let grabOffset = null;
+
+  function endDrag() {
+    grabOffset = null;
+  }
+
+  scrollBar.addEventListener("pointerdown", (event) => {
+    const thumbRect = scrollThumb.getBoundingClientRect();
+    const onThumb = event.clientY >= thumbRect.top && event.clientY <= thumbRect.bottom;
+    // Grabbing the thumb keeps the grab point; clicking the empty track
+    // centres the thumb on the click, which is the usual scrollbar behaviour.
+    grabOffset = onThumb ? event.clientY - thumbRect.top : thumbRect.height / 2;
+    // As with the arrow buttons, setPointerCapture can throw inside a UXP
+    // panel and must not take the rest of the handler down with it.
+    try {
+      scrollBar.setPointerCapture(event.pointerId);
+    } catch (err) {
+      // Ignored: the window-level pointerup below still ends the drag.
+    }
+    scrollToPointer(event.clientY, grabOffset);
+  });
+
+  scrollBar.addEventListener("pointermove", (event) => {
+    if (grabOffset === null) return;
+    scrollToPointer(event.clientY, grabOffset);
+  });
+  window.addEventListener("pointermove", (event) => {
+    if (grabOffset === null) return;
+    scrollToPointer(event.clientY, grabOffset);
+  });
+  window.addEventListener("pointerup", endDrag);
+  window.addEventListener("mouseup", endDrag);
+  window.addEventListener("blur", endDrag);
+
+  panel.addEventListener("scroll", updateScrollBar);
+  window.addEventListener("resize", updateScrollBar);
+  // The panel's height changes for reasons that fire no event here (a section
+  // collapsed, clips loaded, the panel re-docked), so the size is re-checked
+  // on a slow timer as well. It's a few cheap layout reads per second.
+  setInterval(updateScrollBar, 300);
+  updateScrollBar();
 }
 
 function isVideoClipTrackItem(trackItem) {
@@ -625,6 +724,27 @@ const APPLY_MIN_INTERVAL_MS = 150;
 // Effect Controls screenshots alone (the same stored Position value puts one
 // telop off the left edge and another right of centre), so this prints the
 // ground truth instead of guessing at it.
+
+// Params worth printing the actual value of, rather than just the name: the
+// transform-ish ones, plus anything that looks like it belongs to a text
+// layer (which is what a true "centre this telop" would need).
+const DIAG_VALUE_NAME_RE =
+  /position|位置|scale|スケール|anchor|アンカー|transform|変形|align|揃え|text|テキスト|source|ソース|rect|bounds|width|幅/i;
+
+function describeParamValue(rawValue) {
+  const xy = toXY(rawValue);
+  if (xy) return `(${xy.x}, ${xy.y})`;
+  if (rawValue === null || rawValue === undefined) return String(rawValue);
+  if (typeof rawValue === "object") {
+    try {
+      return JSON.stringify(rawValue).slice(0, 120);
+    } catch (err) {
+      return "(object)";
+    }
+  }
+  return String(rawValue).slice(0, 120);
+}
+
 async function logClipStructure() {
   if (loadedClips.length === 0 || !currentProject) {
     log("先に「読み込む」を押してください。");
@@ -640,11 +760,12 @@ async function logClipStructure() {
     for (let c = 0; c < componentCount; c += 1) {
       const component = componentChain.getComponentAtIndex(c);
       const paramCount = component.getParamCount();
-      const paramNames = [];
+      const params = [];
       for (let p = 0; p < paramCount; p += 1) {
-        paramNames.push(component.getParam(p).displayName || "(名前なし)");
+        const param = component.getParam(p);
+        params.push({ param, name: param.displayName || "(名前なし)" });
       }
-      components.push({ index: c, component, paramNames });
+      components.push({ index: c, component, params });
     }
   });
 
@@ -658,8 +779,26 @@ async function logClipStructure() {
     } catch (err) {
       // Keep going; a name we can't read still leaves the params useful.
     }
-    log(`[${entry.index}] ${displayName} <${matchName}> : ${entry.paramNames.join(" / ")}`);
+    log(
+      `[${entry.index}] ${displayName} <${matchName}> : ` +
+        entry.params.map((p) => p.name).join(" / ")
+    );
+
+    // The value matters as much as the name here: the same stored Position
+    // leaves one telop cut off at the left and another right of centre, so
+    // the numbers are what tell us which param actually places the text.
+    for (const { param, name } of entry.params) {
+      if (!DIAG_VALUE_NAME_RE.test(name)) continue;
+      try {
+        const keyframe = await param.getStartValue();
+        const keyed = param.isTimeVarying() ? " [キーフレームあり]" : "";
+        log(`    ${entry.index}.${name} = ${describeParamValue(keyframe.value.value)}${keyed}`);
+      } catch (err) {
+        log(`    ${entry.index}.${name} = 読み取り不可 (${err.message || err})`);
+      }
+    }
   }
+  log("--- 構造の出力ここまで ---");
 }
 
 function scheduleApply() {
@@ -787,5 +926,6 @@ els.resetBtn.addEventListener("click", () => {
 
 els.loadSelectionBtn.addEventListener("click", handleLoadSelection);
 
+bindScrollBar();
 syncControls();
 log("Telop Shifter パネルを起動しました。");

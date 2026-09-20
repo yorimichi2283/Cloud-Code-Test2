@@ -331,6 +331,7 @@ async function collectEditableParams(project, trackItem) {
       const component = componentChain.getComponentAtIndex(c);
       const paramCount = component.getParamCount();
       const params = [];
+      const scaleParams = [];
       let anchorParam = null;
       let positionParam = null;
       for (let p = 0; p < paramCount; p += 1) {
@@ -341,11 +342,12 @@ async function collectEditableParams(project, trackItem) {
           if (!positionParam) positionParam = param;
         } else if (SCALE_NAME_RE.test(name)) {
           params.push({ param, kind: "scale" });
+          scaleParams.push(param);
         } else if (ANCHOR_NAME_RE.test(name)) {
           anchorParam = param;
         }
       }
-      allGroups.push({ component, params, anchorParam, positionParam });
+      allGroups.push({ component, params, scaleParams, anchorParam, positionParam });
     }
   });
 
@@ -418,14 +420,28 @@ async function collectEditableParams(project, trackItem) {
     }
   }
 
+  // How much the clip's own transform magnifies its contents. Scale is no
+  // longer written here (see below), so this stays put and can be used to
+  // work out where the text ends up on screen.
+  let transformScale = 1;
+  if (chosen.scaleParams.length > 0) {
+    try {
+      const value = (await chosen.scaleParams[0].getStartValue()).value.value;
+      if (typeof value === "number" && value > 0 && value <= 2000) {
+        transformScale = value / 100;
+      }
+    } catch (err) {
+      // Leave it at 1; the clip is almost certainly unscaled.
+    }
+  }
+
   // Where this clip's text actually sits, in the same frame-fraction units as
   // everything else. A text layer places its Anchor Point at its Position, so
-  // (Position - AnchorPoint) is the frame coordinate the glyphs are centred
-  // on — the measurement the API doesn't offer any other way. Verified
-  // against a real project: Position (0.125, 0.350) with Anchor
-  // (-0.382, -0.161) gives 0.507, and that telop's text did sit at 0.506 of
-  // the frame width.
-  const textCenters = [];
+  // (Position - AnchorPoint) is the frame coordinate the glyphs sit on — the
+  // measurement the API doesn't offer any other way. Verified against a real
+  // project: Position (0.125, 0.350) with Anchor (-0.382, -0.161) gives
+  // 0.507, and that telop's text did sit at 0.506 of the frame width.
+  const textLayers = [];
   for (const group of allGroups) {
     if (group === chosen || !group.positionParam || !group.anchorParam) continue;
     let matchName = "";
@@ -439,27 +455,59 @@ async function collectEditableParams(project, trackItem) {
       const pos = toXY((await group.positionParam.getStartValue()).value.value);
       const anchor = toXY((await group.anchorParam.getStartValue()).value.value);
       if (pos && anchor) {
-        textCenters.push({ x: pos.x - anchor.x, y: pos.y - anchor.y });
+        textLayers.push({
+          group,
+          x: pos.x - anchor.x,
+          y: pos.y - anchor.y,
+        });
       }
     } catch (err) {
-      // A layer we can't read just doesn't contribute to the average.
+      // A layer we can't read just doesn't contribute.
     }
   }
-  // Several text layers (a title plus a subtitle, say) are averaged, which is
-  // the best available estimate of the block's centre given the API exposes
-  // each layer's centre but not its width.
+
+  // A telop template often carries spare text layers that aren't used in this
+  // clip, and those sit anywhere — one real project had layers at 0.37, 0.50,
+  // 0.55 and 1.00 of the frame width for a single visible line. Layers parked
+  // outside the frame are dropped, and the MEDIAN of what's left is used
+  // rather than the average, so one stray layer can't drag the estimate.
+  const onScreen = textLayers.filter((layer) => layer.x >= 0 && layer.x <= 1);
+  const usable = onScreen.length > 0 ? onScreen : textLayers;
   let textCenter = null;
-  if (textCenters.length > 0) {
+  if (usable.length > 0) {
+    const xs = usable.map((l) => l.x).sort((a, b) => a - b);
+    const ys = usable.map((l) => l.y).sort((a, b) => a - b);
     textCenter = {
-      x: textCenters.reduce((sum, c) => sum + c.x, 0) / textCenters.length,
-      y: textCenters.reduce((sum, c) => sum + c.y, 0) / textCenters.length,
-      layerCount: textCenters.length,
+      x: xs[Math.floor((xs.length - 1) / 2)],
+      y: ys[Math.floor((ys.length - 1) / 2)],
+      layerCount: usable.length,
+      allX: textLayers.map((l) => l.x),
     };
   }
 
+  // Position moves the whole graphic, so it stays on the clip's transform.
+  //
+  // Scale does NOT. The transform scales the graphic around ITS anchor point
+  // (the frame centre), so a telop sitting anywhere else gets flung outward
+  // as it grows — scaling to 158% threw one right off the edge of the frame.
+  // Each text layer, on the other hand, scales around its own anchor, which
+  // sits on the text itself, so scaling the layers makes the telop grow where
+  // it stands. Clips with no readable text layer (a MOGRT that doesn't expose
+  // one) keep the old behaviour.
+  const textScaleParams = [];
+  for (const layer of textLayers) {
+    for (const param of layer.group.scaleParams) {
+      textScaleParams.push({ param, kind: "scale" });
+    }
+  }
+  const scalesOnText = textScaleParams.length > 0;
+  const candidates = chosen.params
+    .filter((candidate) => candidate.kind === "position")
+    .concat(scalesOnText ? textScaleParams : chosen.params.filter((c) => c.kind === "scale"));
+
   const editableParams = [];
   let skippedKeyframed = 0;
-  for (const candidate of chosen.params) {
+  for (const candidate of candidates) {
     const timeVarying = candidate.param.isTimeVarying();
     if (timeVarying) {
       // Already keyframed: overwriting the static value would be unsafe/ambiguous,
@@ -511,6 +559,8 @@ async function collectEditableParams(project, trackItem) {
     isBaseMotion,
     textCenter,
     transformAnchor: centerXY,
+    transformScale,
+    scalesOnText,
   };
 }
 
@@ -525,7 +575,14 @@ function renderClipList() {
       li.className = "warn";
       li.textContent = `${clip.name} — 位置/スケールの調整対象パラメータが見つかりません`;
     } else {
-      let note = `[${clip.chosenEffectName}] 位置x${posCount} / スケールx${scaleCount}`;
+      // The measured text centre is shown per clip so a wrong measurement is
+      // visible before the centring button is pressed, not after.
+      const centreNote = clip.textCenter
+        ? `文字の中心 ${Math.round(clip.textCenter.x * 100)}%`
+        : "文字の位置は測定できず";
+      let note = `${centreNote} / 位置x${posCount} / スケールx${scaleCount}${
+        clip.scalesOnText ? "(文字)" : ""
+      }`;
       if (clip.skippedKeyframed > 0) {
         li.className = "warn";
         note += `（キーフレーム済みのため対象外: ${clip.skippedKeyframed}件）`;
@@ -604,6 +661,8 @@ async function handleLoadSelection() {
         isBaseMotion,
         textCenter,
         transformAnchor,
+        transformScale,
+        scalesOnText,
       } = await collectEditableParams(project, trackItem);
 
       // A plain video/image clip only ever carries the generic "Motion"
@@ -624,9 +683,21 @@ async function handleLoadSelection() {
         chosenEffectName,
         textCenter,
         transformAnchor,
+        transformScale,
+        scalesOnText,
       });
-      if (chosenEffectName) {
-        log(`${name}: 調整対象エフェクト = 「${chosenEffectName}」`);
+      if (textCenter) {
+        // Printed in full so a mis-measured clip can be spotted against what's
+        // actually on screen, rather than inferred from the result.
+        const all = textCenter.allX
+          .map((x) => `${Math.round(x * 100)}%`)
+          .join(", ");
+        log(
+          `${name}: 文字の中心X=${Math.round(textCenter.x * 100)}% ` +
+            `(テキスト${textCenter.allX.length}枚: ${all})`
+        );
+      } else {
+        log(`${name}: 調整対象エフェクト = 「${chosenEffectName}」（文字の位置は測定できず）`);
       }
     }
 
@@ -767,11 +838,10 @@ function applyDelta(dx, dy, scalePercent) {
 function centeredPositionX(clip) {
   if (!clip.textCenter) return null;
   const anchorX = clip.transformAnchor ? clip.transformAnchor.x : 0.5;
-  const scaleEditable = clip.editableParams.find((e) => e.kind === "scale");
-  const scale =
-    scaleEditable && typeof scaleEditable.baseline === "number"
-      ? (scaleEditable.baseline * (1 + state.scale / 100)) / 100
-      : 1;
+  // The clip's own transform scale, which this tool no longer writes to — the
+  // panel's scale slider drives the text layers instead, and those scale
+  // around the text itself, so they don't move its centre.
+  const scale = typeof clip.transformScale === "number" ? clip.transformScale : 1;
   return 0.5 - scale * (clip.textCenter.x - anchorX);
 }
 

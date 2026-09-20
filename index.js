@@ -544,55 +544,69 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
-// Horizontal centring is per-clip and absolute, unlike the shared offset the
-// rest of the panel applies: each clip's Position X goes to its anchor
-// point's X — frame centre — because Position places the anchor. Reading the
-// anchor rather than assuming a number keeps this correct for vertical and
-// horizontal sequences alike.
+// Puts every loaded clip on ONE shared horizontal position, instead of each
+// keeping its own.
 //
-// This is still not Essential Graphics' measured "align horizontally
-// centred": the UXP API exposes no bounds for a graphic, so if the text was
-// authored off to one side inside its own layer, it stays off to that side.
-// What it does guarantee is that every clip ends up on the same, frame-
-// centred axis.
+// A computed "centre" isn't possible: the UXP API exposes no bounds for a
+// graphic, so there's no way to measure where the text actually sits inside
+// its layer, and the stored Position means different things for different
+// templates — writing a fixed number (0, or the anchor's X) threw telops off
+// the left edge in one project and off the right edge in another.
 //
-// The vertical offset is preserved, the centred X becomes each clip's new
-// baseline, and the X field resets to 0 so later nudges start from there.
+// What IS reliable is a value taken from the clips themselves: the median of
+// their current horizontal positions, plus whatever horizontal nudge is
+// currently dialled in. So the workflow is "nudge with the arrows until it
+// looks right, then press this to put everything on that exact axis" — the
+// position is verified by eye rather than guessed at by arithmetic, and a
+// stray clip snaps onto the same line as the majority.
 function applyHorizontalCenter() {
   if (loadedClips.length === 0 || !currentProject) return;
 
-  const centered = [];
-  try {
-    currentProject.lockedAccess(() => {
-      currentProject.executeTransaction((compoundAction) => {
-        for (const clip of loadedClips) {
-          for (const editable of clip.editableParams) {
-            if (editable.kind !== "position" || !editable.neutral) continue;
-            const base = editable.baseline;
-            if (!base || typeof base.x !== "number" || typeof base.y !== "number") continue;
-
-            const centeredX = editable.neutral.x;
-            const rawY = base.y + pixelsToFraction(state.y, state.frameHeight);
-            const finalY = Math.max(-2, Math.min(3, rawY));
-            const keyframe = editable.param.createKeyframe(new ppro.PointF(centeredX, finalY));
-            compoundAction.addAction(editable.param.createSetValueAction(keyframe, true));
-            centered.push({ editable, centeredX });
-          }
-        }
-      }, "Telop Shifter: center horizontally");
-    });
-  } catch (err) {
-    log(`Error centering: ${err.message || err}`);
+  const positionParams = [];
+  for (const clip of loadedClips) {
+    for (const editable of clip.editableParams) {
+      if (editable.kind !== "position") continue;
+      const base = editable.baseline;
+      if (!base || typeof base.x !== "number" || typeof base.y !== "number") continue;
+      positionParams.push(editable);
+    }
+  }
+  if (positionParams.length === 0) {
+    log("そろえられる位置パラメータがありませんでした。");
     return;
   }
 
-  for (const { editable, centeredX } of centered) {
-    editable.baseline = { x: centeredX, y: editable.baseline.y };
+  const sortedX = positionParams.map((e) => e.baseline.x).sort((a, b) => a - b);
+  const medianX = sortedX[Math.floor(sortedX.length / 2)];
+  const targetX = Math.max(
+    -2,
+    Math.min(3, medianX + pixelsToFraction(state.x, state.frameWidth))
+  );
+
+  try {
+    currentProject.lockedAccess(() => {
+      currentProject.executeTransaction((compoundAction) => {
+        for (const editable of positionParams) {
+          const rawY = editable.baseline.y + pixelsToFraction(state.y, state.frameHeight);
+          const finalY = Math.max(-2, Math.min(3, rawY));
+          const keyframe = editable.param.createKeyframe(new ppro.PointF(targetX, finalY));
+          compoundAction.addAction(editable.param.createSetValueAction(keyframe, true));
+        }
+      }, "Telop Shifter: align horizontally");
+    });
+  } catch (err) {
+    log(`Error aligning: ${err.message || err}`);
+    return;
+  }
+
+  for (const editable of positionParams) {
+    editable.baseline = { x: targetX, y: editable.baseline.y };
   }
   state.x = 0;
   syncControls();
-  const samplePx = centered.length > 0 ? fractionToPixels(centered[0].centeredX, state.frameWidth) : 0;
-  log(`${centered.length}件を横方向の中央（X=${samplePx}px）にそろえました。`);
+  log(
+    `${positionParams.length}件の横位置を X=${fractionToPixels(targetX, state.frameWidth)}px にそろえました。`
+  );
 }
 
 // Every write to Premiere becomes its own undo step, so writing on each

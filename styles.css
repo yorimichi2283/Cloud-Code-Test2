@@ -125,6 +125,7 @@ select {
   color: #808080;
   font-size: 11px;
   text-align: center;
+  line-height: 1.5;
 }
 
 .log {

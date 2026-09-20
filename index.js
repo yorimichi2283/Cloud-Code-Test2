@@ -30,7 +30,6 @@ const SCALE_MAX = 300;
 // One entry per loaded clip: { name, editableParams: [{ param, kind, baseline }] }
 let loadedClips = [];
 let currentProject = null;
-let rafScheduled = false;
 
 // Current offset from each param's baseline, applied to every loaded clip.
 const state = {
@@ -488,13 +487,27 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
+// Every write to Premiere becomes its own undo step, so writing on each
+// animation frame buried the undo stack under dozens of 1px entries and made
+// Cmd+Z look like it did nothing. Writes are throttled instead, with a
+// guaranteed trailing write so the final value always lands.
+let applyTimer = null;
+let lastApplyAt = 0;
+const APPLY_MIN_INTERVAL_MS = 150;
+
 function scheduleApply() {
-  if (rafScheduled) return;
-  rafScheduled = true;
-  requestAnimationFrame(() => {
-    rafScheduled = false;
+  const elapsed = Date.now() - lastApplyAt;
+  if (elapsed >= APPLY_MIN_INTERVAL_MS) {
+    lastApplyAt = Date.now();
     applyDelta(state.x, state.y, state.scale);
-  });
+    return;
+  }
+  if (applyTimer) return;
+  applyTimer = setTimeout(() => {
+    applyTimer = null;
+    lastApplyAt = Date.now();
+    applyDelta(state.x, state.y, state.scale);
+  }, APPLY_MIN_INTERVAL_MS - elapsed);
 }
 
 // Manual typing in the number fields.
@@ -510,20 +523,22 @@ bindNumberInput(els.xInput, "x");
 bindNumberInput(els.yInput, "y");
 bindNumberInput(els.scaleInput, "scale");
 
-// ◀/▶ arrow buttons: one immediate 1-unit step per click, and repeated
-// stepping while held down. Uses Pointer Events + setPointerCapture so that
-// releasing anywhere (not just while still over the button) reliably stops
-// the repeat — without capture, a fast click/drag can leave
-// pointerup/pointercancel un-fired and the interval running forever.
+// ◀/▶ arrow buttons: one step per click, repeating while held down.
+// Now that Position is written in the right units, one step is a real
+// pixel — far too small to see — so a normal click moves by ARROW_STEP and
+// Shift+click moves by exactly 1 for fine work.
 const HOLD_INITIAL_DELAY_MS = 400;
 const HOLD_REPEAT_INTERVAL_MS = 80;
+const ARROW_STEP = 10;
 
 function bindArrowButton(buttonEl, axis, direction) {
   let repeatTimer = null;
   let initialTimer = null;
+  let lastPointerStepAt = 0;
 
-  function step() {
-    state[axis] = clampAxisValue(axis, state[axis] + direction);
+  function step(fine) {
+    const amount = direction * (fine ? 1 : ARROW_STEP);
+    state[axis] = clampAxisValue(axis, state[axis] + amount);
     syncControls();
     scheduleApply();
   }
@@ -537,15 +552,39 @@ function bindArrowButton(buttonEl, axis, direction) {
 
   buttonEl.addEventListener("pointerdown", (event) => {
     if (buttonEl.disabled) return;
-    buttonEl.setPointerCapture(event.pointerId);
-    step();
+    lastPointerStepAt = Date.now();
+    // setPointerCapture isn't reliable inside a UXP panel — if it throws,
+    // it must not take the actual step down with it.
+    try {
+      buttonEl.setPointerCapture(event.pointerId);
+    } catch (err) {
+      // Ignored: the window-level pointerup below still stops the repeat.
+    }
+    const fine = event.shiftKey;
+    step(fine);
     initialTimer = setTimeout(() => {
-      repeatTimer = setInterval(step, HOLD_REPEAT_INTERVAL_MS);
+      repeatTimer = setInterval(() => step(fine), HOLD_REPEAT_INTERVAL_MS);
     }, HOLD_INITIAL_DELAY_MS);
   });
+
+  // Fallback for the case where pointer events don't reach the button at
+  // all: a plain click still steps once. The timestamp (rather than a flag)
+  // avoids both double-stepping and getting stuck if pointerdown fires
+  // without a matching click.
+  buttonEl.addEventListener("click", (event) => {
+    if (buttonEl.disabled) return;
+    if (Date.now() - lastPointerStepAt < 500) return;
+    step(event.shiftKey);
+  });
+
   buttonEl.addEventListener("pointerup", stopHold);
   buttonEl.addEventListener("pointercancel", stopHold);
   buttonEl.addEventListener("lostpointercapture", stopHold);
+  // Safety net: whatever happens to the button's own events, releasing the
+  // mouse anywhere stops the repeat.
+  window.addEventListener("pointerup", stopHold);
+  window.addEventListener("mouseup", stopHold);
+  window.addEventListener("blur", stopHold);
 }
 
 bindArrowButton(els.xMinus, "x", -1);

@@ -529,7 +529,7 @@ bindNumberInput(els.scaleInput, "scale");
 // Shift+click moves by exactly 1 for fine work.
 const HOLD_INITIAL_DELAY_MS = 400;
 const HOLD_REPEAT_INTERVAL_MS = 80;
-const ARROW_STEP = 10;
+const ARROW_STEP = 5;
 
 function bindArrowButton(buttonEl, axis, direction) {
   let repeatTimer = null;

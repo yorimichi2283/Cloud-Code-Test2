@@ -61,15 +61,16 @@
         <section class="card">
           <h2 class="cardTitle">一括操作</h2>
           <div class="cardBody">
-            <button id="centerHBtn" disabled>横位置を全クリップでそろえる</button>
+            <button id="centerHBtn" disabled>テロップを画面の中央にそろえる</button>
             <button id="resetBtn" disabled>リセット（読み込んだ時点に戻す）</button>
             <details class="sub">
               <summary>使い方</summary>
               <div class="subBody">
                 <div class="hint">
-                  まずX座標の矢印で見た目が中央に来るよう合わせ、そのあと「横位置を全クリップでそろえる」
-                  を押すと、読み込んだ全クリップがその横位置に揃います。ズレている1件だけを多数派に
-                  合わせる用途にも使えます。
+                  各テロップの文字が実際に画面のどこにあるかを1件ずつ測って、まとめて中央に動かします。
+                  縦動画でも横動画でも、テロップごとに文字の位置がバラバラでも大丈夫です。縦の位置は
+                  変わりません。<br />
+                  X座標に数値を入れてから押すと、「中央から◯px」の位置にそろえられます。
                 </div>
               </div>
             </details>

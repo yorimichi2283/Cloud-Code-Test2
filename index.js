@@ -186,6 +186,13 @@ async function getActiveProjectAndSequence() {
 // as the option value. Earlier versions guessed at how getVideoTrack()'s
 // index maps onto those labels and got it wrong in both directions; reading
 // the real name removes the guesswork entirely.
+// The name of the track the dropdown was last set to, remembered separately
+// from the option's value. The list is rebuilt on every load, and the API
+// index that a name maps to differs from sequence to sequence — so restoring
+// the raw index after switching sequences silently pointed at a different
+// track (a list saying "13件" loading a track that had one clip).
+let lastSelectedTrackName = null;
+
 async function populateTrackOptions(sequence) {
   const trackCount = await sequence.getVideoTrackCount();
   const previous = els.trackSelect.value;
@@ -211,16 +218,39 @@ async function populateTrackOptions(sequence) {
 
   // The clip count makes it obvious which track actually holds the telops,
   // so an empty or wrong track is visible before loading.
+  let restoredValue = null;
   for (const { apiIndex, name, clipCount } of tracks) {
     const option = document.createElement("option");
     option.value = String(apiIndex);
     option.textContent = `${name}（${clipCount}件）`;
     els.trackSelect.appendChild(option);
+    if (name === lastSelectedTrackName) {
+      restoredValue = option.value;
+    }
   }
 
-  const stillValid = Array.from(els.trackSelect.options).some((o) => o.value === previous);
-  els.trackSelect.value = stillValid ? previous : "selection";
+  if (previous === "selection" || lastSelectedTrackName === null) {
+    els.trackSelect.value = "selection";
+  } else if (restoredValue !== null) {
+    els.trackSelect.value = restoredValue;
+  } else {
+    // The remembered track no longer exists here; better to fall back than to
+    // quietly load whatever now sits at that index.
+    log(`前に選んでいたトラック「${lastSelectedTrackName}」が見つかりませんでした。`);
+    els.trackSelect.value = "selection";
+  }
 }
+
+// Remember the NAME, not the index, so the choice survives the list being
+// rebuilt for a different sequence.
+els.trackSelect.addEventListener("change", () => {
+  const selected = els.trackSelect.options[els.trackSelect.selectedIndex];
+  if (!selected || selected.value === "selection") {
+    lastSelectedTrackName = null;
+    return;
+  }
+  lastSelectedTrackName = (selected.textContent || "").replace(/（.*$/, "");
+});
 
 async function resolveVideoClips(sequence) {
   const chosen = els.trackSelect.value;
@@ -250,6 +280,10 @@ async function fetchFrameSize(sequence) {
 
 const BASE_MOTION_MATCH_NAME = "AE.ADBE Motion";
 const VECTOR_MOTION_NAME_RE = /vector\s*motion|ベクトルモーション/i;
+// A Graphic clip's text layers show up in the component chain as their own
+// components, each with its own Position and Anchor Point. That pair is what
+// finally makes real centring possible: see textVisibleCenter() below.
+const TEXT_MATCH_NAME = "AE.ADBE Text";
 
 // IMPORTANT: Premiere's Position params are stored as a FRACTION OF THE
 // FRAME, not in pixels. A clip sitting dead centre of a 1080x1920 sequence
@@ -290,7 +324,7 @@ async function collectEditableParams(project, trackItem) {
 
   // Group candidate Position/Scale params by which component (effect) they
   // belong to, rather than flattening everything into one list.
-  const rawGroups = [];
+  const allGroups = [];
   project.lockedAccess(() => {
     const componentCount = componentChain.getComponentCount();
     for (let c = 0; c < componentCount; c += 1) {
@@ -298,25 +332,33 @@ async function collectEditableParams(project, trackItem) {
       const paramCount = component.getParamCount();
       const params = [];
       let anchorParam = null;
+      let positionParam = null;
       for (let p = 0; p < paramCount; p += 1) {
         const param = component.getParam(p);
         const name = param.displayName || "";
         if (POSITION_NAME_RE.test(name)) {
           params.push({ param, kind: "position" });
+          if (!positionParam) positionParam = param;
         } else if (SCALE_NAME_RE.test(name)) {
           params.push({ param, kind: "scale" });
         } else if (ANCHOR_NAME_RE.test(name)) {
           anchorParam = param;
         }
       }
-      if (params.length > 0) {
-        rawGroups.push({ component, params, anchorParam });
-      }
+      allGroups.push({ component, params, anchorParam, positionParam });
     }
   });
 
+  const rawGroups = allGroups.filter((group) => group.params.length > 0);
   if (rawGroups.length === 0) {
-    return { editableParams: [], skippedKeyframed: 0, chosenEffectName: null, isBaseMotion: true };
+    return {
+      editableParams: [],
+      skippedKeyframed: 0,
+      chosenEffectName: null,
+      isBaseMotion: true,
+      textCenter: null,
+      transformAnchor: null,
+    };
   }
 
   // A Graphic/Text clip has its own content transform ("Vector Motion") in
@@ -376,6 +418,45 @@ async function collectEditableParams(project, trackItem) {
     }
   }
 
+  // Where this clip's text actually sits, in the same frame-fraction units as
+  // everything else. A text layer places its Anchor Point at its Position, so
+  // (Position - AnchorPoint) is the frame coordinate the glyphs are centred
+  // on — the measurement the API doesn't offer any other way. Verified
+  // against a real project: Position (0.125, 0.350) with Anchor
+  // (-0.382, -0.161) gives 0.507, and that telop's text did sit at 0.506 of
+  // the frame width.
+  const textCenters = [];
+  for (const group of allGroups) {
+    if (group === chosen || !group.positionParam || !group.anchorParam) continue;
+    let matchName = "";
+    try {
+      matchName = await group.component.getMatchName();
+    } catch (err) {
+      continue;
+    }
+    if (matchName !== TEXT_MATCH_NAME) continue;
+    try {
+      const pos = toXY((await group.positionParam.getStartValue()).value.value);
+      const anchor = toXY((await group.anchorParam.getStartValue()).value.value);
+      if (pos && anchor) {
+        textCenters.push({ x: pos.x - anchor.x, y: pos.y - anchor.y });
+      }
+    } catch (err) {
+      // A layer we can't read just doesn't contribute to the average.
+    }
+  }
+  // Several text layers (a title plus a subtitle, say) are averaged, which is
+  // the best available estimate of the block's centre given the API exposes
+  // each layer's centre but not its width.
+  let textCenter = null;
+  if (textCenters.length > 0) {
+    textCenter = {
+      x: textCenters.reduce((sum, c) => sum + c.x, 0) / textCenters.length,
+      y: textCenters.reduce((sum, c) => sum + c.y, 0) / textCenters.length,
+      layerCount: textCenters.length,
+    };
+  }
+
   const editableParams = [];
   let skippedKeyframed = 0;
   for (const candidate of chosen.params) {
@@ -423,7 +504,14 @@ async function collectEditableParams(project, trackItem) {
     });
   }
 
-  return { editableParams, skippedKeyframed, chosenEffectName, isBaseMotion };
+  return {
+    editableParams,
+    skippedKeyframed,
+    chosenEffectName,
+    isBaseMotion,
+    textCenter,
+    transformAnchor: centerXY,
+  };
 }
 
 function renderClipList() {
@@ -509,8 +597,14 @@ async function handleLoadSelection() {
     let skippedPlainClips = 0;
     for (const trackItem of videoClips) {
       const name = await trackItem.getName();
-      const { editableParams, skippedKeyframed, chosenEffectName, isBaseMotion } =
-        await collectEditableParams(project, trackItem);
+      const {
+        editableParams,
+        skippedKeyframed,
+        chosenEffectName,
+        isBaseMotion,
+        textCenter,
+        transformAnchor,
+      } = await collectEditableParams(project, trackItem);
 
       // A plain video/image clip only ever carries the generic "Motion"
       // effect; a telop (Graphic/Text or MOGRT) has its own content
@@ -522,10 +616,23 @@ async function handleLoadSelection() {
         continue;
       }
 
-      loadedClips.push({ trackItem, name, editableParams, skippedKeyframed, chosenEffectName });
+      loadedClips.push({
+        trackItem,
+        name,
+        editableParams,
+        skippedKeyframed,
+        chosenEffectName,
+        textCenter,
+        transformAnchor,
+      });
       if (chosenEffectName) {
         log(`${name}: 調整対象エフェクト = 「${chosenEffectName}」`);
       }
+    }
+
+    const measurable = loadedClips.filter((c) => c.textCenter).length;
+    if (measurable > 0) {
+      log(`文字の位置を測定できたクリップ: ${measurable}/${loadedClips.length}件`);
     }
 
     if (skippedPlainClips > 0) {
@@ -645,68 +752,119 @@ function applyDelta(dx, dy, scalePercent) {
   logWriteConfirmation(intendedByParam);
 }
 
-// Puts every loaded clip on ONE shared horizontal position, instead of each
-// keeping its own.
+// Works out the horizontal position this clip's transform needs so that its
+// text lands on the middle of the frame — per clip, so telops whose text was
+// typed at different places inside their own graphic all end up visually
+// centred rather than merely sharing a stored number.
 //
-// A computed "centre" isn't possible: the UXP API exposes no bounds for a
-// graphic, so there's no way to measure where the text actually sits inside
-// its layer, and the stored Position means different things for different
-// templates — writing a fixed number (0, or the anchor's X) threw telops off
-// the left edge in one project and off the right edge in another.
+// The maths, all in frame-fraction units:
+//   visibleX = anchorX + scale * ((textCentreX) - anchorX) + (posX - anchorX)
+// where textCentreX is the text layer's own (Position - AnchorPoint). Setting
+// visibleX to 0.5 and solving for posX gives:
+//   posX = 0.5 - scale * (textCentreX - anchorX)
+// The scale term is there because the clip's own scale magnifies how far the
+// text sits from the transform's anchor.
+function centeredPositionX(clip) {
+  if (!clip.textCenter) return null;
+  const anchorX = clip.transformAnchor ? clip.transformAnchor.x : 0.5;
+  const scaleEditable = clip.editableParams.find((e) => e.kind === "scale");
+  const scale =
+    scaleEditable && typeof scaleEditable.baseline === "number"
+      ? (scaleEditable.baseline * (1 + state.scale / 100)) / 100
+      : 1;
+  return 0.5 - scale * (clip.textCenter.x - anchorX);
+}
+
+// Centres every loaded telop horizontally.
 //
-// What IS reliable is a value taken from the clips themselves: the median of
-// their current horizontal positions, plus whatever horizontal nudge is
-// currently dialled in. So the workflow is "nudge with the arrows until it
-// looks right, then press this to put everything on that exact axis" — the
-// position is verified by eye rather than guessed at by arithmetic, and a
-// stray clip snaps onto the same line as the majority.
+// Each clip's text is measured from its own text layers (Position minus
+// Anchor Point), so this is a real centring rather than "write the same
+// number everywhere" — which is what previously threw telops off the left
+// edge in one project and off the right in another, since the stored
+// Position means something different in every template.
+//
+// Clips whose text can't be measured (a MOGRT that exposes no text layer,
+// say) fall back to the old behaviour: they're put on the median of the
+// others' positions, so they at least line up with the majority.
+//
+// Whatever is dialled into the X field is added on top, so "centred, but 20px
+// left" is still available.
 function applyHorizontalCenter() {
   if (loadedClips.length === 0 || !currentProject) return;
 
-  const positionParams = [];
+  const nudgeX = pixelsToFraction(state.x, state.frameWidth);
+  const plan = [];
+  const unmeasured = [];
+
   for (const clip of loadedClips) {
-    for (const editable of clip.editableParams) {
-      if (editable.kind !== "position") continue;
-      const base = editable.baseline;
-      if (!base || typeof base.x !== "number" || typeof base.y !== "number") continue;
-      positionParams.push(editable);
+    const positions = clip.editableParams.filter(
+      (e) =>
+        e.kind === "position" &&
+        e.baseline &&
+        typeof e.baseline.x === "number" &&
+        typeof e.baseline.y === "number"
+    );
+    if (positions.length === 0) continue;
+
+    const centered = centeredPositionX(clip);
+    if (centered === null) {
+      unmeasured.push({ clip, positions });
+      continue;
     }
+    plan.push({ clip, positions, targetX: Math.max(-2, Math.min(3, centered + nudgeX)) });
   }
-  if (positionParams.length === 0) {
+
+  if (plan.length === 0 && unmeasured.length === 0) {
     log("そろえられる位置パラメータがありませんでした。");
     return;
   }
 
-  const sortedX = positionParams.map((e) => e.baseline.x).sort((a, b) => a - b);
-  const medianX = sortedX[Math.floor(sortedX.length / 2)];
-  const targetX = Math.max(
-    -2,
-    Math.min(3, medianX + pixelsToFraction(state.x, state.frameWidth))
-  );
+  // Clips we couldn't measure ride along on the median of the measured ones
+  // (or of their own positions, if nothing could be measured at all).
+  if (unmeasured.length > 0) {
+    const pool =
+      plan.length > 0
+        ? plan.map((entry) => entry.targetX)
+        : unmeasured.map((entry) => entry.positions[0].baseline.x + nudgeX);
+    const sorted = pool.slice().sort((a, b) => a - b);
+    const medianX = Math.max(-2, Math.min(3, sorted[Math.floor(sorted.length / 2)]));
+    for (const entry of unmeasured) {
+      plan.push({ clip: entry.clip, positions: entry.positions, targetX: medianX });
+    }
+  }
 
   try {
     currentProject.lockedAccess(() => {
       currentProject.executeTransaction((compoundAction) => {
-        for (const editable of positionParams) {
-          const rawY = editable.baseline.y + pixelsToFraction(state.y, state.frameHeight);
-          const finalY = Math.max(-2, Math.min(3, rawY));
-          const keyframe = editable.param.createKeyframe(new ppro.PointF(targetX, finalY));
-          compoundAction.addAction(editable.param.createSetValueAction(keyframe, true));
+        for (const entry of plan) {
+          for (const editable of entry.positions) {
+            const rawY = editable.baseline.y + pixelsToFraction(state.y, state.frameHeight);
+            const finalY = Math.max(-2, Math.min(3, rawY));
+            const keyframe = editable.param.createKeyframe(
+              new ppro.PointF(entry.targetX, finalY)
+            );
+            compoundAction.addAction(editable.param.createSetValueAction(keyframe, true));
+          }
         }
-      }, "Telop Shifter: align horizontally");
+      }, "Telop Shifter: centre horizontally");
     });
   } catch (err) {
-    log(`Error aligning: ${err.message || err}`);
+    log(`Error centring: ${err.message || err}`);
     return;
   }
 
-  for (const editable of positionParams) {
-    editable.baseline = { x: targetX, y: editable.baseline.y };
+  for (const entry of plan) {
+    for (const editable of entry.positions) {
+      editable.baseline = { x: entry.targetX, y: editable.baseline.y };
+    }
   }
   state.x = 0;
   syncControls();
+
+  const measuredCount = plan.length - unmeasured.length;
   log(
-    `${positionParams.length}件の横位置を X=${fractionToPixels(targetX, state.frameWidth)}px にそろえました。`
+    `${plan.length}件を中央にそろえました（文字の位置を実測できたもの: ${measuredCount}件 / ` +
+      `多数派に合わせたもの: ${unmeasured.length}件）`
   );
 }
 

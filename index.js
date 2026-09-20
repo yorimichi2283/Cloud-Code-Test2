@@ -16,13 +16,6 @@ const els = {
   xInput: document.getElementById("xInput"),
   yInput: document.getElementById("yInput"),
   scaleInput: document.getElementById("scaleInput"),
-  xMinus: document.getElementById("xMinus"),
-  xPlus: document.getElementById("xPlus"),
-  yMinus: document.getElementById("yMinus"),
-  yPlus: document.getElementById("yPlus"),
-  scaleMinus: document.getElementById("scaleMinus"),
-  scalePlus: document.getElementById("scalePlus"),
-  stepSizeGroup: document.getElementById("stepSizeGroup"),
   logBox: document.getElementById("logBox"),
 };
 
@@ -44,11 +37,6 @@ const state = {
   frameWidth: DEFAULT_FRAME_WIDTH,
   frameHeight: DEFAULT_FRAME_HEIGHT,
 };
-
-function getStepSize() {
-  const checked = els.stepSizeGroup.querySelector('input[name="stepSize"]:checked');
-  return checked ? Number(checked.value) : 1;
-}
 
 // Keeps a value within a sane range for its axis, so a stray drag, a held
 // button, or a typo in the number field can't send the offset to an
@@ -96,10 +84,14 @@ async function populateTrackOptions(sequence) {
   selectionOption.textContent = "タイムラインで選択中のクリップ";
   els.trackSelect.appendChild(selectionOption);
 
-  for (let i = 0; i < trackCount; i += 1) {
+  // Option values are the on-screen track number (V1 = bottom track, as
+  // shown in the timeline). getVideoTrack()'s own index numbers tracks the
+  // other way around (index 0 = the topmost track), so the conversion
+  // happens in resolveVideoClips() below, not here.
+  for (let displayNumber = 1; displayNumber <= trackCount; displayNumber += 1) {
     const option = document.createElement("option");
-    option.value = String(i);
-    option.textContent = `V${i + 1}`;
+    option.value = String(displayNumber);
+    option.textContent = `V${displayNumber}`;
     els.trackSelect.appendChild(option);
   }
 
@@ -114,7 +106,9 @@ async function resolveVideoClips(sequence) {
     const items = await selection.getTrackItems();
     return items.filter(isVideoClipTrackItem);
   }
-  const track = await sequence.getVideoTrack(Number(chosen));
+  const trackCount = await sequence.getVideoTrackCount();
+  const apiIndex = trackCount - Number(chosen);
+  const track = await sequence.getVideoTrack(apiIndex);
   return track.getTrackItems(ppro.Constants.TrackItemType.CLIP, false);
 }
 
@@ -133,6 +127,20 @@ async function fetchFrameSize(sequence) {
 
 const BASE_MOTION_MATCH_NAME = "AE.ADBE Motion";
 const VECTOR_MOTION_NAME_RE = /vector\s*motion|ベクトルモーション/i;
+
+// Normalizes a Position-like value to a plain {x, y}, regardless of whether
+// the underlying param returned a PointF-shaped object or a plain [x, y]
+// array (this varies by effect implementation — Vector Motion's own
+// Position didn't behave like the base Motion effect's).
+function toXY(value) {
+  if (value && typeof value.x === "number" && typeof value.y === "number") {
+    return { x: value.x, y: value.y };
+  }
+  if (Array.isArray(value) && typeof value[0] === "number" && typeof value[1] === "number") {
+    return { x: value[0], y: value[1] };
+  }
+  return null;
+}
 
 // Scans one clip's effect stack and returns the Position/Scale params
 // that are safe to overwrite directly (i.e. not keyframed).
@@ -213,10 +221,16 @@ async function collectEditableParams(project, trackItem) {
       continue;
     }
     const startKeyframe = await candidate.param.getStartValue();
+    const rawValue = startKeyframe.value.value;
+    const baseline = candidate.kind === "position" ? toXY(rawValue) : rawValue;
+    if (candidate.kind === "position" && !baseline) {
+      log(`警告: 位置の値の形式を認識できません（スキップします）: ${JSON.stringify(rawValue)}`);
+      continue;
+    }
     editableParams.push({
       param: candidate.param,
       kind: candidate.kind,
-      baseline: startKeyframe.value.value,
+      baseline,
     });
   }
 
@@ -246,18 +260,7 @@ function renderClipList() {
 }
 
 function setControlsEnabled(enabled) {
-  for (const el of [
-    els.xInput,
-    els.yInput,
-    els.scaleInput,
-    els.xMinus,
-    els.xPlus,
-    els.yMinus,
-    els.yPlus,
-    els.scaleMinus,
-    els.scalePlus,
-    els.resetBtn,
-  ]) {
+  for (const el of [els.xInput, els.yInput, els.scaleInput, els.resetBtn]) {
     el.disabled = !enabled;
   }
 }
@@ -316,7 +319,7 @@ async function handleLoadSelection() {
     const anyEditable = loadedClips.some((c) => c.editableParams.length > 0);
     setControlsEnabled(anyEditable);
     els.statusLine.textContent = anyEditable
-      ? "＋/−ボタン、ラベルのドラッグ、数値入力のいずれでも、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
+      ? "ラベルのドラッグ、または数値入力で、選択した全クリップの位置・スケールがまとめてリアルタイムに変わります。"
       : "選択したクリップに調整可能な位置/スケールパラメータが見つかりませんでした。";
     log(`${loadedClips.length}件のクリップを読み込みました。`);
   } catch (err) {
@@ -412,58 +415,8 @@ bindNumberInput(els.xInput, "x");
 bindNumberInput(els.yInput, "y");
 bindNumberInput(els.scaleInput, "scale");
 
-// +/- buttons: one immediate step per click, and repeated stepping while held down.
-const HOLD_INITIAL_DELAY_MS = 400;
-const HOLD_REPEAT_INTERVAL_MS = 80;
-
-function bindStepButton(buttonEl, axis, direction) {
-  let repeatTimer = null;
-  let initialTimer = null;
-
-  function step() {
-    const delta = direction * getStepSize();
-    state[axis] = clampAxisValue(axis, state[axis] + delta);
-    syncControls();
-    scheduleApply();
-  }
-
-  function stopHold() {
-    clearTimeout(initialTimer);
-    clearInterval(repeatTimer);
-    initialTimer = null;
-    repeatTimer = null;
-  }
-
-  // Uses Pointer Events + setPointerCapture so that releasing the mouse
-  // anywhere (not just while still over the button) reliably stops the
-  // repeat. Without capture, a fast click/drag can leave mouseup/mouseleave
-  // un-fired and the interval running forever, which is what made the
-  // value race up to an extreme number.
-  buttonEl.addEventListener("pointerdown", (event) => {
-    if (buttonEl.disabled) return;
-    buttonEl.setPointerCapture(event.pointerId);
-    step();
-    initialTimer = setTimeout(() => {
-      repeatTimer = setInterval(step, HOLD_REPEAT_INTERVAL_MS);
-    }, HOLD_INITIAL_DELAY_MS);
-  });
-  buttonEl.addEventListener("pointerup", stopHold);
-  buttonEl.addEventListener("pointercancel", stopHold);
-  buttonEl.addEventListener("lostpointercapture", stopHold);
-}
-
-bindStepButton(els.xMinus, "x", -1);
-bindStepButton(els.xPlus, "x", 1);
-bindStepButton(els.yMinus, "y", -1);
-bindStepButton(els.yPlus, "y", 1);
-bindStepButton(els.scaleMinus, "scale", -1);
-bindStepButton(els.scalePlus, "scale", 1);
-
 // Click-drag directly on a label (left/right) to scrub its value, the way
-// Premiere's own numeric fields work. Sensitivity is always 1px = 1 unit,
-// independent of the +/- buttons' "movement step" — using that step size as
-// a per-pixel multiplier made dragging wildly oversensitive (a normal drag
-// with the step set to 50 could add thousands of units in an instant).
+// Premiere's own numeric fields work. Sensitivity is always 1px = 1 unit.
 function bindScrubLabel(labelEl, axis) {
   let dragging = false;
   let startClientX = 0;

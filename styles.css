@@ -1,0 +1,98 @@
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 12px;
+  background: #2c2c2c;
+  color: #e0e0e0;
+}
+
+.panel {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+button {
+  background: #454545;
+  color: #e0e0e0;
+  border: 1px solid #5a5a5a;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #565656;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: #1473e6;
+  border-color: #1473e6;
+  color: white;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #0d66d0;
+}
+
+.status {
+  color: #b0b0b0;
+  line-height: 1.4;
+}
+
+.clipListLabel {
+  color: #b0b0b0;
+}
+
+.clipList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 110px;
+  overflow-y: auto;
+  border: 1px solid #454545;
+  border-radius: 4px;
+}
+
+.clipList li {
+  padding: 4px 8px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.clipList li.warn {
+  color: #e0a030;
+}
+
+.clipList li:last-child {
+  border-bottom: none;
+}
+
+.control label {
+  display: flex;
+  justify-content: space-between;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+.log {
+  font-family: monospace;
+  font-size: 11px;
+  max-height: 90px;
+  overflow-y: auto;
+  color: #909090;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Telop Shifter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="panel">
+    <section class="row">
+      <button id="loadSelectionBtn" class="primary">タイムラインの選択クリップを読み込む</button>
+      <div id="statusLine" class="status">Premiereでテロップ（テキスト/グラフィック）クリップを選択してから、上のボタンを押してください。</div>
+    </section>
+
+    <section class="row">
+      <div class="clipListLabel">読み込んだクリップ (<span id="clipCount">0</span>件)</div>
+      <ul id="clipList" class="clipList"></ul>
+    </section>
+
+    <section class="row control">
+      <label for="xSlider">X座標 <span id="xValue">0</span>px</label>
+      <input type="range" id="xSlider" min="-500" max="500" value="0" step="1" disabled />
+    </section>
+
+    <section class="row control">
+      <label for="ySlider">Y座標 <span id="yValue">0</span>px</label>
+      <input type="range" id="ySlider" min="-500" max="500" value="0" step="1" disabled />
+    </section>
+
+    <section class="row control">
+      <label for="scaleSlider">スケール <span id="scaleValue">0</span>%</label>
+      <input type="range" id="scaleSlider" min="-90" max="200" value="0" step="1" disabled />
+    </section>
+
+    <section class="row buttons">
+      <button id="resetBtn" disabled>リセット（元の位置に戻す）</button>
+    </section>
+
+    <section class="row">
+      <div id="logBox" class="log"></div>
+    </section>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>

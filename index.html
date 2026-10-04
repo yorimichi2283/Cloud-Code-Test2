@@ -27,6 +27,7 @@
     color-scheme: dark;
   }
 
+  [hidden] { display: none !important; }
   html, body { background: var(--bg); color: var(--fg); }
   body { font-family: var(--ui); font-size: 15px; line-height: 1.6; font-feature-settings: "palt"; letter-spacing: 0.03em; }
 
@@ -207,6 +208,17 @@
     color: var(--muted);
   }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dir-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px;
+    border-left: 2px solid var(--hot);
+    background: var(--bg);
+    border-radius: 0 3px 3px 0;
+  }
+  .sublegend { font-size: 12px; font-weight: 700; color: var(--muted); }
   .chip { position: relative; cursor: pointer; }
   .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
   .chip span {
@@ -348,7 +360,17 @@
           <label class="chip"><input type="radio" name="anim" value="pop" id="a-pop"><span>ポップ</span></label>
           <label class="chip"><input type="radio" name="anim" value="type" id="a-type"><span>タイプ</span></label>
           <label class="chip"><input type="radio" name="anim" value="slide" id="a-slide"><span>スライド</span></label>
+          <label class="chip"><input type="radio" name="anim" value="slide-chars" id="a-slide-chars"><span>一文字スライド</span></label>
           <label class="chip"><input type="radio" name="anim" value="cut" id="a-cut"><span>カット</span></label>
+        </div>
+        <div class="dir-row" id="dir-row" hidden>
+          <span class="sublegend" id="dir-label">向き</span>
+          <div class="chips" role="radiogroup" aria-labelledby="dir-label">
+            <label class="chip"><input type="radio" name="dir" value="right" id="d-right" checked><span>右から</span></label>
+            <label class="chip"><input type="radio" name="dir" value="left" id="d-left"><span>左から</span></label>
+            <label class="chip"><input type="radio" name="dir" value="bottom" id="d-bottom"><span>下から</span></label>
+            <label class="chip"><input type="radio" name="dir" value="top" id="d-top"><span>上から</span></label>
+          </div>
         </div>
         <label class="check"><input type="checkbox" id="drift" checked> 出たあと、ゆっくり寄る</label>
       </fieldset>
@@ -398,11 +420,11 @@
   "use strict";
 
   var SAMPLES = {
-    setsu:    { text: "大人になってから\n食べる駄菓子\nだいたい美味しい説", anim: "strobe", drift: true },
-    result:   { text: "*説* 立証", anim: "slam", drift: false },
-    nazori:   { text: "いや、それは\n*反則*やろ", anim: "strobe", drift: false },
-    band:     { text: "このあと、*まさか*の展開に", anim: "slide", drift: false },
-    tsukkomi: { text: "いや知らんがな", anim: "pop", drift: false },
+    setsu:    { text: "大人になってから\n食べる駄菓子\nだいたい美味しい説", anim: "strobe", dir: "right", drift: true },
+    result:   { text: "*説* 立証", anim: "slam", dir: "right", drift: false },
+    nazori:   { text: "いや、それは\n*反則*やろ", anim: "strobe", dir: "bottom", drift: false },
+    band:     { text: "このあと、*まさか*の展開に", anim: "slide", dir: "left", drift: false },
+    tsukkomi: { text: "いや知らんがな", anim: "pop", dir: "right", drift: false },
   };
   // 種類ごとに入力中の文を覚えておく
   var texts = {};
@@ -421,6 +443,7 @@
   var fileInput = document.getElementById("file");
   var fileWrap = document.getElementById("file-wrap");
   var fileLabel = document.getElementById("file-label");
+  var dirRow = document.getElementById("dir-row");
 
   var current = null;
   var loopTimer = 0;
@@ -441,6 +464,7 @@
     return {
       preset: radio("preset"),
       anim: radio("anim"),
+      dir: radio("dir"),
       font: radio("font"),
       drift: driftEl.checked,
       text: textEl.value,
@@ -474,9 +498,12 @@
     return 1600 + chars * 90;
   }
 
+  function isSlide(anim) { return anim === "slide" || anim === "slide-chars"; }
+
   function play() {
     clearTimeout(loopTimer);
     var s = settings();
+    dirRow.hidden = !isSlide(s.anim);
     current = Telop.show(stage, s);
     startClock();
     renderSnippet(s);
@@ -545,12 +572,15 @@
       '  Telop.show(document.getElementById("stage"), {',
       '    preset: "' + s.preset + '",',
       '    anim: "' + s.anim + '",',
+    ];
+    if (isSlide(s.anim)) lines.push('    dir: "' + s.dir + '",');
+    lines = lines.concat([
       '    font: "' + s.font + '",',
       "    drift: " + s.drift + ",",
       "    text: " + JSON.stringify(s.text) + ",",
       "  });",
       "<\/script>",
-    ];
+    ]);
     snippet.textContent = lines.join("\n");
   }
 
@@ -585,6 +615,7 @@
       var sample = SAMPLES[t.value];
       textEl.value = texts[t.value];
       setRadio("anim", sample.anim);
+      setRadio("dir", sample.dir);
       driftEl.checked = sample.drift;
     }
     if (t.name === "bg") setScene(t.value);

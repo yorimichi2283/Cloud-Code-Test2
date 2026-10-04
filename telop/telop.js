@@ -1,8 +1,10 @@
 /*
  * telop.js — バラエティ番組風テロップ
  *
- *   Telop.show(stage, { text, preset, anim, font, drift })  → テロップ要素
- *   Telop.hide(telopEl)                                    → Promise（消え終わり）
+ *   Telop.show(stage, { text, preset, anim, dir, font, drift }) → テロップ要素
+ *   Telop.hide(telopEl)                                         → Promise（消え終わり）
+ *
+ *   dir はスライド系（slide / slide-chars）の向き。どこから入ってくるか
  *
  * text の書き方:
  *   改行 … 行を分ける
@@ -13,7 +15,8 @@
   "use strict";
 
   var PRESETS = ["setsu", "result", "nazori", "band", "tsukkomi"];
-  var ANIMS = ["strobe", "slam", "pop", "type", "slide", "cut"];
+  var ANIMS = ["strobe", "slam", "pop", "type", "slide", "slide-chars", "cut"];
+  var DIRS = ["right", "left", "bottom", "top"];
   var FONTS = ["mincho-black", "mincho", "gothic"];
 
   // タイトルセーフ（画面の 90%）に収める
@@ -103,6 +106,7 @@
     var preset = PRESETS.indexOf(opts.preset) >= 0 ? opts.preset : "setsu";
     var anim = ANIMS.indexOf(opts.anim) >= 0 ? opts.anim : "strobe";
     var font = FONTS.indexOf(opts.font) >= 0 ? opts.font : "mincho-black";
+    var dir = DIRS.indexOf(opts.dir) >= 0 ? opts.dir : "right";
 
     if (opts.replace !== false) {
       Array.prototype.forEach.call(stage.querySelectorAll(":scope > .telop"), function (old) {
@@ -112,7 +116,7 @@
 
     var lines = parse(opts.text == null ? "" : opts.text, preset);
     var el = document.createElement("div");
-    el.className = "telop telop--" + preset + " anim-" + anim;
+    el.className = "telop telop--" + preset + " anim-" + anim + " dir-" + dir;
     if (font !== "mincho-black") el.classList.add("font-" + font);
     if (opts.drift) el.classList.add("is-drift");
     el.setAttribute("role", "img");
@@ -174,6 +178,7 @@
     parse: parse,
     PRESETS: PRESETS.slice(),
     ANIMS: ANIMS.slice(),
+    DIRS: DIRS.slice(),
     FONTS: FONTS.slice(),
   };
 })(window);

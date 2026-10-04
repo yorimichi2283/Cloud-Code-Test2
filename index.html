@@ -367,13 +367,13 @@
       <fieldset class="group">
         <legend class="legend">出し方</legend>
         <div class="chips">
-          <label class="chip"><input type="radio" name="anim" value="strobe" id="a-strobe" checked><span>ストロボ</span></label>
+          <label class="chip"><input type="radio" name="anim" value="strobe" id="a-strobe"><span>ストロボ</span></label>
           <label class="chip"><input type="radio" name="anim" value="slam" id="a-slam"><span>ドーン</span></label>
           <label class="chip"><input type="radio" name="anim" value="pop" id="a-pop"><span>ポップ</span></label>
           <label class="chip"><input type="radio" name="anim" value="type" id="a-type"><span>タイプ</span></label>
           <label class="chip"><input type="radio" name="anim" value="slide" id="a-slide"><span>スライド</span></label>
           <label class="chip"><input type="radio" name="anim" value="slide-chars" id="a-slide-chars"><span>一文字スライド</span></label>
-          <label class="chip"><input type="radio" name="anim" value="cut" id="a-cut"><span>カット</span></label>
+          <label class="chip"><input type="radio" name="anim" value="cut" id="a-cut" checked><span>カット</span></label>
         </div>
         <div class="dir-row" id="dir-row" hidden>
           <span class="sublegend" id="dir-label">向き</span>
@@ -384,6 +384,7 @@
             <label class="chip"><input type="radio" name="dir" value="top" id="d-top"><span>上から</span></label>
           </div>
         </div>
+        <label class="check"><input type="checkbox" id="flicker" checked> ちらつき（ストロボ）</label>
         <label class="check"><input type="checkbox" id="drift" checked> 出たあと、ゆっくり寄る</label>
       </fieldset>
 
@@ -450,11 +451,11 @@
   "use strict";
 
   var SAMPLES = {
-    setsu:    { text: "大人になってから\n食べる駄菓子\nだいたい美味しい説", anim: "strobe", dir: "right", drift: true },
-    result:   { text: "*説* 立証", anim: "slam", dir: "right", drift: false },
-    nazori:   { text: "いや、それは\n*反則*やろ", anim: "strobe", dir: "bottom", drift: false },
-    band:     { text: "このあと、*まさか*の展開に", anim: "slide", dir: "left", drift: false },
-    tsukkomi: { text: "いや知らんがな", anim: "pop", dir: "right", drift: false },
+    setsu:    { text: "大人になってから\n食べる駄菓子\nだいたい美味しい説", anim: "cut", dir: "right", drift: true, flicker: true },
+    result:   { text: "*説* 立証", anim: "slam", dir: "right", drift: false, flicker: false },
+    nazori:   { text: "いや、それは\n*反則*やろ", anim: "cut", dir: "bottom", drift: false, flicker: false },
+    band:     { text: "このあと、*まさか*の展開に", anim: "slide", dir: "left", drift: false, flicker: true },
+    tsukkomi: { text: "いや知らんがな", anim: "pop", dir: "right", drift: false, flicker: false },
   };
   // 種類ごとに入力中の文を覚えておく
   var texts = {};
@@ -465,6 +466,7 @@
   var form = document.getElementById("rack");
   var textEl = document.getElementById("text");
   var driftEl = document.getElementById("drift");
+  var flickerEl = document.getElementById("flicker");
   var loopEl = document.getElementById("loop");
   var tcEl = document.getElementById("tc");
   var tally = document.getElementById("tally");
@@ -499,6 +501,7 @@
       dir: radio("dir"),
       font: radio("font"),
       drift: driftEl.checked,
+      flicker: flickerEl.checked,
       text: textEl.value,
     };
   }
@@ -609,6 +612,7 @@
     lines = lines.concat([
       '    font: "' + s.font + '",',
       "    drift: " + s.drift + ",",
+      "    flicker: " + s.flicker + ",",
       "    text: " + JSON.stringify(s.text) + ",",
       "  });",
       "<\/script>",
@@ -629,6 +633,7 @@
     if (isSlide(s.anim)) parts.push("--dir " + s.dir);
     if (s.font !== "mincho-black") parts.push("--font " + s.font);
     if (s.drift) parts.push("--drift");
+    if (s.flicker) parts.push("--flicker");
     parts.push("--duration " + d);
     if (!withOutEl.checked) parts.push("--no-out");
     cmd.textContent = parts.join(" ");
@@ -673,6 +678,7 @@
       setRadio("anim", sample.anim);
       setRadio("dir", sample.dir);
       driftEl.checked = sample.drift;
+      flickerEl.checked = sample.flicker;
     }
     if (t.name === "bg") setScene(t.value);
     if (t.name === "bg") { renderSnippet(settings()); return; }

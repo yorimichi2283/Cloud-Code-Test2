@@ -20,7 +20,7 @@
  *   --outdir out        書き出し先フォルダ
  *
  * テロップごとのオプション（JSON の項目名も同じ）:
- *   --text --preset --anim --dir --font --drift
+ *   --text --preset --anim --dir --font --drift --flicker
  *   --duration 4        長さ（秒）。消える動きを含む
  *   --no-out            消える動きを付けない（最後まで出しっぱなし。JSON では "out": false）
  *   --name              ファイル名（省略時はテキストから作る）
@@ -49,6 +49,7 @@ function parseArgs(argv) {
     }
     const key = a.slice(2);
     if (key === "drift") opts.drift = true;
+    else if (key === "flicker") opts.flicker = true;
     else if (key === "no-drift") opts.drift = false;
     else if (key === "no-out") opts.out = false;
     else if (key === "help" || key === "h") opts.help = true;
@@ -138,6 +139,7 @@ async function renderOne(page, item, common) {
     dir: item.dir,
     font: item.font,
     drift: !!item.drift,
+    flicker: !!item.flicker,
   };
 
   let encoder = null;

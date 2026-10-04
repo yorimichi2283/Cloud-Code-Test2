@@ -307,6 +307,18 @@
   animation: telop-drift 7s 0.4s cubic-bezier(0.3, 0, 0.6, 1) both;
 }
 
+/* ちらつき：番組でよく使われるストロボ（0.1 秒ごとに 0.05 秒、元の画像 90%＋白 10%）
+ * 白に寄せるフィルターは telop.js がページに足す（#telop-flicker） */
+.telop.is-flicker {
+  animation: telop-flicker 0.1s steps(1, end) infinite;
+}
+
+.telop.is-drift.is-flicker {
+  animation:
+    telop-drift 7s 0.4s cubic-bezier(0.3, 0, 0.6, 1) both,
+    telop-flicker 0.1s steps(1, end) infinite;
+}
+
 /* 消す */
 .telop.is-out .telop__body {
   animation: telop-out 0.22s ease-in both;
@@ -396,6 +408,11 @@
   }
 }
 
+@keyframes telop-flicker {
+  0% { filter: url(#telop-flicker); }
+  50% { filter: none; }
+}
+
 @keyframes telop-drift {
   from { scale: 1; }
   to { scale: 1.07; }
@@ -415,7 +432,8 @@
   .telop .telop__body,
   .telop .telop__ch,
   .telop .telop__body::before,
-  .telop.is-drift {
+  .telop.is-drift,
+  .telop.is-flicker {
     animation: none !important;
   }
 

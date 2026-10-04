@@ -1,10 +1,11 @@
 /*
  * telop.js — バラエティ番組風テロップ
  *
- *   Telop.show(stage, { text, preset, anim, dir, font, drift }) → テロップ要素
+ *   Telop.show(stage, { text, preset, anim, dir, font, drift, flicker }) → テロップ要素
  *   Telop.hide(telopEl)                                         → Promise（消え終わり）
  *
  *   dir はスライド系（slide / slide-chars）の向き。どこから入ってくるか
+ *   flicker を true にすると、出ている間ずっとストロボでちらつく
  *
  * text の書き方:
  *   改行 … 行を分ける
@@ -87,6 +88,22 @@
     return layer;
   }
 
+  // ちらつき用のフィルター（元の色 90%＋白 10%）を一度だけページに足す
+  function ensureFlickerFilter() {
+    if (document.getElementById("telop-flicker")) return;
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "0");
+    svg.setAttribute("height", "0");
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.position = "absolute";
+    var f = '<feFunc{c} type="linear" slope="0.9" intercept="0.1"/>';
+    svg.innerHTML =
+      '<filter id="telop-flicker" color-interpolation-filters="sRGB"><feComponentTransfer>' +
+      f.replace("{c}", "R") + f.replace("{c}", "G") + f.replace("{c}", "B") +
+      "</feComponentTransfer></filter>";
+    document.body.appendChild(svg);
+  }
+
   // 文字が多いときは、画面からはみ出さないよう縮める
   function fit(el) {
     var stage = el.parentElement;
@@ -119,6 +136,10 @@
     el.className = "telop telop--" + preset + " anim-" + anim + " dir-" + dir;
     if (font !== "mincho-black") el.classList.add("font-" + font);
     if (opts.drift) el.classList.add("is-drift");
+    if (opts.flicker) {
+      ensureFlickerFilter();
+      el.classList.add("is-flicker");
+    }
     el.setAttribute("role", "img");
     el.setAttribute(
       "aria-label",

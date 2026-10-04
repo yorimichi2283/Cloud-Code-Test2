@@ -8,6 +8,9 @@
  *   まとめて（JSON に並べたものを全部）:
  *     node render/render.js render/telops.example.json
  *
+ *   .mov を書き出すと、out/テロップ.xml も作り直す。Premiere で「ファイル → 読み込み」から
+ *   これを選ぶと、out/ のテロップを並べたシーケンスがプロジェクトに入る。
+ *
  * 共通オプション:
  *   --fps 29.97         フレームレート（23.976 / 24 / 25 / 29.97 / 30 / 59.94 / 60）
  *   --width 1920        横幅（高さは 16:9 で決まる。4K なら 3840）
@@ -28,6 +31,7 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const { pathToFileURL } = require("url");
+const { updateProject } = require("./premiere-xml");
 
 const ROOT = path.resolve(__dirname, "..");
 const FRAME_HTML = pathToFileURL(path.join(__dirname, "frame.html")).href;
@@ -164,6 +168,7 @@ async function renderOne(page, item, common) {
   }
   if (encoder) await encoder.end();
   console.log(`完了 → ${path.relative(process.cwd(), target)}`);
+  return { name, file: target, frames: total, fps: { num: fps.num, den: fps.den }, width: common.width, height: common.height };
 }
 
 async function main() {
@@ -188,6 +193,8 @@ async function main() {
   const height = Math.round((width * 9) / 16);
   const common = {
     fps: parseFps(args.fps),
+    width,
+    height,
     format,
     outDir: path.resolve(args.outdir || path.join(ROOT, "out")),
   };
@@ -217,8 +224,13 @@ async function main() {
       });
     }
     await page.goto(FRAME_HTML);
+    const rendered = [];
     for (const item of items) {
-      await renderOne(page, item, common);
+      rendered.push(await renderOne(page, item, common));
+    }
+    if (format !== "png") {
+      const { xmlPath, count } = updateProject(common.outDir, rendered, common);
+      console.log(`Premiere 用 → ${path.relative(process.cwd(), xmlPath)}（${count} 本を並べたシーケンス）`);
     }
   } finally {
     await browser.close();

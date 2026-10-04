@@ -520,17 +520,22 @@
 
   // ───────── 設定レイヤー（Premiere で触るつまみ） ─────────
 
+  // 選択肢のメニュー。項目を入れると After Effects が効果を作り直して名前が消えるので、
+  // 番号でたどり、項目を入れたあとで名前を付ける
+  function addDropdown(layer, name, items, value) {
+    layer.property("ADBE Effect Parade").addProperty("ADBE Dropdown Control");
+    var index = layer.property("ADBE Effect Parade").numProperties;
+    layer.property("ADBE Effect Parade").property(index).property(1).setPropertyParameters(items);
+    layer.property("ADBE Effect Parade").property(index).name = name;
+    layer.property("ADBE Effect Parade").property(index).property(1).setValue(value);
+  }
+
   function addControls(comp, P) {
     var layer = comp.layers.addNull(CONFIG.duration);
     layer.name = "設定";
 
-    addEffect(layer, "ADBE Dropdown Control", "出し方");
-    effect(layer, "出し方").property(1).setPropertyParameters(ANIMS);
-    effect(layer, "出し方").property(1).setValue(P.anim);
-
-    addEffect(layer, "ADBE Dropdown Control", "向き");
-    effect(layer, "向き").property(1).setPropertyParameters(DIRS);
-    effect(layer, "向き").property(1).setValue(P.dir);
+    addDropdown(layer, "出し方", ANIMS, P.anim);
+    addDropdown(layer, "向き", DIRS, P.dir);
 
     var values = [
       ["ADBE Checkbox Control", "ちらつき", P.flicker ? 1 : 0],
@@ -544,8 +549,10 @@
       ["ADBE Color Control", "座布団の色", P.band || [1, 1, 1]]
     ];
     for (var i = 0; i < values.length; i++) {
-      addEffect(layer, values[i][0], values[i][1]);
-      effect(layer, values[i][1]).property(1).setValue(values[i][2]);
+      layer.property("ADBE Effect Parade").addProperty(values[i][0]);
+      var index = layer.property("ADBE Effect Parade").numProperties;
+      layer.property("ADBE Effect Parade").property(index).name = values[i][1];
+      layer.property("ADBE Effect Parade").property(index).property(1).setValue(values[i][2]);
     }
     return layer;
   }
@@ -584,6 +591,16 @@
 
   // ───────── 組み立て ─────────
 
+  // 失敗しても残りの手順は続ける（どこで止まったかは最後のメッセージとログに出す）
+  function step(compName, label, fn) {
+    try {
+      return fn();
+    } catch (e) {
+      warnings.push(compName + "：" + label + "に失敗しました（" + e.toString() + "／" + (e.line || "?") + " 行目）");
+      return null;
+    }
+  }
+
   function buildComp(P, folder) {
     var comp = app.project.items.addComp(P.name, CONFIG.width, CONFIG.height, 1, CONFIG.duration, CONFIG.fps);
     comp.parentFolder = folder;
@@ -608,12 +625,14 @@
     if (!bottomEdge) bottomEdge = edge1;
     var text = addTextLayer(comp, P, "fill", fontName, move);
     if (P.shadow) {
-      addShadow(bottomEdge, "ぼかした影", [0, 0, 0], P.shadow.opacity, 180,
-        Math.round(P.size * P.shadow.distance), Math.round(P.size * P.shadow.softness));
+      step(P.name, "ぼかした影", function () {
+        addShadow(bottomEdge, "ぼかした影", [0, 0, 0], P.shadow.opacity, 180,
+          Math.round(P.size * P.shadow.distance), Math.round(P.size * P.shadow.softness));
+      });
     }
 
-    var controls = addControls(comp, P);
-    addFlicker(comp);
+    var controls = step(P.name, "設定レイヤー", function () { return addControls(comp, P); });
+    step(P.name, "ちらつき", function () { addFlicker(comp); });
     applyExpressions(P.name);
 
     // Premiere で長さを変えても、出る動き・消える動きの速さは変わらないようにする
@@ -621,8 +640,23 @@
     protect(comp, CONFIG.duration - 0.5, 0.5, "消える");
 
     comp.motionGraphicsTemplateName = P.name;
-    exposeControls(comp, P, controls, text);
+    if (controls) step(P.name, "エッセンシャルグラフィックス", function () { exposeControls(comp, P, controls, text); });
     return { comp: comp, font: fontName };
+  }
+
+  // 最後のメッセージと同じ内容をデスクトップのフォルダにも残す（うまくいかなかったときに送ってもらう用）
+  function writeLog(report) {
+    try {
+      var folder = new Folder(CONFIG.outputFolder);
+      if (!folder.exists) folder.create();
+      var file = new File(folder.fsName + "/説テロップ_ログ.txt");
+      file.encoding = "UTF-8";
+      if (file.open("w")) {
+        file.writeln("After Effects " + app.version + " / " + $.os);
+        file.writeln(report.join("\n"));
+        file.close();
+      }
+    } catch (e) {}
   }
 
   function main() {
@@ -646,7 +680,7 @@
         built.push(buildComp(PRESETS[i], folder));
       } catch (e) {
         pending = [];
-        warnings.push(PRESETS[i].name + " を作れませんでした：" + e.toString() + "（" + (e.line || "?") + " 行目）");
+        warnings.push(PRESETS[i].name + " を作れませんでした（" + e.toString() + "／" + (e.line || "?") + " 行目）");
       }
     }
     app.endUndoGroup();
@@ -677,6 +711,7 @@
     }
     report.push("書体：" + (fontsUsed.mincho || "-") + "（なぞり：" + (fontsUsed.nazori || "-") + "）");
     if (warnings.length) report.push("\n気になった点：\n- " + warnings.join("\n- "));
+    writeLog(report);
     alert(report.join("\n"), "説テロップ工房");
   }
 

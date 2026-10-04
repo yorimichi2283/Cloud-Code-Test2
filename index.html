@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>説テロップ工房</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Shippori+Mincho+B1:wght@800&family=Zen+Kaku+Gothic+New:wght@400;700&family=Zen+Old+Mincho:wght@900&display=swap">
+<link rel="stylesheet" href="telop/telop.css">
+<style>
+  /* Layout: 編集室。左にモニター、右にスイッチャー卓。900px 未満で縦一列 */
+  :root {
+    --bg: #0f1013;
+    --panel: #16181d;
+    --raised: #1f2229;
+    --line: #2b2f38;
+    --fg: #ebe9e4;
+    --muted: #9a9da7;
+    --hot: #ffd400;      /* テロップの黄。再生ボタンと選択中 */
+    --hot-ink: #141414;
+    --cue: #85ecff;      /* 座布団の水色。フォーカス */
+    --tally: #e5322d;    /* PGM ランプ */
+    --ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    --display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    color-scheme: dark;
+  }
+
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: var(--ui); font-size: 15px; line-height: 1.6; font-feature-settings: "palt"; letter-spacing: 0.03em; }
+
+  .app {
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 3vw, 32px);
+    padding-block: 28px 56px;
+    display: grid;
+    gap: 28px;
+  }
+
+  /* ヘッダー */
+  .masthead { display: grid; gap: 6px; }
+  .masthead h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(30px, 4.4vw, 44px);
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+    color: #fff;
+    -webkit-text-stroke: 0.08em #000;
+    paint-order: stroke fill;
+    text-shadow: 0 0.05em 0.14em rgb(0 0 0 / 0.9);
+    text-wrap: balance;
+  }
+  .masthead h1 em { font-style: normal; color: var(--hot); font-size: 1.18em; }
+  .masthead p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  .studio {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .studio { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* モニター */
+  .monitor { display: grid; gap: 10px; min-width: 0; }
+  .monitor__frame {
+    border: 1px solid var(--line);
+    background: #000;
+    padding: 6px;
+    border-radius: 3px;
+  }
+  .monitor__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 2px 4px 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .tally {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 1px 7px;
+    border-radius: 2px;
+    background: var(--raised);
+    color: var(--muted);
+  }
+  .tally.is-live { background: var(--tally); color: #fff; }
+  .tc {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--fg);
+    letter-spacing: 0.04em;
+  }
+  .monitor__bar .spacer { flex: 1; }
+
+  .telop-stage > .scene { position: absolute; inset: 0; z-index: 0; }
+  .telop-stage > .telop { z-index: 1; }
+  .telop-stage > .guides { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .guides i {
+    position: absolute;
+    border: 1px dashed rgb(255 255 255 / 0.55);
+  }
+  .guides .g-action { inset: 3.5%; }
+  .guides .g-title { inset: 5%; border-color: rgb(133 236 255 / 0.75); }
+  .guides span {
+    position: absolute;
+    left: 5%;
+    top: 5%;
+    translate: 0 -100%;
+    font: 500 10px/1.4 var(--mono);
+    color: rgb(133 236 255 / 0.9);
+    padding-bottom: 2px;
+  }
+
+  /* 背景シーン */
+  .scene--studio {
+    background:
+      radial-gradient(circle at 14% 26%, rgb(255 196 92 / 0.6) 0 2.5%, transparent 8%),
+      radial-gradient(circle at 31% 18%, rgb(255 140 200 / 0.35) 0 2%, transparent 7%),
+      radial-gradient(circle at 78% 20%, rgb(120 205 255 / 0.55) 0 3.5%, transparent 10%),
+      radial-gradient(circle at 90% 46%, rgb(255 210 120 / 0.35) 0 2%, transparent 7%),
+      radial-gradient(circle at 60% 34%, rgb(190 120 255 / 0.3) 0 3%, transparent 10%),
+      radial-gradient(ellipse 70% 40% at 50% 100%, rgb(236 140 110 / 0.55), transparent 70%),
+      linear-gradient(180deg, #18203d 0%, #2b2043 52%, #3c2537 100%);
+  }
+  .scene--location {
+    background:
+      linear-gradient(180deg, transparent 58%, rgb(0 0 0 / 0.25) 100%),
+      linear-gradient(90deg,
+        #7c8792 0 9%, #a9b3bb 9% 17%, transparent 17% 26%, #8e8478 26% 37%,
+        transparent 37% 55%, #b7aa96 55% 66%, #6f7b88 66% 78%, transparent 78% 86%, #9aa4ad 86% 100%)
+        0 22% / 100% 40% no-repeat,
+      linear-gradient(180deg, #8ec2e8 0%, #cfe4ef 55%, #6e6b66 62%, #4d4b48 100%);
+    filter: blur(3px) saturate(1.05);
+    inset: -8px !important;
+  }
+  .scene--green { background: #00b140; }
+  .scene--black { background: #000; }
+  .scene--file { background: #000; }
+  .scene--file > img,
+  .scene--file > video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scene--studio::after,
+  .scene--location::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* トランスポート */
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .transport .spacer { flex: 1; }
+
+  .btn {
+    font: 700 14px/1 var(--ui);
+    color: var(--fg);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 11px 16px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: #444a56; }
+  .btn--hot {
+    background: var(--hot);
+    border-color: var(--hot);
+    color: var(--hot-ink);
+    padding-inline: 22px;
+  }
+  .btn--hot:hover { border-color: #fff3a6; background: #ffe24d; }
+  .btn:focus-visible,
+  .chip input:focus-visible + span,
+  .check input:focus-visible,
+  textarea:focus-visible,
+  .file input:focus-visible + span { outline: 2px solid var(--cue); outline-offset: 2px; }
+
+  .check { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; cursor: pointer; }
+  .check input { accent-color: var(--hot); width: 16px; height: 16px; margin: 0; }
+
+  /* 卓 */
+  .rack {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px;
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+  }
+  .group { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+  .legend {
+    padding: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { position: relative; cursor: pointer; }
+  .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .chip span {
+    display: block;
+    padding: 7px 11px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--raised);
+    color: var(--fg);
+  }
+  .chip:hover span { border-color: #444a56; }
+  .chip input:checked + span { background: var(--hot); border-color: var(--hot); color: var(--hot-ink); }
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 104px;
+    padding: 10px 12px;
+    font: 700 16px/1.5 var(--ui);
+    color: var(--fg);
+    background: #0c0d10;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .hint { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+  .hint code, .note code {
+    font-family: var(--mono);
+    font-size: 0.95em;
+    color: var(--fg);
+    background: var(--raised);
+    padding: 0 4px;
+    border-radius: 2px;
+  }
+
+  .file { position: relative; display: inline-block; cursor: pointer; }
+  .file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .file span {
+    display: block;
+    padding: 7px 11px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px dashed #4a505c;
+    border-radius: 3px;
+    color: var(--muted);
+  }
+  .file:hover span { color: var(--fg); border-color: var(--muted); }
+  .file.is-on span { border-style: solid; border-color: var(--hot); color: var(--hot); }
+
+  /* コード */
+  .code {
+    border-top: 1px solid var(--line);
+    padding-top: 22px;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  .code__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .code h2 { margin: 0; font-size: 17px; font-weight: 700; }
+  .code__head p { margin: 0; color: var(--muted); font-size: 13px; }
+  .code__actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .code pre {
+    margin: 0;
+    overflow-x: auto;
+    background: #0a0b0d;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px 16px;
+    font: 500 12.5px/1.65 var(--mono);
+    color: #cfd3db;
+  }
+  .note { margin: 0; color: var(--muted); font-size: 13px; }
+  .toast { font-size: 13px; color: var(--hot); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <header class="masthead">
+    <h1><em>説</em>テロップ工房</h1>
+    <p>極太の明朝体に黒い縁、ぼかした影、そしてストロボで点滅しながら出る。そんなバラエティ番組風のテロップを、文字を打つだけで再生できます。</p>
+  </header>
+
+  <main class="studio">
+    <section class="monitor" aria-label="プレビュー">
+      <div class="monitor__frame">
+        <div class="monitor__bar">
+          <span class="tally" id="tally">PGM</span>
+          <span class="tc" id="tc" aria-label="タイムコード">00:00:00;00</span>
+          <span class="spacer"></span>
+          <label class="check"><input type="checkbox" id="safe"> セーフエリア</label>
+        </div>
+        <div class="telop-stage" id="stage">
+          <div class="scene scene--studio" id="scene"></div>
+          <div class="guides" id="guides" hidden>
+            <i class="g-action"></i><i class="g-title"></i><span>TITLE SAFE 90%</span>
+          </div>
+        </div>
+      </div>
+      <div class="transport">
+        <button type="button" class="btn btn--hot" id="play">▶ 再生</button>
+        <button type="button" class="btn" id="out">消す</button>
+        <label class="check"><input type="checkbox" id="loop"> ループ</label>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="fs">全画面</button>
+      </div>
+    </section>
+
+    <form class="rack" id="rack" aria-label="テロップの設定">
+      <fieldset class="group">
+        <legend class="legend">種類</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="preset" value="setsu" id="p-setsu" checked><span>説の提示</span></label>
+          <label class="chip"><input type="radio" name="preset" value="result" id="p-result"><span>検証結果</span></label>
+          <label class="chip"><input type="radio" name="preset" value="nazori" id="p-nazori"><span>なぞり</span></label>
+          <label class="chip"><input type="radio" name="preset" value="band" id="p-band"><span>座布団</span></label>
+          <label class="chip"><input type="radio" name="preset" value="tsukkomi" id="p-tsukkomi"><span>ツッコミ</span></label>
+        </div>
+      </fieldset>
+
+      <div class="group">
+        <label class="legend" for="text">テキスト</label>
+        <textarea id="text" rows="4" spellcheck="false"></textarea>
+        <p class="hint">改行で行が分かれます。<code>*文字*</code> で強調色。「説の提示」では行末の「説」が大きくなります。</p>
+      </div>
+
+      <fieldset class="group">
+        <legend class="legend">出し方</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="anim" value="strobe" id="a-strobe" checked><span>ストロボ</span></label>
+          <label class="chip"><input type="radio" name="anim" value="slam" id="a-slam"><span>ドーン</span></label>
+          <label class="chip"><input type="radio" name="anim" value="pop" id="a-pop"><span>ポップ</span></label>
+          <label class="chip"><input type="radio" name="anim" value="type" id="a-type"><span>タイプ</span></label>
+          <label class="chip"><input type="radio" name="anim" value="slide" id="a-slide"><span>スライド</span></label>
+          <label class="chip"><input type="radio" name="anim" value="cut" id="a-cut"><span>カット</span></label>
+        </div>
+        <label class="check"><input type="checkbox" id="drift" checked> 出たあと、ゆっくり寄る</label>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend class="legend">書体</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="font" value="mincho-black" id="f-black" checked><span>極太明朝</span></label>
+          <label class="chip"><input type="radio" name="font" value="mincho" id="f-mincho"><span>太明朝</span></label>
+          <label class="chip"><input type="radio" name="font" value="gothic" id="f-gothic"><span>極太ゴシック</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend class="legend">背景</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="bg" value="studio" id="b-studio" checked><span>スタジオ</span></label>
+          <label class="chip"><input type="radio" name="bg" value="location" id="b-location"><span>ロケ</span></label>
+          <label class="chip"><input type="radio" name="bg" value="green" id="b-green"><span>グリーンバック</span></label>
+          <label class="chip"><input type="radio" name="bg" value="black" id="b-black"><span>黒</span></label>
+        </div>
+        <label class="file" id="file-wrap">
+          <input type="file" id="file" accept="image/*,video/*">
+          <span id="file-label">＋ 自分の画像・動画を敷く</span>
+        </label>
+      </fieldset>
+    </form>
+  </main>
+
+  <section class="code" aria-labelledby="code-title">
+    <div class="code__head">
+      <h2 id="code-title">自分のページで使う</h2>
+      <p>今の設定がそのまま入ったコードです。</p>
+      <div class="code__actions">
+        <span class="toast" id="toast" role="status"></span>
+        <button type="button" class="btn" id="copy">コピー</button>
+      </div>
+    </div>
+    <pre><code id="snippet"></code></pre>
+    <p class="note">グリーンバックにして画面収録すれば、動画編集ソフトでクロマキー合成して使えます。</p>
+  </section>
+</div>
+
+<script src="telop/telop.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var SAMPLES = {
+    setsu:    { text: "大人になってから\n食べる駄菓子\nだいたい美味しい説", anim: "strobe", drift: true },
+    result:   { text: "*説* 立証", anim: "slam", drift: false },
+    nazori:   { text: "いや、それは\n*反則*やろ", anim: "strobe", drift: false },
+    band:     { text: "このあと、*まさか*の展開に", anim: "slide", drift: false },
+    tsukkomi: { text: "いや知らんがな", anim: "pop", drift: false },
+  };
+  // 種類ごとに入力中の文を覚えておく
+  var texts = {};
+  Object.keys(SAMPLES).forEach(function (k) { texts[k] = SAMPLES[k].text; });
+
+  var stage = document.getElementById("stage");
+  var scene = document.getElementById("scene");
+  var form = document.getElementById("rack");
+  var textEl = document.getElementById("text");
+  var driftEl = document.getElementById("drift");
+  var loopEl = document.getElementById("loop");
+  var tcEl = document.getElementById("tc");
+  var tally = document.getElementById("tally");
+  var snippet = document.getElementById("snippet");
+  var toast = document.getElementById("toast");
+  var fileInput = document.getElementById("file");
+  var fileWrap = document.getElementById("file-wrap");
+  var fileLabel = document.getElementById("file-label");
+
+  var current = null;
+  var loopTimer = 0;
+  var startedAt = 0;
+  var rafId = 0;
+  var objectUrl = null;
+
+  function radio(name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : null;
+  }
+  function setRadio(name, value) {
+    var el = form.querySelector('input[name="' + name + '"][value="' + value + '"]');
+    if (el) el.checked = true;
+  }
+
+  function settings() {
+    return {
+      preset: radio("preset"),
+      anim: radio("anim"),
+      font: radio("font"),
+      drift: driftEl.checked,
+      text: textEl.value,
+    };
+  }
+
+  // ── タイムコード（29.97 の表記にならって ; 区切り） ──
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function tick() {
+    var t = (performance.now() - startedAt) / 1000;
+    var f = Math.floor(t * 30);
+    tcEl.textContent =
+      pad(Math.floor(f / 108000)) + ":" + pad(Math.floor(f / 1800) % 60) + ":" +
+      pad(Math.floor(f / 30) % 60) + ";" + pad(f % 30);
+    rafId = requestAnimationFrame(tick);
+  }
+  function startClock() {
+    cancelAnimationFrame(rafId);
+    startedAt = performance.now();
+    tally.classList.add("is-live");
+    rafId = requestAnimationFrame(tick);
+  }
+  function stopClock() {
+    cancelAnimationFrame(rafId);
+    tally.classList.remove("is-live");
+  }
+
+  // ── 再生・消す ──
+  function holdMs(s) {
+    var chars = Array.from(s.text.replace(/[\s*]/g, "")).length;
+    return 1600 + chars * 90;
+  }
+
+  function play() {
+    clearTimeout(loopTimer);
+    var s = settings();
+    current = Telop.show(stage, s);
+    startClock();
+    renderSnippet(s);
+    if (loopEl.checked) {
+      loopTimer = setTimeout(function () {
+        var el = current;
+        Telop.hide(el).then(function () {
+          if (current === el) loopTimer = setTimeout(play, 450);
+        });
+      }, holdMs(s));
+    }
+  }
+
+  function hide() {
+    clearTimeout(loopTimer);
+    var el = current;
+    current = null;
+    Telop.hide(el).then(stopClock);
+  }
+
+  // ── 背景 ──
+  function setScene(kind) {
+    scene.className = "scene scene--" + kind;
+    if (kind !== "file") {
+      scene.textContent = "";
+      fileWrap.classList.remove("is-on");
+      fileLabel.textContent = "＋ 自分の画像・動画を敷く";
+    }
+  }
+
+  fileInput.addEventListener("change", function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(f);
+    var media;
+    if (f.type.indexOf("video/") === 0) {
+      media = document.createElement("video");
+      media.muted = true;
+      media.loop = true;
+      media.autoplay = true;
+      media.playsInline = true;
+    } else {
+      media = document.createElement("img");
+      media.alt = "";
+    }
+    media.src = objectUrl;
+    form.querySelectorAll('input[name="bg"]').forEach(function (r) { r.checked = false; });
+    setScene("file");
+    scene.textContent = "";
+    scene.appendChild(media);
+    fileWrap.classList.add("is-on");
+    fileLabel.textContent = "敷いています：" + f.name;
+    fileInput.value = "";
+  });
+
+  // ── コード ──
+  function renderSnippet(s) {
+    var lines = [
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@800&family=Zen+Old+Mincho:wght@900&display=swap">',
+      '<link rel="stylesheet" href="telop/telop.css">',
+      '<script src="telop/telop.js"><\/script>',
+      "",
+      '<div class="telop-stage" id="stage"></div>',
+      "<script>",
+      '  Telop.show(document.getElementById("stage"), {',
+      '    preset: "' + s.preset + '",',
+      '    anim: "' + s.anim + '",',
+      '    font: "' + s.font + '",',
+      "    drift: " + s.drift + ",",
+      "    text: " + JSON.stringify(s.text) + ",",
+      "  });",
+      "<\/script>",
+    ];
+    snippet.textContent = lines.join("\n");
+  }
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var text = snippet.textContent;
+    var shown = function (msg) {
+      toast.textContent = msg;
+      setTimeout(function () { toast.textContent = ""; }, 1800);
+    };
+    var fallback = function () {
+      var range = document.createRange();
+      range.selectNodeContents(snippet);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      shown("選択しました。⌘C / Ctrl+C でコピー");
+    };
+    try {
+      navigator.clipboard.writeText(text).then(function () { shown("コピーしました"); }, fallback);
+    } catch (e) {
+      fallback();
+    }
+  });
+
+  // ── 入力 ──
+  var typingTimer = 0;
+  form.addEventListener("submit", function (e) { e.preventDefault(); });
+  form.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t === fileInput) return;
+    if (t.name === "preset") {
+      var sample = SAMPLES[t.value];
+      textEl.value = texts[t.value];
+      setRadio("anim", sample.anim);
+      driftEl.checked = sample.drift;
+    }
+    if (t.name === "bg") setScene(t.value);
+    if (t.name === "bg") { renderSnippet(settings()); return; }
+    play();
+  });
+  textEl.addEventListener("input", function () {
+    texts[radio("preset")] = textEl.value;
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(play, 350);
+  });
+
+  document.getElementById("play").addEventListener("click", play);
+  document.getElementById("out").addEventListener("click", hide);
+  loopEl.addEventListener("change", function () { if (loopEl.checked) play(); });
+  document.getElementById("safe").addEventListener("change", function (e) {
+    document.getElementById("guides").hidden = !e.target.checked;
+  });
+  document.getElementById("fs").addEventListener("click", function () {
+    try {
+      var p = stage.requestFullscreen && stage.requestFullscreen();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  });
+
+  textEl.value = texts.setsu;
+  play();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { if (current) Telop.fit(current); });
+  }
+})();
+</script>
+</body>
+</html>

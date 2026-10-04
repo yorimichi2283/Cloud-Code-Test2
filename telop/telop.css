@@ -1,0 +1,359 @@
+/*
+ * telop.css — バラエティ番組風テロップ
+ *
+ * 構造（telop.js が生成）:
+ *   .telop-stage                 … 16:9 の画面。文字サイズは画面幅（cqw）基準
+ *     .telop.telop--{preset}     … 配置・回転・寄り（scale）
+ *       .telop__body             … 出し方アニメーション
+ *         .telop__layer--edge2   … 外側の縁（＋ぼかし影）
+ *         .telop__layer--edge1   … 内側の縁
+ *         .telop__layer--fill    … 文字本体
+ *           .telop__line > .telop__ch
+ *
+ * 縁を別レイヤーに分けているのは、太い縁が隣の文字の上に
+ * かぶらないようにするため（全文字の縁 → 全文字の本体の順に描く）。
+ */
+
+.telop-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  container-type: inline-size;
+  overflow: hidden;
+  background: #000;
+}
+
+.telop {
+  /* 書体 */
+  --t-font: "Zen Old Mincho", "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --t-weight: 900;
+  --t-size: 6cqw;
+  --t-lh: 1.28;
+  --t-ls: 0.02em;
+  /* 色 */
+  --t-fill: #fff;
+  --t-accent: #ffe100;
+  --t-edge1: #0b0b0b;
+  --t-edge1-w: 0.1em;
+  --t-edge2: var(--t-edge1);
+  --t-edge2-w: 0em;
+  --t-shadow: drop-shadow(0 0.05em 0.1em rgb(0 0 0 / 0.75));
+  /* 配置（画面に対する％と、テロップ自身の基準点） */
+  --t-x: 50%;
+  --t-y: 50%;
+  --t-ax: -50%;
+  --t-ay: -50%;
+  --t-align: center;
+  --t-tilt: 0deg;
+  /* 動き */
+  --t-stagger: 45ms;
+  --t-fit: 1;
+
+  position: absolute;
+  left: var(--t-x);
+  top: var(--t-y);
+  translate: var(--t-ax) var(--t-ay);
+  rotate: var(--t-tilt);
+  width: max-content;
+  font-family: var(--t-font);
+  font-weight: var(--t-weight);
+  font-size: calc(var(--t-size) * var(--t-fit));
+  line-height: var(--t-lh);
+  letter-spacing: var(--t-ls);
+  font-kerning: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.telop__body {
+  position: relative;
+  display: grid;
+  isolation: isolate;
+}
+
+/* filter を持つレイヤーは描画順が後回しになるので、z-index で順番を固定する */
+.telop__layer {
+  position: relative;
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: var(--t-align);
+}
+
+.telop__line {
+  display: block;
+  white-space: pre;
+}
+
+.telop__ch {
+  display: inline-block;
+  transform-origin: 50% 65%;
+}
+
+/* -webkit-text-stroke は線の中心が輪郭上なので、外に w 出すには 2w 必要 */
+.telop__layer--edge2 {
+  z-index: 0;
+  color: var(--t-edge2);
+  -webkit-text-stroke: calc((var(--t-edge1-w) + var(--t-edge2-w)) * 2) var(--t-edge2);
+  filter: var(--t-shadow);
+}
+
+.telop__layer--edge1 {
+  z-index: 1;
+  color: var(--t-edge1);
+  -webkit-text-stroke: calc(var(--t-edge1-w) * 2) var(--t-edge1);
+}
+
+.telop__layer--fill {
+  z-index: 2;
+  color: var(--t-fill);
+}
+
+.telop__layer--fill .is-accent {
+  color: var(--t-accent);
+}
+
+/* 説の提示で、行末の「説」だけ一回り大きく */
+.telop__ch.is-big {
+  font-size: 1.32em;
+  line-height: 1;
+}
+
+/* ───────── プリセット ───────── */
+
+/* 説の提示：極太明朝・白文字・黒縁・ぼかし影。画面中央 */
+.telop--setsu {
+  --t-size: 6.4cqw;
+  --t-lh: 1.36;
+  --t-edge1-w: 0.09em;
+  --t-shadow: drop-shadow(0 0.04em 0.14em rgb(0 0 0 / 0.85));
+}
+
+/* 検証結果：特大・赤縁＋白の二重縁・金のグラデ */
+.telop--result {
+  --t-size: 12cqw;
+  --t-lh: 1.1;
+  --t-ls: 0.06em;
+  --t-edge1: #c4001d;
+  --t-edge1-w: 0.075em;
+  --t-edge2: #fff;
+  --t-edge2-w: 0.045em;
+  --t-accent: #fff;
+  --t-shadow: drop-shadow(0 0.03em 0.12em rgb(0 0 0 / 0.8));
+}
+
+.telop--result .telop__layer--fill .telop__ch {
+  background: linear-gradient(180deg, #fffbe0 8%, #ffe24a 46%, #ffb000 62%, #ffe680 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.telop--result .telop__layer--fill .telop__ch.is-accent {
+  background: none;
+  color: var(--t-accent);
+}
+
+/* なぞり：VTR中の発言。画面下・タイトルセーフ内 */
+.telop--nazori {
+  --t-font: "Shippori Mincho B1", "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --t-weight: 800;
+  --t-size: 5cqw;
+  --t-lh: 1.22;
+  --t-edge1-w: 0.12em;
+  --t-y: 91%;
+  --t-ay: -100%;
+  --t-shadow: drop-shadow(0 0.03em 0.09em rgb(0 0 0 / 0.9));
+}
+
+/* 座布団付き：水色のベースにオレンジ文字 */
+.telop--band {
+  --t-size: 5.4cqw;
+  --t-lh: 1.2;
+  --t-fill: #ef9a0d;
+  --t-accent: #ff4d1f;
+  --t-edge1: #fff;
+  --t-edge1-w: 0.08em;
+  --t-edge2: #1d2a44;
+  --t-edge2-w: 0.04em;
+  --t-band: #85ecff;
+  --t-x: 7%;
+  --t-y: 9%;
+  --t-ax: 0%;
+  --t-ay: 0%;
+  --t-align: flex-start;
+  --t-shadow: none;
+}
+
+.telop--band .telop__body::before {
+  content: "";
+  position: absolute;
+  inset: -0.16em -0.55em -0.16em -0.45em;
+  z-index: -1;
+  background: var(--t-band);
+  box-shadow: 0.08em 0.08em 0 #1d2a44;
+  transform: skewX(-10deg);
+  transform-origin: 0 100%;
+  animation: telop-band-wipe 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ツッコミ：黄色・少し傾けて画面右上 */
+.telop--tsukkomi {
+  --t-font: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --t-size: 4.6cqw;
+  --t-lh: 1.2;
+  --t-fill: #ffe14d;
+  --t-accent: #fff;
+  --t-edge1: #111;
+  --t-edge1-w: 0.12em;
+  --t-x: 93%;
+  --t-y: 9%;
+  --t-ax: -100%;
+  --t-ay: 0%;
+  --t-align: flex-end;
+  --t-tilt: -4deg;
+}
+
+/* 書体の切り替え */
+.telop.font-mincho {
+  --t-font: "Shippori Mincho B1", "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --t-weight: 800;
+}
+
+.telop.font-gothic {
+  --t-font: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --t-weight: 400;
+}
+
+/* ───────── 出し方 ───────── */
+
+/* ストロボ：点滅しながら出る */
+.telop.anim-strobe .telop__body {
+  animation: telop-strobe 0.5s linear both;
+}
+
+/* ドーン：手前から叩きつけて揺れる */
+.telop.anim-slam .telop__body {
+  animation:
+    telop-slam 0.42s cubic-bezier(0.18, 0.9, 0.3, 1) both,
+    telop-shake 0.38s 0.26s linear both;
+}
+
+/* ポップ：一文字ずつ弾む */
+.telop.anim-pop .telop__ch {
+  animation: telop-pop 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) calc(var(--i) * var(--t-stagger)) both;
+}
+
+/* タイプ：一文字ずつパッと出る */
+.telop.anim-type .telop__ch {
+  animation: telop-type 1ms steps(1, end) calc(var(--i) * var(--t-stagger) * 1.6) both;
+}
+
+/* スライド：右から滑り込む */
+.telop.anim-slide .telop__body {
+  animation: telop-slide 0.36s cubic-bezier(0.15, 0.85, 0.25, 1) both;
+}
+
+/* 寄り：出たあと、ゆっくり大きくなる */
+.telop.is-drift {
+  animation: telop-drift 7s 0.4s cubic-bezier(0.3, 0, 0.6, 1) both;
+}
+
+/* 消す */
+.telop.is-out .telop__body {
+  animation: telop-out 0.22s ease-in both;
+}
+
+.telop.is-out.anim-strobe .telop__body {
+  animation: telop-strobe-out 0.32s linear both;
+}
+
+@keyframes telop-strobe {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  18% { opacity: 0.12; }
+  30% { opacity: 1; }
+  42% { opacity: 0.12; }
+  56% { opacity: 1; }
+  68% { opacity: 0.3; }
+  80%, 100% { opacity: 1; }
+}
+
+@keyframes telop-strobe-out {
+  0% { opacity: 1; }
+  25% { opacity: 0.1; }
+  50% { opacity: 1; }
+  75% { opacity: 0.1; }
+  100% { opacity: 0; }
+}
+
+@keyframes telop-slam {
+  0% { opacity: 0; transform: scale(2.6); filter: blur(0.12em); }
+  45% { opacity: 1; filter: blur(0); }
+  60% { transform: scale(0.94); }
+  78% { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes telop-shake {
+  0% { translate: 0 0; }
+  15% { translate: -0.06em 0.04em; }
+  30% { translate: 0.05em -0.05em; }
+  45% { translate: -0.04em -0.02em; }
+  60% { translate: 0.03em 0.03em; }
+  80% { translate: -0.015em 0; }
+  100% { translate: 0 0; }
+}
+
+@keyframes telop-pop {
+  0% { opacity: 0; transform: scale(0.1) translateY(0.3em); }
+  50% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes telop-type {
+  from { visibility: hidden; }
+  to { visibility: visible; }
+}
+
+@keyframes telop-slide {
+  0% { opacity: 0; transform: translateX(1.6em) skewX(-12deg); filter: blur(0.06em); }
+  70% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes telop-drift {
+  from { scale: 1; }
+  to { scale: 1.07; }
+}
+
+@keyframes telop-out {
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes telop-band-wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* 点滅や大きな動きを控えたい人向け：フェードだけにする */
+@media (prefers-reduced-motion: reduce) {
+  .telop .telop__body,
+  .telop .telop__ch,
+  .telop .telop__body::before,
+  .telop.is-drift {
+    animation: none !important;
+  }
+
+  .telop .telop__body {
+    animation: telop-fade 0.3s ease-out both !important;
+  }
+
+  .telop.is-out .telop__body {
+    animation: telop-out 0.2s ease-in both !important;
+  }
+
+  @keyframes telop-fade {
+    from { opacity: 0; }
+  }
+}

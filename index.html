@@ -294,6 +294,18 @@
     color: #cfd3db;
   }
   .note { margin: 0; color: var(--muted); font-size: 13px; }
+  .export-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+  .field { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  .field input {
+    width: 5em;
+    padding: 6px 8px;
+    font: 500 14px/1.2 var(--mono);
+    color: var(--fg);
+    background: #0c0d10;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .field input:focus-visible { outline: 2px solid var(--cue); outline-offset: 2px; }
   .toast { font-size: 13px; color: var(--hot); }
 
   .sr-only {
@@ -400,17 +412,35 @@
     </form>
   </main>
 
+  <section class="code" aria-labelledby="export-title">
+    <div class="code__head">
+      <h2 id="export-title">Premiere Pro 用に書き出す</h2>
+      <p>今の設定で、背景が透明な動画（ProRes 4444 の .mov）を作るコマンドです。最初の準備は README を見てください。</p>
+      <div class="code__actions">
+        <span class="toast" role="status"></span>
+        <button type="button" class="btn" data-copy="cmd">コピー</button>
+      </div>
+    </div>
+    <div class="export-opts">
+      <label class="field" for="duration">長さ
+        <input type="number" id="duration" value="4" min="0.5" max="60" step="0.5"> 秒
+      </label>
+      <label class="check"><input type="checkbox" id="with-out" checked> 最後に消える動きを付ける</label>
+    </div>
+    <pre><code id="cmd"></code></pre>
+    <p class="note">書き出した .mov を、映像より上のトラック（V2 など）に置くだけで重なります。</p>
+  </section>
+
   <section class="code" aria-labelledby="code-title">
     <div class="code__head">
       <h2 id="code-title">自分のページで使う</h2>
       <p>今の設定がそのまま入ったコードです。</p>
       <div class="code__actions">
-        <span class="toast" id="toast" role="status"></span>
-        <button type="button" class="btn" id="copy">コピー</button>
+        <span class="toast" role="status"></span>
+        <button type="button" class="btn" data-copy="snippet">コピー</button>
       </div>
     </div>
     <pre><code id="snippet"></code></pre>
-    <p class="note">グリーンバックにして画面収録すれば、動画編集ソフトでクロマキー合成して使えます。</p>
   </section>
 </div>
 
@@ -439,7 +469,9 @@
   var tcEl = document.getElementById("tc");
   var tally = document.getElementById("tally");
   var snippet = document.getElementById("snippet");
-  var toast = document.getElementById("toast");
+  var cmd = document.getElementById("cmd");
+  var durationEl = document.getElementById("duration");
+  var withOutEl = document.getElementById("with-out");
   var fileInput = document.getElementById("file");
   var fileWrap = document.getElementById("file-wrap");
   var fileLabel = document.getElementById("file-label");
@@ -582,27 +614,51 @@
       "<\/script>",
     ]);
     snippet.textContent = lines.join("\n");
+    renderCommand(s);
   }
 
-  document.getElementById("copy").addEventListener("click", function () {
-    var text = snippet.textContent;
-    var shown = function (msg) {
-      toast.textContent = msg;
-      setTimeout(function () { toast.textContent = ""; }, 1800);
-    };
-    var fallback = function () {
-      var range = document.createRange();
-      range.selectNodeContents(snippet);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      shown("選択しました。⌘C / Ctrl+C でコピー");
-    };
-    try {
-      navigator.clipboard.writeText(text).then(function () { shown("コピーしました"); }, fallback);
-    } catch (e) {
-      fallback();
-    }
+  // render/render.js に渡すコマンド。改行は \n と書けば render.js が改行に戻す
+  function quote(str) {
+    return '"' + str.replace(/[\\"$`]/g, "\\$&").replace(/\n/g, "\\n") + '"';
+  }
+
+  function renderCommand(s) {
+    var d = Number(durationEl.value);
+    if (!(d > 0)) d = 4;
+    var parts = ["npm run render --", "--text " + quote(s.text), "--preset " + s.preset, "--anim " + s.anim];
+    if (isSlide(s.anim)) parts.push("--dir " + s.dir);
+    if (s.font !== "mincho-black") parts.push("--font " + s.font);
+    if (s.drift) parts.push("--drift");
+    parts.push("--duration " + d);
+    if (!withOutEl.checked) parts.push("--no-out");
+    cmd.textContent = parts.join(" ");
+  }
+
+  durationEl.addEventListener("input", function () { renderCommand(settings()); });
+  withOutEl.addEventListener("change", function () { renderCommand(settings()); });
+
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var target = document.getElementById(button.getAttribute("data-copy"));
+      var toast = button.parentElement.querySelector(".toast");
+      var shown = function (msg) {
+        toast.textContent = msg;
+        setTimeout(function () { toast.textContent = ""; }, 1800);
+      };
+      var fallback = function () {
+        var range = document.createRange();
+        range.selectNodeContents(target);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        shown("選択しました。⌘C / Ctrl+C でコピー");
+      };
+      try {
+        navigator.clipboard.writeText(target.textContent).then(function () { shown("コピーしました"); }, fallback);
+      } catch (e) {
+        fallback();
+      }
+    });
   });
 
   // ── 入力 ──

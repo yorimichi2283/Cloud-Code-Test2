@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>telop render</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@800&family=Zen+Old+Mincho:wght@900&display=block">
+<link rel="stylesheet" href="../telop/telop.css">
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  .telop-stage { width: 100vw; background: transparent; }
+</style>
+</head>
+<body>
+<div class="telop-stage" id="stage"></div>
+<script src="../telop/telop.js"></script>
+<script>
+  // render.js から 1 フレームずつ時間を指定して止め絵にするための窓口。
+  // CSS アニメーションをすべて一時停止し、currentTime を直接動かす。
+  (function () {
+    var stage = document.getElementById("stage");
+    var el = null;
+    var offsets = new Map(); // アニメーション → 最初に見つけた時刻（秒）
+
+    function frame() {
+      return new Promise(function (r) {
+        requestAnimationFrame(function () { requestAnimationFrame(r); });
+      });
+    }
+
+    window.__render = {
+      start: async function (opts) {
+        offsets.clear();
+        el = Telop.show(stage, opts);
+        var text = String(opts.text || "").replace(/\*/g, "") || "あ";
+        await Promise.all(
+          ['900 40px "Zen Old Mincho"', '800 40px "Shippori Mincho B1"', '400 40px "Dela Gothic One"'].map(
+            function (f) { return document.fonts.load(f, text).catch(function () {}); }
+          )
+        );
+        await document.fonts.ready;
+        Telop.fit(el);
+        await frame();
+      },
+      // 消す動きに切り替わって外れたアニメーションには触らない
+      // （止めたり時間を動かしたりすると、外れたものが復活して上書きしてしまう）
+      seek: function (t) {
+        document.getAnimations().forEach(function (a) {
+          if (!offsets.has(a)) offsets.set(a, t);
+          a.pause();
+          a.currentTime = Math.max(0, (t - offsets.get(a)) * 1000);
+        });
+      },
+      out: function () {
+        if (!el) return;
+        if (el.classList.contains("anim-cut")) {
+          el.remove();
+          return;
+        }
+        // pause() した CSS アニメーションは class を変えても自動では外れず、
+        // 出る動きの最後（表示状態）が消える動きを上書きしてしまうので先に取り消す
+        el.querySelector(".telop__body").getAnimations().forEach(function (a) { a.cancel(); });
+        el.classList.add("is-out");
+      },
+    };
+  })();
+</script>
+</body>
+</html>

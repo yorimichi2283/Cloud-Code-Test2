@@ -1,0 +1,14 @@
+{
+  "name": "telop-kobo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "バラエティ番組風テロップ。ブラウザで再生、Premiere Pro 用に透過動画で書き出し",
+  "scripts": {
+    "render": "node render/render.js",
+    "render:example": "node render/render.js render/telops.example.json"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "playwright": "^1.56.1"
+  }
+}

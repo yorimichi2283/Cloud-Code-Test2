@@ -1,0 +1,40 @@
+[
+  {
+    "name": "01_説の提示",
+    "preset": "setsu",
+    "anim": "strobe",
+    "drift": true,
+    "duration": 5,
+    "text": "大人になってから\n食べる駄菓子\nだいたい美味しい説"
+  },
+  {
+    "name": "02_検証結果",
+    "preset": "result",
+    "anim": "slam",
+    "duration": 3,
+    "text": "*説* 立証"
+  },
+  {
+    "name": "03_なぞり",
+    "preset": "nazori",
+    "anim": "slide",
+    "dir": "bottom",
+    "duration": 3,
+    "text": "いや、それは\n*反則*やろ"
+  },
+  {
+    "name": "04_座布団",
+    "preset": "band",
+    "anim": "slide",
+    "dir": "left",
+    "duration": 4,
+    "text": "このあと、*まさか*の展開に"
+  },
+  {
+    "name": "05_ツッコミ",
+    "preset": "tsukkomi",
+    "anim": "pop",
+    "duration": 2.5,
+    "text": "いや知らんがな"
+  }
+]

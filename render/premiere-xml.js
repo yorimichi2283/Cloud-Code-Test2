@@ -1,7 +1,7 @@
 /*
  * 書き出したテロップを Premiere Pro に読み込める XML（Final Cut Pro XML / xmeml）にまとめる
  *
- * render.js が書き出すたびに out/manifest.json へ記録し、out/テロップ.xml を作り直す。
+ * render.js が書き出すたびに out/manifest.json へ記録し、out/telop.xml を作り直す。
  * Premiere で「ファイル → 読み込み」からこの XML を選ぶと、
  * 「テロップ」シーケンス（V2 にテロップを順番に並べたもの）と素材がプロジェクトに入る。
  *
@@ -14,7 +14,8 @@ const fs = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
 
-const XML_NAME = "テロップ.xml";
+// ファイル名に日本語を使うと読み込めない環境があるので英数字にする
+const XML_NAME = "telop.xml";
 const SEQUENCE_NAME = "テロップ";
 const MANIFEST_NAME = "manifest.json";
 
@@ -37,12 +38,24 @@ function timecode(fps) {
   );
 }
 
-function sampleCharacteristics(fps, width, height) {
+function sampleCharacteristics(fps, width, height, depth) {
   return (
     `<samplecharacteristics>${rate(fps)}<width>${width}</width><height>${height}</height>` +
     `<anamorphic>FALSE</anamorphic><pixelaspectratio>square</pixelaspectratio>` +
-    `<fielddominance>none</fielddominance></samplecharacteristics>`
+    `<fielddominance>none</fielddominance><colordepth>${depth}</colordepth></samplecharacteristics>`
   );
+}
+
+// Premiere 自身が書き出す XML に入っている時間（1 秒 = 254016000000 ticks）
+const TICKS_PER_SECOND = 254016000000;
+function ticks(frames, fps) {
+  return Math.round((frames * TICKS_PER_SECOND * fps.den) / fps.num);
+}
+
+// 決まった入力からは毎回同じ ID になるようにする（書き出し直しても差分が出ない）
+function uuid(seed) {
+  const h = require("crypto").createHash("sha1").update(seed).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
 // Premiere が書き出す XML と同じ file://localhost/ 形式（日本語はパーセントエンコード）
@@ -64,6 +77,7 @@ function buildXmeml(entries, seq) {
     const n = i + 1;
     return [
       `          <clipitem id="clipitem-${n}">`,
+      `            <masterclipid>masterclip-${n}</masterclipid>`,
       `            <name>${esc(e.name)}</name>`,
       `            <enabled>TRUE</enabled>`,
       `            <duration>${e.frames}</duration>`,
@@ -72,32 +86,38 @@ function buildXmeml(entries, seq) {
       `            <end>${end}</end>`,
       `            <in>0</in>`,
       `            <out>${e.frames}</out>`,
+      `            <pproTicksIn>0</pproTicksIn>`,
+      `            <pproTicksOut>${ticks(e.frames, e.fps)}</pproTicksOut>`,
       `            <alphatype>straight</alphatype>`,
+      `            <pixelaspectratio>square</pixelaspectratio>`,
+      `            <anamorphic>FALSE</anamorphic>`,
       `            <file id="file-${n}">`,
       `              <name>${esc(path.basename(e.file))}</name>`,
       `              <pathurl>${esc(e.pathurl || pathUrl(e.file))}</pathurl>`,
       `              ${rate(e.fps)}`,
       `              <duration>${e.frames}</duration>`,
       `              ${timecode(e.fps)}`,
-      `              <media><video>${sampleCharacteristics(e.fps, e.width, e.height)}</video></media>`,
+      `              <media><video>${sampleCharacteristics(e.fps, e.width, e.height, 32)}</video></media>`,
       `            </file>`,
       `          </clipitem>`,
     ].join("\n");
   });
   const duration = Math.max(0, cursor - gap);
+  const name = seq.name || SEQUENCE_NAME;
 
+  // 要素の並びは Premiere が書き出す XML に合わせている
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<!DOCTYPE xmeml>`,
     `<xmeml version="4">`,
     `  <sequence id="sequence-1">`,
-    `    <name>${esc(seq.name || SEQUENCE_NAME)}</name>`,
+    `    <uuid>${uuid(name + entries.map((e) => e.name + ":" + e.frames).join("|"))}</uuid>`,
     `    <duration>${duration}</duration>`,
     `    ${rate(seq.fps)}`,
-    `    ${timecode(seq.fps)}`,
+    `    <name>${esc(name)}</name>`,
     `    <media>`,
     `      <video>`,
-    `        <format>${sampleCharacteristics(seq.fps, seq.width, seq.height)}</format>`,
+    `        <format>${sampleCharacteristics(seq.fps, seq.width, seq.height, 24)}</format>`,
     `        <track>`,
     `          <enabled>TRUE</enabled>`,
     `          <locked>FALSE</locked>`,
@@ -108,7 +128,21 @@ function buildXmeml(entries, seq) {
     `          <locked>FALSE</locked>`,
     `        </track>`,
     `      </video>`,
+    `      <audio>`,
+    `        <numOutputChannels>2</numOutputChannels>`,
+    `        <format><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics></format>`,
+    `        <outputs>`,
+    `          <group><index>1</index><numchannels>1</numchannels><downmix>0</downmix><channel><index>1</index></channel></group>`,
+    `          <group><index>2</index><numchannels>1</numchannels><downmix>0</downmix><channel><index>2</index></channel></group>`,
+    `        </outputs>`,
+    `        <track>`,
+    `          <enabled>TRUE</enabled>`,
+    `          <locked>FALSE</locked>`,
+    `          <outputchannelindex>1</outputchannelindex>`,
+    `        </track>`,
+    `      </audio>`,
     `    </media>`,
+    `    ${timecode(seq.fps)}`,
     `  </sequence>`,
     `</xmeml>`,
     ``,

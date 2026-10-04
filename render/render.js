@@ -8,7 +8,7 @@
  *   まとめて（JSON に並べたものを全部）:
  *     node render/render.js render/telops.example.json
  *
- *   .mov を書き出すと、out/テロップ.xml も作り直す。Premiere で「ファイル → 読み込み」から
+ *   .mov を書き出すと、out/telop.xml も作り直す。Premiere で「ファイル → 読み込み」から
  *   これを選ぶと、out/ のテロップを並べたシーケンスがプロジェクトに入る。
  *
  * 共通オプション:

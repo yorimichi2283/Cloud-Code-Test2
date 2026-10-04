@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ルールテロップ プレビュー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&family=Kaisei+Tokumin:wght@800&family=M+PLUS+Rounded+1c:wght@500&display=swap" rel="stylesheet">
+<style>
+  /*
+    After Effects スクリプト (../aftereffects/TelopTemplates.jsx) と同じ寸法・色で組んだ確認用ページ。
+    数値はすべて 1920x1080 基準。
+  */
+  :root {
+    --page-bg: #f4f4f2;
+    --page-fg: #1d1d1b;
+    --panel-bg: #ffffff;
+    --panel-border: #d9d9d4;
+    --accent: #1f6f63;
+
+    /* テロップ配色 (スクリーンショットから採取) */
+    --frame-dark: #3a3410;
+    --frame-yellow: #f2ee68;
+    --frame-gold: #a8953c;
+    --frame-light: #c2b062;
+    --frame-inner: #2c3f30;
+    --mint: #a8ece0;
+    --mint-ray: #b9f5e7;
+    --text-white: #ffffff;
+    --text-red: #d85a44;
+    --text-shadow: #000000;
+    --label-red: #cf4b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #161716;
+      --page-fg: #ececea;
+      --panel-bg: #202220;
+      --panel-border: #3a3d3a;
+      --accent: #7fd6c6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #161716;
+    --page-fg: #ececea;
+    --panel-bg: #202220;
+    --panel-border: #3a3d3a;
+    --accent: #7fd6c6;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 4px 0 12px; }
+
+  /* ---- 16:9 画面 ---- */
+  .viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #6b7a72;
+  }
+  .viewport.bg-photo {
+    background:
+      radial-gradient(ellipse 30% 45% at 48% 38%, #c99a83 0%, #a8796a 55%, transparent 56%),
+      linear-gradient(180deg, #9fb59a 0%, #c7d3b9 45%, #8d8a80 100%);
+  }
+  .viewport.bg-gray { background: #808080; }
+  .viewport.bg-check {
+    background: repeating-conic-gradient(#cfcfcf 0 25%, #ffffff 0 50%) 0 0 / 40px 40px;
+  }
+  .stage {
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 1080px;
+    transform-origin: 0 0;
+  }
+
+  /* ---- ルールテロップ ---- */
+  .rule { position: absolute; left: 33px; top: 894px; width: 1855px; height: 168px; }
+
+  .banner { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .frame {
+    position: absolute; inset: 0;
+    background: var(--frame-dark);
+    box-shadow:
+      inset 0 0 0 2px var(--frame-dark),
+      inset 0 0 0 6px var(--frame-yellow),
+      inset 0 0 0 9px var(--frame-gold),
+      inset 0 0 0 11px var(--frame-light),
+      inset 0 0 0 13px var(--frame-dark);
+  }
+  .panel {
+    position: absolute; inset: 13px;
+    overflow: hidden;
+    background: var(--mint);
+  }
+  .rays {
+    /* 正円の集中線を横に引き伸ばす (AE 側も同じ作り) */
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 1400px; height: 1400px;
+    margin: -700px 0 0 -700px;
+    background: repeating-conic-gradient(from 0deg, var(--mint-ray) 0deg 3.75deg, transparent 3.75deg 7.5deg);
+    transform: scaleX(3);
+  }
+  .panel-shade {
+    position: absolute; inset: 0;
+    box-shadow:
+      inset 0 0 0 1.5px var(--frame-inner),
+      inset 0 5px 6px -2px rgba(20, 70, 60, .55),
+      inset 0 -3px 4px -2px rgba(20, 70, 60, .45);
+  }
+  .rivet {
+    position: absolute; width: 15px; height: 15px;
+    background: #dcdcd6;
+    border: 2px solid #232323;
+  }
+  .rivet::after {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+    background: #222;
+  }
+  .rivet.tl { left: -1px; top: -1px; }
+  .rivet.tr { right: -1px; top: -1px; }
+  .rivet.bl { left: -1px; bottom: -1px; }
+  .rivet.br { right: -1px; bottom: -1px; }
+
+  .rule-text {
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: 0;
+    display: flex; justify-content: center; align-items: center;
+    transform: translateY(-8px);
+  }
+  .rule-text span.line {
+    display: inline-block;
+    white-space: nowrap;
+    font-family: "Noto Sans JP", "Noto Sans JP Black", sans-serif;
+    font-weight: 900;
+    font-size: 88px;
+    letter-spacing: -0.07em;
+    line-height: 1;
+    color: var(--text-white);
+    text-shadow:
+      1px 1px 0 var(--text-shadow), 2px 2px 0 var(--text-shadow), 3px 3px 0 var(--text-shadow),
+      4px 4px 0 var(--text-shadow), 5px 5px 0 var(--text-shadow), 6px 6px 0 var(--text-shadow),
+      7px 7px 0 var(--text-shadow), 8px 8px 0 var(--text-shadow), 9px 9px 0 var(--text-shadow),
+      10px 10px 0 var(--text-shadow), 11px 11px 1px var(--text-shadow);
+    transform-origin: 50% 50%;
+  }
+  .rule-text em { font-style: normal; color: var(--text-red); }
+
+  .label {
+    position: absolute; left: 0; bottom: 100%;
+    display: flex;
+    transform-origin: 0% 100%;
+  }
+  .label .box {
+    width: 81px; height: 76px;
+    margin-right: -3px;
+    background: #fff;
+    border: 3px solid #111;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "M PLUS Rounded 1c", "Rounded Mplus 1c Medium", sans-serif;
+    font-weight: 500;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--label-red);
+  }
+
+  /* ---- セリフテロップ ---- */
+  .speech {
+    position: absolute; left: 0; right: 0; top: 843px; height: 0;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .speech span {
+    white-space: nowrap;
+    font-family: "Kaisei Tokumin", "Kaisei Tokumin ExtraBold", serif;
+    font-weight: 800;
+    font-size: 90px;
+    letter-spacing: -0.17em;
+    line-height: 1;
+    color: #fff;
+    -webkit-text-stroke: 6px #000;
+    paint-order: stroke fill;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, .85);
+    transform-origin: 50% 50%;
+  }
+
+  /* ---- 操作パネル ---- */
+  .controls {
+    margin-top: 14px;
+    display: grid; gap: 10px;
+    grid-template-columns: 1fr;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .controls label { display: grid; gap: 4px; font-size: 13px; }
+  .controls input[type="text"] {
+    width: 100%; font-size: 16px; padding: 6px 8px;
+    border: 1px solid var(--panel-border); border-radius: 4px;
+    background: var(--page-bg); color: var(--page-fg);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, select {
+    font-size: 14px; padding: 6px 12px;
+    border: 1px solid var(--panel-border); border-radius: 4px;
+    background: var(--page-bg); color: var(--page-fg);
+    cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .hint { font-size: 12px; opacity: .75; margin: 0; }
+  @media (min-width: 720px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+    .controls .wide { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>ルールテロップ／セリフテロップ プレビュー</h1>
+  <div class="viewport bg-photo" id="viewport">
+    <div class="stage" id="stage">
+      <div class="speech" id="speech"><span id="speechText"></span></div>
+      <div class="rule" id="rule">
+        <div class="banner">
+          <div class="frame"></div>
+          <div class="panel">
+            <div class="rays"></div>
+            <div class="panel-shade"></div>
+          </div>
+          <div class="rivet tl"></div><div class="rivet tr"></div>
+          <div class="rivet bl"></div><div class="rivet br"></div>
+        </div>
+        <div class="label" id="label"></div>
+        <div class="rule-text"><span class="line" id="ruleText"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label class="wide">本文（赤くしたい部分を ＊ で挟む）
+      <input type="text" id="inMain" value="レシートに書かれているモノは＊現物と交換可能＊">
+    </label>
+    <label>ラベル
+      <input type="text" id="inLabel" value="ルール">
+    </label>
+    <label>セリフ
+      <input type="text" id="inSpeech" value="ちょっとだいぶ歩ったからなぁ">
+    </label>
+    <label>アニメーションの長さ（フレーム）
+      <input type="text" id="animFrames" value="9" inputmode="numeric">
+    </label>
+    <div class="row wide">
+      <button class="primary" id="replay">▶ アニメーション再生</button>
+      <select id="speed" aria-label="再生速度">
+        <option value="1">等速</option>
+        <option value="0.25">1/4 スロー</option>
+      </select>
+      <select id="bg" aria-label="背景">
+        <option value="bg-photo">背景：映像っぽい色</option>
+        <option value="bg-gray">背景：グレー</option>
+        <option value="bg-check">背景：透明（チェック）</option>
+      </select>
+      <label class="row" style="display:flex"><input type="checkbox" id="showSpeech" checked> セリフを表示</label>
+    </div>
+    <p class="hint wide">After Effects のスクリプトと同じ寸法・色・動きの式で描いています（29.97fps のコマ送り）。動きは参考映像が無いため仮のもので、画面録画をもらえれば合わせ込みます。</p>
+  </div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  // AE 側の式と同じルール: ＊(全角) か *(半角) で挟んだ部分を赤にする
+  function parseEmphasis(raw) {
+    const parts = [];
+    let buf = "", red = false;
+    for (const ch of raw) {
+      if (ch === "*" || ch === "＊") {
+        if (buf) parts.push({ text: buf, red });
+        buf = ""; red = !red;
+      } else {
+        buf += ch;
+      }
+    }
+    if (buf) parts.push({ text: buf, red });
+    return parts;
+  }
+
+  function render() {
+    const line = $("ruleText");
+    line.textContent = "";
+    for (const p of parseEmphasis($("inMain").value)) {
+      const node = p.red ? document.createElement("em") : document.createTextNode(p.text);
+      if (p.red) node.textContent = p.text;
+      line.appendChild(node);
+    }
+    // 帯からはみ出す長さなら自動で縮める (AE 側の式と同じ考え方)
+    const maxW = 1856 - 2 * 60;
+    const w = line.scrollWidth;
+    line.style.scale = w > maxW ? String(maxW / w) : "";
+
+    const label = $("label");
+    label.textContent = "";
+    for (const ch of $("inLabel").value) {
+      const b = document.createElement("div");
+      b.className = "box";
+      b.textContent = ch;
+      label.appendChild(b);
+    }
+    $("speechText").textContent = $("inSpeech").value;
+    $("speech").style.display = $("showSpeech").checked ? "" : "none";
+  }
+
+  function fit() {
+    const vp = $("viewport");
+    $("stage").style.transform = "scale(" + vp.clientWidth / 1920 + ")";
+  }
+
+  // ---- IN アニメーション: TelopTemplates.jsx の式 (EX_ANIM) と同じ計算 ----
+  const FPS = 29.97;
+  const SPEECH_FRAMES = 4;
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const backOut = (x) => { const s = 1.70158; x = x - 1; return x * x * ((s + 1) * x + s) + 1; };
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+
+  function animFrames() {
+    const n = parseFloat($("animFrames").value);
+    return Math.max(1, Number.isFinite(n) ? n : 9);
+  }
+
+  function drawAt(t) {
+    const dur = animFrames() / FPS;
+    const pIn = (delay, d) => clamp01((t - delay * d) / d);
+    const pb = pIn(0, dur);
+    document.querySelector(".banner").style.transform = `scale(${backOut(pb)}, ${0.7 + 0.3 * easeOut(pb)})`;
+    $("label").style.transform = `scale(${backOut(pIn(0.33, dur))})`;
+    $("ruleText").style.transform = `scale(${backOut(pIn(0.55, dur))})`;
+    const ps = pIn(0, SPEECH_FRAMES / FPS);
+    $("speechText").style.transform = `scale(${1 + 0.3 * (1 - easeOut(ps))})`;
+    $("speechText").style.opacity = String(easeOut(ps));
+  }
+
+  let raf = 0;
+  function replay() {
+    cancelAnimationFrame(raf);
+    const speed = parseFloat($("speed").value);
+    const start = performance.now();
+    const tick = (now) => {
+      const sec = (now - start) / 1000 * speed;
+      drawAt(Math.floor(sec * FPS) / FPS); // コマ送りで描く
+      if (sec < 2) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  }
+
+  ["inMain", "inLabel", "inSpeech", "showSpeech"].forEach((id) => $(id).addEventListener("input", render));
+  $("replay").addEventListener("click", replay);
+  $("bg").addEventListener("change", (e) => {
+    $("viewport").className = "viewport " + e.target.value;
+  });
+  window.addEventListener("resize", fit);
+  fit();
+  render();
+  drawAt(10);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+</script>
+</body>
+</html>

@@ -9,6 +9,7 @@
 //
 //  作られるコンポジション：
 //    01_OP_オープニング       … 点→線→ロゴが跳ねて登場 → 円形に広がる穴から次のシーンへ（5秒）
+//                                 最後にロゴは左上の丸いバッジに収まる
 //    02_左上ロゴ＋上部タイトル … OP の最後と同じ位置の左上ロゴ＋上部タイトル
 //    03_下部テロップ          … 画面下中央のテロップ
 //    04_名前テロップ          … 左下の名前テロップ（丸＋ピン、名前、肩書きタグ、所属）
@@ -50,15 +51,18 @@
     // ロゴ（素材画像の座標系＝元画像のピクセル）
     var LOGO_CENTER = [999, 963.5];  // ロゴ全体の中心
     var LOGO_SPLIT_Y = 727;          // 「かながわの」と「現場」の間の線
-    var OP_LOGO_SCALE = 70;          // OP でのロゴの大きさ（%）
+    var LOGO_W = 1570;               // ロゴ全体の幅（素材のピクセル）
+    var OP_LOGO_SCALE = 52;          // OP でのロゴの大きさ（%）。52% で画面幅の約4割
     var OP_DUR = 5.0;
     var HIRA_T0 = 0.40, HIRA_STEP = 0.07;    // 「かながわの」が跳ね出す開始時間と1文字ごとの間隔
     var KANJI_T0 = 0.70, KANJI_STEP = 0.10;  // 「現場」が落ちてくる開始時間と間隔
 
     // 左上ロゴ（OP の最後と 02 のコンポで同じ値を使います）
-    var CORNER_POS = [187, 139];     // 左上ロゴの中心
-    var CORNER_SIZE = 22.7;          // OP のロゴに対する大きさ（%）
-    var PLATE = { w: 294, h: 210, r: 40, stroke: 4 }; // 左上ロゴのプレート（画面上のピクセル。r＝角の丸み、stroke＝縁の太さ）
+    var CORNER_POS = [141, 141];     // 左上ロゴ（丸いバッジ）の中心
+    var CORNER_LOGO_W = 150;         // 左上ロゴの文字の幅（画面上のピクセル）
+    var PLATE = { w: 210, h: 210, r: 105, stroke: 4 }; // 左上の丸いバッジ（直径 210px。r＝角の丸み＝半径で正円、stroke＝縁の太さ）
+    var CORNER_SIZE = Math.round(CORNER_LOGO_W / (LOGO_W * OP_LOGO_SCALE / 100) * 10000) / 100; // OP のロゴに対する大きさ（%）
+    var OP_LOGO_PX = LOGO_W * OP_LOGO_SCALE / 100;  // OP でのロゴの幅（画面上のピクセル）
 
     // =================================================================
     //  ロゴ画像（ビルド時に埋め込まれます）
@@ -722,7 +726,7 @@
         blur(LN);
         var logoOp = CR + keep + 'keep?100:linear(p,0,0.7,100,0)';
 
-        // 左上プレート（角の丸い白いプレート＋水色の縁。最後にポンと出る）
+        // 左上の丸いバッジ（白い円＋水色の縁。最後にポンと出る）
         var k = 100 / CORNER_SIZE;
         var PL = comp.layers.addShape();
         PL.name = "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8";
@@ -749,7 +753,7 @@
             var kp = toLogoSpace(kanji[ki].x + kanji[ki].w / 2, kanji[ki].y + kanji[ki].h);
             var tI = KANJI_T0 + KANJI_STEP * ki + 0.34;
             newGroup(RP, kg);
-            addEllipse(RP, kg, "E", [700, 84], [0, 0]);
+            addEllipse(RP, kg, "E", [OP_LOGO_PX * 0.64, OP_LOGO_PX * 0.077], [0, 0]);
             addStroke(RP, kg, "S", hex4(COL.cyan), 10);
             setExpr(gp(RP, kg, "S").property("ADBE Vector Stroke Color"), cyanExp, "\u6CE2\u7D0B \u8272");
             gxf(RP, kg, "ADBE Vector Position").setValue([kp[0], kp[1] + 2]);
@@ -783,13 +787,14 @@
         var SH = comp.layers.addShape();
         SH.name = "\u5149\u306E\u5E2F";
         SH.parent = LN;
-        setXY(SH, [0, 0], [330, 700]);
+        var shY = toLogoSpace(0, 1120)[1], shX0 = 960 - OP_LOGO_PX / 2 - 160, shX1 = 960 + OP_LOGO_PX / 2 + 160;
+        setXY(SH, [0, 0], [shX0, shY]);
         newGroup(SH, "G");
-        addRect(SH, "G", "R", [120, 1400], [0, 0], 0);
+        addRect(SH, "G", "R", [OP_LOGO_PX * 0.1, OP_LOGO_PX * 1.2], [0, 0], 0);
         addFill(SH, "G", "F", hex4(COL.white));
         gxf(SH, "G", "ADBE Vector Rotation").setValue(18);
         setExpr(fillColor(SH, "G"), CR + 'C.effect("\u8272:\u5149\u306E\u5E2F")(1)', "\u5149\u306E\u5E2F \u8272");
-        keys(xf(SH, "ADBE Position"), [[2.05, [330, 700]], [2.75, [1650, 700]]], 60, 60);
+        keys(xf(SH, "ADBE Position"), [[2.05, [shX0, shY]], [2.75, [shX1, shY]]], 60, 60);
         xf(SH, "ADBE Opacity").setValue(55);
         var MT = comp.layers.add(kanjiComp, OP_DUR);
         MT.name = "\u5149\u306E\u5E2F\u306E\u5F62\uFF08\u6F22\u5B57\uFF09";
@@ -808,7 +813,8 @@
         SP.name = "\u30AD\u30E9\u30AD\u30E9";
         SP.parent = LN;
         setXY(SP, [0, 0], [0, 0]);
-        var dirs = [[-110, -190, 26], [120, -165, 17]];
+        var sk = OP_LOGO_PX / 1100;
+        var dirs = [[-110 * sk, -190 * sk, 26 * sk], [120 * sk, -165 * sk, 17 * sk]];
         for (var hi = 0; hi < hira.length; hi++) {
             var hx = toLogoSpace(hira[hi].x + hira[hi].w / 2, 0)[0];
             var ts = HIRA_T0 + HIRA_STEP * hi + 0.06;
@@ -835,7 +841,8 @@
         newGroup(LI, "G");
         addRect(LI, "G", "R", [10, 10], [960, ly], 5);
         addFill(LI, "G", "F", hex4(COL.cyan));
-        setExpr(rectSize(LI, "G"), CR + 'var p=C.effect("\u30E9\u30A4\u30F3(%)")(1)/100;[10+1230*p,10]', "\u7DDA \u30B5\u30A4\u30BA");
+        var lineW = Math.round(OP_LOGO_PX + 140);
+        setExpr(rectSize(LI, "G"), CR + 'var p=C.effect("\u30E9\u30A4\u30F3(%)")(1)/100;[10+' + (lineW - 10) + '*p,10]', "\u7DDA \u30B5\u30A4\u30BA");
         setExpr(fillColor(LI, "G"), cyanExp, "\u7DDA \u8272");
         keys(xf(LI, "ADBE Scale"), [[0, [0, 0]], [0.08, [150, 150]], [0.16, [100, 100]], [1.68, [100, 100]], [1.82, [0, 0]]], 50, 40);
 

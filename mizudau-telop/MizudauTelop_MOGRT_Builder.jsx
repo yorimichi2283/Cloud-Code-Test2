@@ -1151,8 +1151,6 @@
     }
     app.endUndoGroup();
 
-    if (comps.length > 0) comps[comps.length - 1].openInViewer();
-
     var outFolder = Folder.selectDialog("保存先フォルダを選んでください（.mogrt と .aep を保存します）");
     var exported = [];
 
@@ -1171,6 +1169,13 @@
     } else {
         log("効果音のフォルダが見つからなかったため、効果音あり版は作っていません。");
     }
+
+    // 書き出し時はサムネイル用に完成形の時刻を表示していたので、
+    // 再生するとアニメーションが最初から見えるよう、再生ヘッドを 0 フレーム目に戻す
+    for (var ct = 0; ct < comps.length; ct++) {
+        comps[ct].time = 0;
+    }
+    if (comps.length > 0) comps[comps.length - 1].openInViewer();
 
     // 3) 効果音入りのプロジェクトを保存
     if (outFolder) {

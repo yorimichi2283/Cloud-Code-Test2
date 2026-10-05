@@ -11,8 +11,10 @@ const { makeEvaluator } = require("./expr_eval.js");
 const JSX = path.join(__dirname, "..", "KanagawaGenba_Builder.jsx");
 const MAC_FONTS = ["HiraginoSans-W7", "HiraginoSans-W5"];
 
+const MOGRT_DIR = path.join(require("os").tmpdir(), "kg_mogrt_out");
 function runScript(opts) {
-  const g = makeGlobals(Object.assign({ fonts: MAC_FONTS, confirm: true, folder: "/tmp/mogrt" }, opts || {}));
+  fs.rmSync(MOGRT_DIR, { recursive: true, force: true }); fs.mkdirSync(MOGRT_DIR, { recursive: true });
+  const g = makeGlobals(Object.assign({ fonts: MAC_FONTS, confirm: true, folder: MOGRT_DIR }, opts || {}));
   const code = fs.readFileSync(JSX, "utf8").replace(/^﻿/, "");
   vm.createContext(g);
   vm.runInContext(code, g, { filename: "KanagawaGenba_Builder.jsx", timeout: 60000 });
@@ -26,6 +28,32 @@ function allProps(comp) {
     (n.children || []).forEach((c) => walk(c, p + "/" + n.name));
   })(L._root, comp.name);
   return out;
+}
+
+// on-screen size/centre of the "G"/"R" rectangle of a shape layer at time t
+function rectOnScreen(ev, comp, layerName, t) {
+  const L = comp.layer(layerName);
+  if (!L) throw new Error("layer not found: " + layerName);
+  const m = ev.layerMatrix(L, t);
+  const grp = ev.findChild(ev.findChild(L._root, "ADBE Root Vectors Group"), "G");
+  const R = ev.findChild(ev.findChild(grp, "ADBE Vectors Group"), "R");
+  const size = ev.valueOf(ev.findChild(R, "ADBE Vector Rect Size"), t), pos = ev.valueOf(ev.findChild(R, "ADBE Vector Rect Position"), t);
+  return { w: size[0] * Math.hypot(m[0], m[1]), h: size[1] * Math.hypot(m[2], m[3]), x: m[0] * pos[0] + m[2] * pos[1] + m[4], y: m[1] * pos[0] + m[3] * pos[1] + m[5] };
+}
+function geometryReport(g, ev) {
+  const comps = g.app.project._items.filter((x) => x instanceof CompItem);
+  const op = comps.find((c) => c.name.startsWith("01_")), cn = comps.find((c) => c.name.startsWith("02_"));
+  const lines = [], problems = [];
+  const a = rectOnScreen(ev, cn, "左上プレート", 1.0), b = rectOnScreen(ev, op, "左上プレート", 4.9);
+  lines.push("badge 02: " + [a.w, a.h, a.x, a.y].map((v) => v.toFixed(1)).join(", ") + "   OP@4.9: " + [b.w, b.h, b.x, b.y].map((v) => v.toFixed(1)).join(", "));
+  if (Math.abs(a.w - 210) > 2 || Math.abs(a.h - 210) > 2) problems.push("02 badge is not 210px on screen: " + a.w.toFixed(1));
+  for (const k of ["w", "h", "x", "y"]) if (Math.abs(a[k] - b[k]) > 1) problems.push("OP end and 02 badge differ in " + k + ": " + a[k].toFixed(1) + " vs " + b[k].toFixed(1));
+  const gl02 = cn.layer("ロゴ ka"), m02 = ev.layerMatrix(gl02, 1.0);
+  const glOP = op.layer("ロゴ ひらがな（かながわの）"), mOP = ev.layerMatrix(glOP, 4.9);
+  const s02 = Math.hypot(m02[0], m02[1]), sOP = Math.hypot(mOP[0], mOP[1]);
+  lines.push("glyph scale 02: " + s02.toFixed(4) + "   OP@4.9: " + sOP.toFixed(4));
+  if (Math.abs(s02 - sOP) > 0.002) problems.push("glyph scale differs between OP end and 02");
+  return { lines, problems };
 }
 
 function main() {
@@ -74,7 +102,18 @@ function main() {
   }
   console.log("assets checked:", layout.glyphs.length);
 
-  // 4) structure checks
+  // 4) geometry: the corner badge is 210px on screen, and the OP ends exactly where 02 starts
+  const geo = geometryReport(g, ev);
+  for (const line of geo.lines) console.log("  " + line);
+  problems.push(...geo.problems);
+
+  // 5) MOGRT export: 4 files named after the templates, in the chosen folder
+  const mogrts = fs.readdirSync(MOGRT_DIR).filter((f) => f.endsWith(".mogrt"));
+  console.log("mogrt files:", mogrts.join(", "));
+  if (mogrts.length !== 4) problems.push("expected 4 .mogrt files, got " + mogrts.length);
+  if (!g.log.some(([k, m]) => k === "alert" && /MOGRT を書き出しました/.test(m))) problems.push("no MOGRT success message");
+
+  // 5b) structure checks
   for (const c of comps) {
     const names = new Map();
     for (const L of c._layers) {
@@ -93,9 +132,26 @@ function main() {
     console.log("\nOK: no problems found");
   }
 
-  // 5) also run once without the fonts API (older AE) and without MOGRT export
+  // 6) also run once without the fonts API (older AE) and without MOGRT export
   try { runScript({ noFontsApi: true, confirm: false, version: "17.0" }); console.log("OK: runs on an AE without app.fonts"); }
   catch (e) { console.log("FAIL (no fonts api): " + e.message); process.exitCode = 1; }
+
+  // 7) error paths must end with a clear alert, never an uncaught exception
+  const cases = [
+    { label: "file-write preference OFF", opts: { prefFileWrite: 0 }, expect: /スクリプトによるファイルへの書き込み/, comps: 0 },
+    { label: "writes denied (pref unknown)", opts: { denyWrite: true }, expect: /止まりました[\s\S]*スクリプトによるファイルへの書き込み/ },
+    { label: "save dialog cancelled before MOGRT export", opts: { saveCancel: true }, expect: /先にプロジェクトの保存が必要/ },
+  ];
+  for (const c of cases) {
+    try {
+      const gg = runScript(c.opts);
+      const alerts = gg.log.filter(([k]) => k === "alert").map(([, m]) => m).join("\n---\n");
+      const nComps = gg.app.project._items.filter((x) => x instanceof CompItem).length;
+      const ok = c.expect.test(alerts) && (c.comps === undefined || nComps === c.comps);
+      console.log((ok ? "OK: " : "FAIL: ") + c.label + (ok ? "" : "\n" + alerts));
+      if (!ok) process.exitCode = 1;
+    } catch (e) { console.log("FAIL (uncaught) " + c.label + ": " + e.message); process.exitCode = 1; }
+  }
   return g;
 }
 

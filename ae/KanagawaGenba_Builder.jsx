@@ -283,18 +283,23 @@
         var base = null;
         var tries = [];
         try { tries.push(Folder.myDocuments.fsName + "/KanagawaGenba_Assets"); } catch (e0) {}
-        try { tries.push(Folder.temp.fsName + "/KanagawaGenba_Assets"); } catch (e1) {}
+        try { tries.push(Folder.userData.fsName + "/KanagawaGenba_Assets"); } catch (e1) {}
+        try { tries.push(Folder.temp.fsName + "/KanagawaGenba_Assets"); } catch (e2) {}
         for (var t = 0; t < tries.length && base === null; t++) {
-            var fd = new Folder(tries[t]);
-            if (!fd.exists) { fd.create(); }
-            if (fd.exists) { base = fd; }
+            try {
+                var fd = new Folder(tries[t]);
+                if (!fd.exists) { fd.create(); }
+                if (fd.exists) { base = fd; }
+            } catch (e3) {}
         }
-        if (base === null) { throw new Error("\u7D20\u6750\u30D5\u30A9\u30EB\u30C0\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"); }
+        if (base === null) { throw new Error("\u30ED\u30B4\u753B\u50CF\u306E\u4FDD\u5B58\u30D5\u30A9\u30EB\u30C0\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\n" + PREF_MSG); }
         for (var i = 0; i < ASSETS.length; i++) {
             var a = ASSETS[i];
             var f = new File(base.fsName + "/" + a.file);
             f.encoding = "BINARY";
-            if (!f.open("w")) { throw new Error("\u66F8\u304D\u8FBC\u3081\u307E\u305B\u3093\uFF1A" + f.fsName); }
+            var opened = false;
+            try { opened = f.open("w"); } catch (e4) { opened = false; }
+            if (!opened) { throw new Error("\u30ED\u30B4\u753B\u50CF\u3092\u66F8\u304D\u51FA\u305B\u307E\u305B\u3093\u3067\u3057\u305F\uFF1A" + f.fsName + "\n" + PREF_MSG); }
             f.write(a.data);
             f.close();
             var item = app.project.importFile(new ImportOptions(f));
@@ -321,6 +326,14 @@
         n.name = name;
         setXY(n, anchor, pos);
         return n;
+    }
+    // 親子付け。AE の「.parent =」は見た目を保つために子の大きさ・位置を自動補正してしまうので、
+    // 補正なしの setParentWithJump を使う（使えない古い版では補正を元に戻す）
+    function parentTo(child, par) {
+        try { child.setParentWithJump(par); return; } catch (e) {}
+        child.parent = par;
+        try { xf(child, "ADBE Scale").setValue([100, 100]); } catch (e1) {}
+        try { xf(child, "ADBE Rotate Z").setValue(0); } catch (e2) {}
     }
     function srcText(L) { return L.property("ADBE Text Properties").property("ADBE Text Document"); }
     function blur(L) { try { L.motionBlur = true; } catch (e) {} }
@@ -532,8 +545,9 @@
     }
     // 丸がポンと出て、最後にポンと消える
     function popKeys(L, tIn, D) {
+        var E = D - 1 / FPS;   // 最後に描画されるコマ
         keys(xf(L, "ADBE Scale"), [[tIn, [0, 0]], [tIn + 0.14, [118, 118]], [tIn + 0.26, [100, 100]],
-            [D - 0.2, [100, 100]], [D - 0.1, [118, 118]], [D, [0, 0]]], 50, 40);
+            [E - 0.2, [100, 100]], [E - 0.1, [118, 118]], [E, [0, 0]]], 50, 40);
     }
     // 帯の伸び（少し行き過ぎて戻る）
     function barKeys(prop, tIn, tOut, D) {
@@ -635,6 +649,7 @@
 
         var C = comp.layers.addNull(OP_DUR);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "\u8272:\u3072\u3089\u304C\u306A", COL.cyan);
         addColorCtl(C, "\u8272:\u6F22\u5B57", COL.black);
         addColorCtl(C, "\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38", COL.cyan);
@@ -730,7 +745,7 @@
         var k = 100 / CORNER_SIZE;
         var PL = comp.layers.addShape();
         PL.name = "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8";
-        PL.parent = LN;
+        parentTo(PL, LN);
         setXY(PL, [960, 540], [960, 540]);
         newGroup(PL, "G");
         addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], [960, 540], PLATE.r * k);
@@ -746,7 +761,7 @@
         var kanji = glyphs("kanji");
         var RP = comp.layers.addShape();
         RP.name = "\u7740\u5730\u306E\u6CE2\u7D0B";
-        RP.parent = LN;
+        parentTo(RP, LN);
         setXY(RP, [0, 0], [0, 0]);
         for (var ki = 0; ki < kanji.length; ki++) {
             var kg = "\u6CE2\u7D0B" + (ki + 1);
@@ -772,7 +787,7 @@
             var gcomp = buildGlyphComp(uniqueName("_\u30ED\u30B4_" + parts[i].row), parts[i].row);
             var GL = comp.layers.add(gcomp, OP_DUR);
             GL.name = parts[i].name;
-            GL.parent = LN;
+            parentTo(GL, LN);
             setXY(GL, LOGO_CENTER, [960, 540]);
             xf(GL, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
             try { GL.collapseTransformation = true; } catch (eC) {}
@@ -786,7 +801,7 @@
         // 「現場」の上を通る光の帯（漢字の形でくり抜き）
         var SH = comp.layers.addShape();
         SH.name = "\u5149\u306E\u5E2F";
-        SH.parent = LN;
+        parentTo(SH, LN);
         var shY = toLogoSpace(0, 1120)[1], shX0 = 960 - OP_LOGO_PX / 2 - 160, shX1 = 960 + OP_LOGO_PX / 2 + 160;
         setXY(SH, [0, 0], [shX0, shY]);
         newGroup(SH, "G");
@@ -798,20 +813,23 @@
         xf(SH, "ADBE Opacity").setValue(55);
         var MT = comp.layers.add(kanjiComp, OP_DUR);
         MT.name = "\u5149\u306E\u5E2F\u306E\u5F62\uFF08\u6F22\u5B57\uFF09";
-        MT.parent = LN;
+        parentTo(MT, LN);
         setXY(MT, LOGO_CENTER, [960, 540]);
         xf(MT, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
         try { MT.collapseTransformation = true; } catch (eC2) {}
         addMask(MT, "\u7DDA\u3067\u5207\u308B", parts[0].mask, MaskMode.ADD);
         MT.enabled = false;
-        try { SH.trackMatteType = TrackMatteType.ALPHA; } catch (eM) { SH.enabled = false; }
+        try {
+            if (SH.setTrackMatte) { SH.setTrackMatte(MT, TrackMatteType.ALPHA); }   // AE 2023 以降
+            else { SH.trackMatteType = TrackMatteType.ALPHA; }                       // それより前（すぐ上のレイヤーがマット）
+        } catch (eM) { SH.enabled = false; }
 
         // ひらがなが飛び出すときのキラキラ
         var hira = glyphs("hira");
         var ly = toLogoSpace(0, LOGO_SPLIT_Y)[1];
         var SP = comp.layers.addShape();
         SP.name = "\u30AD\u30E9\u30AD\u30E9";
-        SP.parent = LN;
+        parentTo(SP, LN);
         setXY(SP, [0, 0], [0, 0]);
         var sk = OP_LOGO_PX / 1100;
         var dirs = [[-110 * sk, -190 * sk, 26 * sk], [120 * sk, -165 * sk, 17 * sk]];
@@ -836,7 +854,7 @@
         // 最初の線（点がポンと出て、横に伸びて線になる）
         var LI = comp.layers.addShape();
         LI.name = "\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0\u306E\u7DDA";
-        LI.parent = LN;
+        parentTo(LI, LN);
         setXY(LI, [960, ly], [960, ly]);
         newGroup(LI, "G");
         addRect(LI, "G", "R", [10, 10], [960, ly], 5);
@@ -853,6 +871,7 @@
         var ops = ["\u8272:\u3072\u3089\u304C\u306A", "\u8272:\u6F22\u5B57", "\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38", "\u8272:\u80CC\u666F", "\u8272:\u80CC\u666F\u306E\u4E38", "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01", "\u8272:\u5149\u306E\u5E2F", "\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059"];
         for (var oi = 0; oi < ops.length; oi++) { egpFx(comp, C, ops[oi]); }
         setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u30AA\u30FC\u30D7\u30CB\u30F3\u30B0");
+        protect(comp, 0, 4.45, "OP\uFF08\u4F38\u3070\u3057\u3066\u3082\u52D5\u304D\u306F\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
     }
 
@@ -865,6 +884,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "\u8272:\u3072\u3089\u304C\u306A", COL.cyan);
         addColorCtl(C, "\u8272:\u6F22\u5B57", COL.black);
         addColorCtl(C, "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", COL.white);
@@ -882,7 +902,7 @@
         barKeys(fxp(C, "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)"), 0.10, 0.42, D);
 
         var showT = '*thisComp.layer("CTRL").effect("\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A")(1)';
-        var logoOp = CR + 'var o=(C.effect("\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059")(1)==1)?linear(time,thisComp.duration-0.3,thisComp.duration,100,0):100;o';
+        var logoOp = CR + 'var o=(C.effect("\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059")(1)==1)?linear(time,thisComp.duration-thisComp.frameDuration-0.3,thisComp.duration-thisComp.frameDuration,100,0):100;o';
 
         // ---- 左上ロゴ（OP の最後と同じ位置・大きさ）----
         var s = OP_LOGO_SCALE * CORNER_SIZE / 100;   // 素材に対する縮小率（%）
@@ -895,7 +915,7 @@
         var k = 100 / s;
         var PL = comp.layers.addShape();
         PL.name = "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8";
-        PL.parent = LN;
+        parentTo(PL, LN);
         setXY(PL, [0, 0], [0, 0]);
         newGroup(PL, "G");
         addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], LOGO_CENTER, PLATE.r * k);
@@ -910,7 +930,7 @@
             var a = list[i];
             var L = comp.layers.add(FOOTAGE[a.name], D);
             L.name = "\u30ED\u30B4 " + a.name;
-            L.parent = LN;
+            parentTo(L, LN);
             setXY(L, [a.w / 2, a.h / 2], [a.x + a.w / 2, a.y + a.h / 2]);
             addFillFx(L, CR + 'C.effect(' + q(a.row === "hira" ? "\u8272:\u3072\u3089\u304C\u306A" : "\u8272:\u6F22\u5B57") + ')(1)');
             setExpr(xf(L, "ADBE Opacity"), logoOp, "\u30ED\u30B4\u6587\u5B57 \u4E0D\u900F\u660E\u5EA6");
@@ -952,6 +972,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "\u8272:\u5E2F", COL.black);
         addColorCtl(C, "\u8272:\u6587\u5B57", COL.white);
         addColorCtl(C, "\u8272:\u4E38", COL.cyan);
@@ -993,6 +1014,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "\u8272:\u540D\u524D\u306E\u5E2F", COL.black);
         addColorCtl(C, "\u8272:\u540D\u524D\u306E\u6587\u5B57", COL.white);
         addColorCtl(C, "\u8272:\u80A9\u66F8\u304D\u30BF\u30B0", COL.cyan);
@@ -1053,15 +1075,31 @@
     function exportMogrts(list) {
         var folder = Folder.selectDialog("MOGRT\uFF08Premiere \u7528\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u306E\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3093\u3067\u304F\u3060\u3055\u3044");
         if (folder === null) { return "MOGRT \u306E\u66F8\u304D\u51FA\u3057\u306F\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F\u3002"; }
-        var okNames = [], ngNames = [];
+        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する
+        try {
+            if (app.project.file === null) {
+                if (!app.project.saveWithDialog()) {
+                    return "MOGRT \u306E\u66F8\u304D\u51FA\u3057\u306B\u306F\u3001\u5148\u306B\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u4FDD\u5B58\u304C\u5FC5\u8981\u3067\u3059\u3002\n\uFF08\u4FDD\u5B58\u304C\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u305F\u306E\u3067\u66F8\u304D\u51FA\u3057\u307E\u305B\u3093\u3067\u3057\u305F\uFF09";
+                }
+            } else {
+                app.project.save();
+            }
+        } catch (eSave) {}
+        var dir = folder.fsName, okNames = [], ngNames = [];
         for (var i = 0; i < list.length; i++) {
-            var path = folder.fsName + "/" + list[i].file + ".mogrt";
-            var ok = false;
-            try { ok = list[i].comp.exportAsMotionGraphicsTemplate(true, path); } catch (e) { ok = false; }
-            if (ok) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(list[i].comp.name); }
+            var c = list[i].comp;
+            try { var again = app.project.itemByID(list[i].id); if (again) { c = again; } } catch (eId) {}
+            var cname = list[i].name;
+            // 書き出されるファイル名＝テンプレート名（Premiere での表示名にもなる）
+            try { c.motionGraphicsTemplateName = list[i].file; } catch (eN) {}
+            var expect = new File(dir + "/" + list[i].file + ".mogrt");
+            var ret = false;
+            try { ret = c.exportAsMotionGraphicsTemplate(true, dir); } catch (e) { ret = false; }   // 2つ目の引数は「フォルダ」
+            for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
+            if (ret === true || expect.exists) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(cname); }
         }
         var msg = "";
-        if (okNames.length) { msg += "MOGRT \u3092\u66F8\u304D\u51FA\u3057\u307E\u3057\u305F\uFF1A\n  " + okNames.join("\n  ") + "\n\u4FDD\u5B58\u5148\uFF1A" + folder.fsName + "\n"; }
+        if (okNames.length) { msg += "MOGRT \u3092\u66F8\u304D\u51FA\u3057\u307E\u3057\u305F\uFF1A\n  " + okNames.join("\n  ") + "\n\u4FDD\u5B58\u5148\uFF1A" + dir + "\n"; }
         if (ngNames.length) {
             msg += "\n\u81EA\u52D5\u3067\u66F8\u304D\u51FA\u305B\u306A\u304B\u3063\u305F\u30B3\u30F3\u30DD\uFF1A\n  " + ngNames.join("\n  ") +
                 "\n\u2192 \u30B3\u30F3\u30DD\u3092\u958B\u304D\u3001\u30A8\u30C3\u30BB\u30F3\u30B7\u30E3\u30EB\u30B0\u30E9\u30D5\u30A3\u30C3\u30AF\u30B9\u30D1\u30CD\u30EB\u306E\u300C\u30E2\u30FC\u30B7\u30E7\u30F3\u30B0\u30E9\u30D5\u30A3\u30C3\u30AF\u30B9\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u66F8\u304D\u51FA\u3057\u300D\u304B\u3089\u66F8\u304D\u51FA\u3057\u3066\u304F\u3060\u3055\u3044\u3002\n";
@@ -1072,55 +1110,99 @@
     // =================================================================
     //  メイン
     // =================================================================
-    function main() {
-        if (parseFloat(app.version) < 15.0) {
-            alert("After Effects CC 2018\uFF0815.0\uFF09\u4EE5\u964D\u3067\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
-            return;
+    var PREF_MSG = "After Effects \u306E\uFF3B\u74B0\u5883\u8A2D\u5B9A\uFF3D\u2192\uFF3B\u30B9\u30AF\u30EA\u30D7\u30C8\u3068\u30A8\u30AF\u30B9\u30D7\u30EC\u30C3\u30B7\u30E7\u30F3\uFF3D\uFF08\u53E4\u3044\u7248\u306F\uFF3B\u4E00\u822C\u8A2D\u5B9A\uFF3D\uFF09\u3067\n" +
+        "\u300C\u30B9\u30AF\u30EA\u30D7\u30C8\u306B\u3088\u308B\u30D5\u30A1\u30A4\u30EB\u3078\u306E\u66F8\u304D\u8FBC\u307F\u3068\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3078\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u8A31\u53EF\u300D\u306B\u30C1\u30A7\u30C3\u30AF\u3092\u5165\u308C\u3066\u304B\u3089\u3001\u3082\u3046\u4E00\u5EA6\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002";
+
+    // 「スクリプトによるファイルへの書き込み…」の設定がオフと分かったときだけ false
+    function scriptsCanWriteFiles() {
+        var key = "Pref_SCRIPTING_FILE_NETWORK_SECURITY";
+        var sections = ["Main Pref Section v2", "Main Pref Section"];
+        var types = [];
+        try { types = [PREFType.PREF_Type_MACHINE_INDEPENDENT, PREFType.PREF_Type_MACHINE_SPECIFIC]; } catch (e0) { types = [undefined]; }
+        for (var i = 0; i < sections.length; i++) {
+            for (var j = 0; j < types.length; j++) {
+                try {
+                    var has = (types[j] === undefined) ? app.preferences.havePref(sections[i], key) : app.preferences.havePref(sections[i], key, types[j]);
+                    if (!has) { continue; }
+                    var v = (types[j] === undefined) ? app.preferences.getPrefAsLong(sections[i], key) : app.preferences.getPrefAsLong(sections[i], key, types[j]);
+                    return v !== 0;
+                } catch (e1) {}
+            }
         }
-        if (!app.project) { app.newProject(); }
-        var fresh = (app.project.numItems === 0);
+        return true;   // 確認できないときは試してみる（失敗したら下で案内を出す）
+    }
 
-        app.beginUndoGroup("\u304B\u306A\u304C\u308F\u306E\u73FE\u5834\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F5C\u6210");
-        try { app.beginSuppressDialogs(); } catch (eS) {}
+    function buildAll(fresh) {
         if (fresh) { try { app.project.expressionEngine = "javascript-1.0"; } catch (eE) {} }
-
         FOLDER_MAIN = app.project.items.addFolder(uniqueName("\u304B\u306A\u304C\u308F\u306E\u73FE\u5834\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8"));
         FOLDER_PARTS = app.project.items.addFolder("_\u30D1\u30FC\u30C4\uFF08\u89E6\u3089\u306A\u304F\u3066OK\uFF09");
         FOLDER_PARTS.parentFolder = FOLDER_MAIN;
 
         var assetDir = writeAssets();
-
         var N = {
             op: uniqueName("01_OP_\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0"),
             corner: uniqueName("02_\u5DE6\u4E0A\u30ED\u30B4\uFF0B\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB"),
             bottom: uniqueName("03_\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7"),
             name: uniqueName("04_\u540D\u524D\u30C6\u30ED\u30C3\u30D7")
         };
-        var op = buildOP(N);
-        var corner = buildCorner(N);
-        var bottom = buildBottom(N);
-        var nameT = buildName(N);
+        return {
+            assetDir: assetDir,
+            op: buildOP(N),
+            corner: buildCorner(N),
+            bottom: buildBottom(N),
+            nameT: buildName(N)
+        };
+    }
 
+    function main() {
+        if (parseFloat(app.version) < 15.0) {
+            alert("After Effects CC 2018\uFF0815.0\uFF09\u4EE5\u964D\u3067\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+            return;
+        }
+        if (!app.project) { app.newProject(); }
+        if (!scriptsCanWriteFiles()) {
+            alert("\u30ED\u30B4\u753B\u50CF\u3092\u66F8\u304D\u51FA\u3059\u305F\u3081\u306B\u3001\u8A2D\u5B9A\u306E\u5909\u66F4\u304C\u5FC5\u8981\u3067\u3059\u3002\n\n" + PREF_MSG);
+            return;
+        }
+        var fresh = (app.project.numItems === 0);
+
+        var R = null, err = null;
+        app.beginUndoGroup("\u304B\u306A\u304C\u308F\u306E\u73FE\u5834\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F5C\u6210");
+        try { app.beginSuppressDialogs(); } catch (eS) {}
+        try {
+            R = buildAll(fresh);
+        } catch (e) {
+            err = e;
+        }
         try { app.endSuppressDialogs(false); } catch (eS2) {}
         app.endUndoGroup();
-        try { op.openInViewer(); } catch (eV) {}
+
+        if (err !== null) {
+            var where = "";
+            try { if (err.line) { where = "\uFF08" + err.line + " \u884C\u76EE\uFF09"; } } catch (eL) {}
+            alert("\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306E\u4F5C\u6210\u4E2D\u306B\u6B62\u307E\u308A\u307E\u3057\u305F" + where + "\uFF1A\n\n" + err.toString() +
+                "\n\n\uFF3B\u7DE8\u96C6\uFF3D\u2192\uFF3B\u53D6\u308A\u6D88\u3057\uFF3D\u3067\u9014\u4E2D\u307E\u3067\u306E\u4F5C\u6210\u3092\u5143\u306B\u623B\u305B\u307E\u3059\u3002");
+            return;
+        }
+        try { R.op.openInViewer(); } catch (eV) {}
 
         var msg = "\u300C\u304B\u306A\u304C\u308F\u306E\u73FE\u5834\u300D\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F\uFF01\n\n" +
-            "\u30FB" + op.name + "\n\u30FB" + corner.name + "\n\u30FB" + bottom.name + "\n\u30FB" + nameT.name + "\n\n" +
-            "\u30ED\u30B4\u753B\u50CF\u306E\u4FDD\u5B58\u5148\uFF1A\n" + assetDir + "\n\uFF08\u3053\u306E\u30D5\u30A9\u30EB\u30C0\u306F\u6D88\u3055\u306A\u3044\u3067\u304F\u3060\u3055\u3044\uFF09\n";
+            "\u30FB" + R.op.name + "\n\u30FB" + R.corner.name + "\n\u30FB" + R.bottom.name + "\n\u30FB" + R.nameT.name + "\n\n" +
+            "\u30ED\u30B4\u753B\u50CF\u306E\u4FDD\u5B58\u5148\uFF1A\n" + R.assetDir + "\n\uFF08\u3053\u306E\u30D5\u30A9\u30EB\u30C0\u306F\u6D88\u3055\u306A\u3044\u3067\u304F\u3060\u3055\u3044\uFF09\n";
         if (EXPR_ERRORS.length) {
             msg += "\n\u203B \u30A8\u30AF\u30B9\u30D7\u30EC\u30C3\u30B7\u30E7\u30F3\u306E\u8B66\u544A\u304C " + EXPR_ERRORS.length + " \u4EF6\u3042\u308A\u307E\u3057\u305F\uFF1A\n" + EXPR_ERRORS.slice(0, 8).join("\n") + "\n";
         }
         alert(msg);
 
-        if (confirm("\u7D9A\u3051\u3066\u3001Premiere Pro \u7528\u306E MOGRT\uFF08\u30E2\u30FC\u30B7\u30E7\u30F3\u30B0\u30E9\u30D5\u30A3\u30C3\u30AF\u30B9\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u3092\u66F8\u304D\u51FA\u3057\u307E\u3059\u304B\uFF1F\n\uFF08\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3073\u307E\u3059\uFF09")) {
-            var res = exportMogrts([
-                { comp: op, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_01_\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0" },
-                { comp: corner, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_02_\u5DE6\u4E0A\u30ED\u30B4\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB" },
-                { comp: bottom, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_03_\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7" },
-                { comp: nameT, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_04_\u540D\u524D\u30C6\u30ED\u30C3\u30D7" }
-            ]);
-            alert(res + "\n\u6700\u5F8C\u306B\u3001\u3053\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u4FDD\u5B58\uFF08\u30D5\u30A1\u30A4\u30EB \u2192 \u4FDD\u5B58\uFF09\u3057\u3066\u304A\u304F\u3068\u3001\u3042\u3068\u304B\u3089 AE \u3067\u7DE8\u96C6\u3067\u304D\u307E\u3059\u3002");
+        if (confirm("\u7D9A\u3051\u3066\u3001Premiere Pro \u7528\u306E MOGRT\uFF08\u30E2\u30FC\u30B7\u30E7\u30F3\u30B0\u30E9\u30D5\u30A3\u30C3\u30AF\u30B9\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u3092\u66F8\u304D\u51FA\u3057\u307E\u3059\u304B\uFF1F\n\uFF08\u5148\u306B\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u4FDD\u5B58\u3057\u3066\u304B\u3089\u3001\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3073\u307E\u3059\uFF09")) {
+            var list = [
+                { comp: R.op, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_01_\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0" },
+                { comp: R.corner, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_02_\u5DE6\u4E0A\u30ED\u30B4\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB" },
+                { comp: R.bottom, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_03_\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7" },
+                { comp: R.nameT, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_04_\u540D\u524D\u30C6\u30ED\u30C3\u30D7" }
+            ];
+            for (var i = 0; i < list.length; i++) { list[i].id = list[i].comp.id; list[i].name = list[i].comp.name; }
+            alert(exportMogrts(list));
         }
     }
 

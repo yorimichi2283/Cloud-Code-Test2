@@ -124,18 +124,23 @@
         var base = null;
         var tries = [];
         try { tries.push(Folder.myDocuments.fsName + "/KanagawaGenba_Assets"); } catch (e0) {}
-        try { tries.push(Folder.temp.fsName + "/KanagawaGenba_Assets"); } catch (e1) {}
+        try { tries.push(Folder.userData.fsName + "/KanagawaGenba_Assets"); } catch (e1) {}
+        try { tries.push(Folder.temp.fsName + "/KanagawaGenba_Assets"); } catch (e2) {}
         for (var t = 0; t < tries.length && base === null; t++) {
-            var fd = new Folder(tries[t]);
-            if (!fd.exists) { fd.create(); }
-            if (fd.exists) { base = fd; }
+            try {
+                var fd = new Folder(tries[t]);
+                if (!fd.exists) { fd.create(); }
+                if (fd.exists) { base = fd; }
+            } catch (e3) {}
         }
-        if (base === null) { throw new Error("素材フォルダを作成できませんでした。"); }
+        if (base === null) { throw new Error("ロゴ画像の保存フォルダを作成できませんでした。\n" + PREF_MSG); }
         for (var i = 0; i < ASSETS.length; i++) {
             var a = ASSETS[i];
             var f = new File(base.fsName + "/" + a.file);
             f.encoding = "BINARY";
-            if (!f.open("w")) { throw new Error("書き込めません：" + f.fsName); }
+            var opened = false;
+            try { opened = f.open("w"); } catch (e4) { opened = false; }
+            if (!opened) { throw new Error("ロゴ画像を書き出せませんでした：" + f.fsName + "\n" + PREF_MSG); }
             f.write(a.data);
             f.close();
             var item = app.project.importFile(new ImportOptions(f));
@@ -162,6 +167,14 @@
         n.name = name;
         setXY(n, anchor, pos);
         return n;
+    }
+    // 親子付け。AE の「.parent =」は見た目を保つために子の大きさ・位置を自動補正してしまうので、
+    // 補正なしの setParentWithJump を使う（使えない古い版では補正を元に戻す）
+    function parentTo(child, par) {
+        try { child.setParentWithJump(par); return; } catch (e) {}
+        child.parent = par;
+        try { xf(child, "ADBE Scale").setValue([100, 100]); } catch (e1) {}
+        try { xf(child, "ADBE Rotate Z").setValue(0); } catch (e2) {}
     }
     function srcText(L) { return L.property("ADBE Text Properties").property("ADBE Text Document"); }
     function blur(L) { try { L.motionBlur = true; } catch (e) {} }
@@ -373,8 +386,9 @@
     }
     // 丸がポンと出て、最後にポンと消える
     function popKeys(L, tIn, D) {
+        var E = D - 1 / FPS;   // 最後に描画されるコマ
         keys(xf(L, "ADBE Scale"), [[tIn, [0, 0]], [tIn + 0.14, [118, 118]], [tIn + 0.26, [100, 100]],
-            [D - 0.2, [100, 100]], [D - 0.1, [118, 118]], [D, [0, 0]]], 50, 40);
+            [E - 0.2, [100, 100]], [E - 0.1, [118, 118]], [E, [0, 0]]], 50, 40);
     }
     // 帯の伸び（少し行き過ぎて戻る）
     function barKeys(prop, tIn, tOut, D) {
@@ -476,6 +490,7 @@
 
         var C = comp.layers.addNull(OP_DUR);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "色:ひらがな", COL.cyan);
         addColorCtl(C, "色:漢字", COL.black);
         addColorCtl(C, "色:ライン・丸", COL.cyan);
@@ -571,7 +586,7 @@
         var k = 100 / CORNER_SIZE;
         var PL = comp.layers.addShape();
         PL.name = "左上プレート";
-        PL.parent = LN;
+        parentTo(PL, LN);
         setXY(PL, [960, 540], [960, 540]);
         newGroup(PL, "G");
         addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], [960, 540], PLATE.r * k);
@@ -587,7 +602,7 @@
         var kanji = glyphs("kanji");
         var RP = comp.layers.addShape();
         RP.name = "着地の波紋";
-        RP.parent = LN;
+        parentTo(RP, LN);
         setXY(RP, [0, 0], [0, 0]);
         for (var ki = 0; ki < kanji.length; ki++) {
             var kg = "波紋" + (ki + 1);
@@ -613,7 +628,7 @@
             var gcomp = buildGlyphComp(uniqueName("_ロゴ_" + parts[i].row), parts[i].row);
             var GL = comp.layers.add(gcomp, OP_DUR);
             GL.name = parts[i].name;
-            GL.parent = LN;
+            parentTo(GL, LN);
             setXY(GL, LOGO_CENTER, [960, 540]);
             xf(GL, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
             try { GL.collapseTransformation = true; } catch (eC) {}
@@ -627,7 +642,7 @@
         // 「現場」の上を通る光の帯（漢字の形でくり抜き）
         var SH = comp.layers.addShape();
         SH.name = "光の帯";
-        SH.parent = LN;
+        parentTo(SH, LN);
         var shY = toLogoSpace(0, 1120)[1], shX0 = 960 - OP_LOGO_PX / 2 - 160, shX1 = 960 + OP_LOGO_PX / 2 + 160;
         setXY(SH, [0, 0], [shX0, shY]);
         newGroup(SH, "G");
@@ -639,20 +654,23 @@
         xf(SH, "ADBE Opacity").setValue(55);
         var MT = comp.layers.add(kanjiComp, OP_DUR);
         MT.name = "光の帯の形（漢字）";
-        MT.parent = LN;
+        parentTo(MT, LN);
         setXY(MT, LOGO_CENTER, [960, 540]);
         xf(MT, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
         try { MT.collapseTransformation = true; } catch (eC2) {}
         addMask(MT, "線で切る", parts[0].mask, MaskMode.ADD);
         MT.enabled = false;
-        try { SH.trackMatteType = TrackMatteType.ALPHA; } catch (eM) { SH.enabled = false; }
+        try {
+            if (SH.setTrackMatte) { SH.setTrackMatte(MT, TrackMatteType.ALPHA); }   // AE 2023 以降
+            else { SH.trackMatteType = TrackMatteType.ALPHA; }                       // それより前（すぐ上のレイヤーがマット）
+        } catch (eM) { SH.enabled = false; }
 
         // ひらがなが飛び出すときのキラキラ
         var hira = glyphs("hira");
         var ly = toLogoSpace(0, LOGO_SPLIT_Y)[1];
         var SP = comp.layers.addShape();
         SP.name = "キラキラ";
-        SP.parent = LN;
+        parentTo(SP, LN);
         setXY(SP, [0, 0], [0, 0]);
         var sk = OP_LOGO_PX / 1100;
         var dirs = [[-110 * sk, -190 * sk, 26 * sk], [120 * sk, -165 * sk, 17 * sk]];
@@ -677,7 +695,7 @@
         // 最初の線（点がポンと出て、横に伸びて線になる）
         var LI = comp.layers.addShape();
         LI.name = "オープニングの線";
-        LI.parent = LN;
+        parentTo(LI, LN);
         setXY(LI, [960, ly], [960, ly]);
         newGroup(LI, "G");
         addRect(LI, "G", "R", [10, 10], [960, ly], 5);
@@ -694,6 +712,7 @@
         var ops = ["色:ひらがな", "色:漢字", "色:ライン・丸", "色:背景", "色:背景の丸", "色:左上プレート", "色:プレートの縁", "色:光の帯", "最後に左上ロゴを残す"];
         for (var oi = 0; oi < ops.length; oi++) { egpFx(comp, C, ops[oi]); }
         setTemplateName(comp, "かながわの現場 オープニング");
+        protect(comp, 0, 4.45, "OP（伸ばしても動きは変わらない）");
         return comp;
     }
 
@@ -706,6 +725,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "色:ひらがな", COL.cyan);
         addColorCtl(C, "色:漢字", COL.black);
         addColorCtl(C, "色:左上プレート", COL.white);
@@ -723,7 +743,7 @@
         barKeys(fxp(C, "タイトル帯(%)"), 0.10, 0.42, D);
 
         var showT = '*thisComp.layer("CTRL").effect("上部タイトルを表示")(1)';
-        var logoOp = CR + 'var o=(C.effect("最後にロゴも消す")(1)==1)?linear(time,thisComp.duration-0.3,thisComp.duration,100,0):100;o';
+        var logoOp = CR + 'var o=(C.effect("最後にロゴも消す")(1)==1)?linear(time,thisComp.duration-thisComp.frameDuration-0.3,thisComp.duration-thisComp.frameDuration,100,0):100;o';
 
         // ---- 左上ロゴ（OP の最後と同じ位置・大きさ）----
         var s = OP_LOGO_SCALE * CORNER_SIZE / 100;   // 素材に対する縮小率（%）
@@ -736,7 +756,7 @@
         var k = 100 / s;
         var PL = comp.layers.addShape();
         PL.name = "左上プレート";
-        PL.parent = LN;
+        parentTo(PL, LN);
         setXY(PL, [0, 0], [0, 0]);
         newGroup(PL, "G");
         addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], LOGO_CENTER, PLATE.r * k);
@@ -751,7 +771,7 @@
             var a = list[i];
             var L = comp.layers.add(FOOTAGE[a.name], D);
             L.name = "ロゴ " + a.name;
-            L.parent = LN;
+            parentTo(L, LN);
             setXY(L, [a.w / 2, a.h / 2], [a.x + a.w / 2, a.y + a.h / 2]);
             addFillFx(L, CR + 'C.effect(' + q(a.row === "hira" ? "色:ひらがな" : "色:漢字") + ')(1)');
             setExpr(xf(L, "ADBE Opacity"), logoOp, "ロゴ文字 不透明度");
@@ -793,6 +813,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "色:帯", COL.black);
         addColorCtl(C, "色:文字", COL.white);
         addColorCtl(C, "色:丸", COL.cyan);
@@ -834,6 +855,7 @@
 
         var C = comp.layers.addNull(D);
         C.name = "CTRL";
+        setXY(C, [0, 0], [0, 0]);
         addColorCtl(C, "色:名前の帯", COL.black);
         addColorCtl(C, "色:名前の文字", COL.white);
         addColorCtl(C, "色:肩書きタグ", COL.cyan);
@@ -894,15 +916,31 @@
     function exportMogrts(list) {
         var folder = Folder.selectDialog("MOGRT（Premiere 用テンプレート）の保存先フォルダを選んでください");
         if (folder === null) { return "MOGRT の書き出しはキャンセルされました。"; }
-        var okNames = [], ngNames = [];
+        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する
+        try {
+            if (app.project.file === null) {
+                if (!app.project.saveWithDialog()) {
+                    return "MOGRT の書き出しには、先にプロジェクトの保存が必要です。\n（保存がキャンセルされたので書き出しませんでした）";
+                }
+            } else {
+                app.project.save();
+            }
+        } catch (eSave) {}
+        var dir = folder.fsName, okNames = [], ngNames = [];
         for (var i = 0; i < list.length; i++) {
-            var path = folder.fsName + "/" + list[i].file + ".mogrt";
-            var ok = false;
-            try { ok = list[i].comp.exportAsMotionGraphicsTemplate(true, path); } catch (e) { ok = false; }
-            if (ok) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(list[i].comp.name); }
+            var c = list[i].comp;
+            try { var again = app.project.itemByID(list[i].id); if (again) { c = again; } } catch (eId) {}
+            var cname = list[i].name;
+            // 書き出されるファイル名＝テンプレート名（Premiere での表示名にもなる）
+            try { c.motionGraphicsTemplateName = list[i].file; } catch (eN) {}
+            var expect = new File(dir + "/" + list[i].file + ".mogrt");
+            var ret = false;
+            try { ret = c.exportAsMotionGraphicsTemplate(true, dir); } catch (e) { ret = false; }   // 2つ目の引数は「フォルダ」
+            for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
+            if (ret === true || expect.exists) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(cname); }
         }
         var msg = "";
-        if (okNames.length) { msg += "MOGRT を書き出しました：\n  " + okNames.join("\n  ") + "\n保存先：" + folder.fsName + "\n"; }
+        if (okNames.length) { msg += "MOGRT を書き出しました：\n  " + okNames.join("\n  ") + "\n保存先：" + dir + "\n"; }
         if (ngNames.length) {
             msg += "\n自動で書き出せなかったコンポ：\n  " + ngNames.join("\n  ") +
                 "\n→ コンポを開き、エッセンシャルグラフィックスパネルの「モーショングラフィックステンプレートを書き出し」から書き出してください。\n";
@@ -913,55 +951,99 @@
     // =================================================================
     //  メイン
     // =================================================================
-    function main() {
-        if (parseFloat(app.version) < 15.0) {
-            alert("After Effects CC 2018（15.0）以降で実行してください。");
-            return;
+    var PREF_MSG = "After Effects の［環境設定］→［スクリプトとエクスプレッション］（古い版は［一般設定］）で\n" +
+        "「スクリプトによるファイルへの書き込みとネットワークへのアクセスを許可」にチェックを入れてから、もう一度実行してください。";
+
+    // 「スクリプトによるファイルへの書き込み…」の設定がオフと分かったときだけ false
+    function scriptsCanWriteFiles() {
+        var key = "Pref_SCRIPTING_FILE_NETWORK_SECURITY";
+        var sections = ["Main Pref Section v2", "Main Pref Section"];
+        var types = [];
+        try { types = [PREFType.PREF_Type_MACHINE_INDEPENDENT, PREFType.PREF_Type_MACHINE_SPECIFIC]; } catch (e0) { types = [undefined]; }
+        for (var i = 0; i < sections.length; i++) {
+            for (var j = 0; j < types.length; j++) {
+                try {
+                    var has = (types[j] === undefined) ? app.preferences.havePref(sections[i], key) : app.preferences.havePref(sections[i], key, types[j]);
+                    if (!has) { continue; }
+                    var v = (types[j] === undefined) ? app.preferences.getPrefAsLong(sections[i], key) : app.preferences.getPrefAsLong(sections[i], key, types[j]);
+                    return v !== 0;
+                } catch (e1) {}
+            }
         }
-        if (!app.project) { app.newProject(); }
-        var fresh = (app.project.numItems === 0);
+        return true;   // 確認できないときは試してみる（失敗したら下で案内を出す）
+    }
 
-        app.beginUndoGroup("かながわの現場テンプレートを作成");
-        try { app.beginSuppressDialogs(); } catch (eS) {}
+    function buildAll(fresh) {
         if (fresh) { try { app.project.expressionEngine = "javascript-1.0"; } catch (eE) {} }
-
         FOLDER_MAIN = app.project.items.addFolder(uniqueName("かながわの現場テンプレート"));
         FOLDER_PARTS = app.project.items.addFolder("_パーツ（触らなくてOK）");
         FOLDER_PARTS.parentFolder = FOLDER_MAIN;
 
         var assetDir = writeAssets();
-
         var N = {
             op: uniqueName("01_OP_オープニング"),
             corner: uniqueName("02_左上ロゴ＋上部タイトル"),
             bottom: uniqueName("03_下部テロップ"),
             name: uniqueName("04_名前テロップ")
         };
-        var op = buildOP(N);
-        var corner = buildCorner(N);
-        var bottom = buildBottom(N);
-        var nameT = buildName(N);
+        return {
+            assetDir: assetDir,
+            op: buildOP(N),
+            corner: buildCorner(N),
+            bottom: buildBottom(N),
+            nameT: buildName(N)
+        };
+    }
 
+    function main() {
+        if (parseFloat(app.version) < 15.0) {
+            alert("After Effects CC 2018（15.0）以降で実行してください。");
+            return;
+        }
+        if (!app.project) { app.newProject(); }
+        if (!scriptsCanWriteFiles()) {
+            alert("ロゴ画像を書き出すために、設定の変更が必要です。\n\n" + PREF_MSG);
+            return;
+        }
+        var fresh = (app.project.numItems === 0);
+
+        var R = null, err = null;
+        app.beginUndoGroup("かながわの現場テンプレートを作成");
+        try { app.beginSuppressDialogs(); } catch (eS) {}
+        try {
+            R = buildAll(fresh);
+        } catch (e) {
+            err = e;
+        }
         try { app.endSuppressDialogs(false); } catch (eS2) {}
         app.endUndoGroup();
-        try { op.openInViewer(); } catch (eV) {}
+
+        if (err !== null) {
+            var where = "";
+            try { if (err.line) { where = "（" + err.line + " 行目）"; } } catch (eL) {}
+            alert("テンプレートの作成中に止まりました" + where + "：\n\n" + err.toString() +
+                "\n\n［編集］→［取り消し］で途中までの作成を元に戻せます。");
+            return;
+        }
+        try { R.op.openInViewer(); } catch (eV) {}
 
         var msg = "「かながわの現場」テンプレートを作成しました！\n\n" +
-            "・" + op.name + "\n・" + corner.name + "\n・" + bottom.name + "\n・" + nameT.name + "\n\n" +
-            "ロゴ画像の保存先：\n" + assetDir + "\n（このフォルダは消さないでください）\n";
+            "・" + R.op.name + "\n・" + R.corner.name + "\n・" + R.bottom.name + "\n・" + R.nameT.name + "\n\n" +
+            "ロゴ画像の保存先：\n" + R.assetDir + "\n（このフォルダは消さないでください）\n";
         if (EXPR_ERRORS.length) {
             msg += "\n※ エクスプレッションの警告が " + EXPR_ERRORS.length + " 件ありました：\n" + EXPR_ERRORS.slice(0, 8).join("\n") + "\n";
         }
         alert(msg);
 
-        if (confirm("続けて、Premiere Pro 用の MOGRT（モーショングラフィックステンプレート）を書き出しますか？\n（保存先フォルダを選びます）")) {
-            var res = exportMogrts([
-                { comp: op, file: "かながわの現場_01_オープニング" },
-                { comp: corner, file: "かながわの現場_02_左上ロゴ上部タイトル" },
-                { comp: bottom, file: "かながわの現場_03_下部テロップ" },
-                { comp: nameT, file: "かながわの現場_04_名前テロップ" }
-            ]);
-            alert(res + "\n最後に、このプロジェクトを保存（ファイル → 保存）しておくと、あとから AE で編集できます。");
+        if (confirm("続けて、Premiere Pro 用の MOGRT（モーショングラフィックステンプレート）を書き出しますか？\n（先にプロジェクトを保存してから、保存先フォルダを選びます）")) {
+            var list = [
+                { comp: R.op, file: "かながわの現場_01_オープニング" },
+                { comp: R.corner, file: "かながわの現場_02_左上ロゴ上部タイトル" },
+                { comp: R.bottom, file: "かながわの現場_03_下部テロップ" },
+                { comp: R.nameT, file: "かながわの現場_04_名前テロップ" }
+            ];
+            for (var i = 0; i < list.length; i++) { list[i].id = list[i].comp.id; list[i].name = list[i].comp.name; }
+            alert(exportMogrts(list));
         }
     }
 

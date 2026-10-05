@@ -292,11 +292,37 @@ class Layer extends Handle {
   get name() { return this._root.name; }
   set name(v) { if (typeof v !== "string" || !v) fail("bad layer name"); this._root.name = v; }
   get parent() { return this._parent; }
-  set parent(p) {
+  _checkParent(p) {
     if (p !== null && !(p instanceof Layer)) fail("parent must be a Layer");
     if (p && p.containingComp !== this.containingComp) fail("parent in another comp");
     if (p === this) fail("parent to self");
+  }
+  // Like AE: assigning .parent keeps the layer where it is on screen by rewriting
+  // its position / scale / rotation (anchor unchanged). Uses static (pre-expression) values.
+  set parent(p) {
+    this._checkParent(p);
+    const before = staticMatrix(this);
     this._parent = p;
+    const pm = p ? staticMatrix(p) : [1, 0, 0, 1, 0, 0];
+    const det = pm[0] * pm[3] - pm[1] * pm[2];
+    if (Math.abs(det) < 1e-12) fail("parent has zero scale");
+    const inv = [pm[3] / det, -pm[1] / det, -pm[2] / det, pm[0] / det, 0, 0];
+    inv[4] = -(inv[0] * pm[4] + inv[2] * pm[5]); inv[5] = -(inv[1] * pm[4] + inv[3] * pm[5]);
+    const m = mulM(inv, before);
+    const tr = this._root.children.find((c) => c.matchName === "ADBE Transform Group");
+    const get = (mn) => tr.children.find((c) => c.matchName === mn);
+    const a = staticVal(get("ADBE Anchor Point"));
+    const sx = Math.hypot(m[0], m[1]), rot = Math.atan2(m[1], m[0]), sy = (m[0] * m[3] - m[1] * m[2]) / sx;
+    const pos = [m[4] + m[0] * a[0] + m[2] * a[1], m[5] + m[1] * a[0] + m[3] * a[1], 0];
+    for (const [mn, v] of [["ADBE Position", pos], ["ADBE Scale", [sx * 100, sy * 100, 100]], ["ADBE Rotate Z", rot * 180 / Math.PI]]) {
+      const n = get(mn); if (n.keys.length) fail("mock: parenting a layer with keyframed " + mn + " is not modelled"); n.value = v;
+    }
+  }
+  setParentWithJump(p) { this._checkParent(p); this._parent = p; }
+  setTrackMatte(L, type) {
+    if (!(L instanceof Layer) || L.containingComp !== this.containingComp || L === this) fail("setTrackMatte: bad matte layer");
+    if (!Object.values(TrackMatteType).includes(type)) fail("setTrackMatte: bad type");
+    this._matteLayer = L; this._trackMatteType = type;
   }
   get index() { return this.containingComp._layers.indexOf(this) + 1; }
   get trackMatteType() { return this._trackMatteType; }
@@ -310,6 +336,20 @@ class Layer extends Handle {
   moveToEnd() { const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
   moveBefore(L) { if (!(L instanceof Layer) || L.containingComp !== this.containingComp || L === this) fail("moveBefore arg"); const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L), 0, this); }
   moveAfter(L) { if (!(L instanceof Layer) || L.containingComp !== this.containingComp || L === this) fail("moveAfter arg"); const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L) + 1, 0, this); }
+}
+
+function staticVal(n) { return n.keys && n.keys.length ? n.keys[0].v : n.value; }
+function mulM(m, n) {
+  return [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+}
+function staticMatrix(L) {
+  const tr = L._root.children.find((c) => c.matchName === "ADBE Transform Group");
+  const g = (mn) => staticVal(tr.children.find((c) => c.matchName === mn));
+  const a = g("ADBE Anchor Point"), p = g("ADBE Position"), s = g("ADBE Scale"), r = g("ADBE Rotate Z") * Math.PI / 180;
+  const sx = s[0] / 100, sy = s[1] / 100, cs = Math.cos(r), sn = Math.sin(r);
+  let m = [cs * sx, sn * sx, -sn * sy, cs * sy, 0, 0];
+  m[4] = p[0] - (m[0] * a[0] + m[2] * a[1]); m[5] = p[1] - (m[1] * a[0] + m[3] * a[1]);
+  return L._parent ? mulM(staticMatrix(L._parent), m) : m;
 }
 
 class LayerCollection {
@@ -349,7 +389,7 @@ class MFile {
   get exists() { return FS.existsSync(this.fsName); }
   get name() { return PATH.basename(this.fsName); }
   get parent() { return new MFolder(PATH.dirname(this.fsName)); }
-  open(mode) { if (!FS.existsSync(PATH.dirname(this.fsName))) return false; this._mode = mode; this._chunks = []; return true; }
+  open(mode) { if (MFile.deny && mode === "w") throw new AEError("Unable to execute script. Permission denied (scripts may not write files)"); if (!FS.existsSync(PATH.dirname(this.fsName))) return false; this._mode = mode; this._chunks = []; return true; }
   write(s) {
     if (this._mode !== "w") fail("File.write without open('w')");
     if (this.encoding !== "BINARY") fail("binary data must be written with encoding BINARY");
@@ -361,12 +401,14 @@ class MFile {
 class MFolder {
   constructor(p) { this.fsName = String(p); }
   get exists() { return FS.existsSync(this.fsName) && FS.statSync(this.fsName).isDirectory(); }
-  create() { FS.mkdirSync(this.fsName, { recursive: true }); return true; }
+  create() { if (MFile.deny) throw new AEError("Unable to execute script. Permission denied (scripts may not write files)"); FS.mkdirSync(this.fsName, { recursive: true }); return true; }
 }
 class ImportOptions { constructor(f) { if (!(f instanceof MFile)) fail("ImportOptions needs a File"); this.file = f; } }
+let ITEM_ID = 0;
 class CompItem extends Item {
   constructor(name, w, h, par, dur, fps) {
     super(name);
+    this.id = ++ITEM_ID;
     if (typeof name !== "string" || !(w >= 4) || !(h >= 4) || !(par > 0) || !(dur > 0) || !(fps > 0)) fail("addComp args");
     this.width = w; this.height = h; this.pixelAspect = par; this.duration = dur; this.frameRate = fps;
     this._layers = []; this.layers = new LayerCollection(this); this._egp = []; this.bgColor = [0, 0, 0];
@@ -376,13 +418,26 @@ class CompItem extends Item {
   get numLayers() { return this._layers.length; }
   layer(k) { if (typeof k === "number") return this._layers[k - 1] || null; return this._layers.find((l) => l.name === k) || null; }
   openInViewer() {}
-  exportAsMotionGraphicsTemplate(over, path) { if (!this._egp.length) return false; this._exported = path; return true; }
+  // Real AE: the 2nd argument is a FOLDER; the file is named after motionGraphicsTemplateName.
+  // An unsaved/modified project makes AE prompt to save; modelled as a failure.
+  exportAsMotionGraphicsTemplate(over, folderPath) {
+    if (!this._egp.length) return false;
+    if (!this._project || !this._project._saved) { this._project && this._project._log.push(["prompt", "save project before MOGRT export"]); return false; }
+    if (typeof folderPath !== "string" || /\.mogrt$/i.test(folderPath)) return false;
+    if (!FS.existsSync(folderPath) || !FS.statSync(folderPath).isDirectory()) return false;
+    const f = PATH.join(folderPath, (this.motionGraphicsTemplateName || this.name) + ".mogrt");
+    FS.writeFileSync(f, "mock mogrt"); this._exported = f; return true;
+  }
 }
 
 function makeApp(opts) {
   const items = [];
   const project = {
     expressionEngine: "extendscript",
+    file: null, _saved: false, _log: opts.log,
+    save() { if (!this.file) fail("project.save() on an untitled project"); this._saved = true; return true; },
+    saveWithDialog() { if (opts.saveCancel) return false; this.file = new MFile(PATH.join(MOCK_ROOT, "project.aep")); this._saved = true; return true; },
+    itemByID(id) { return items.find((x) => x.id === id) || null; },
     get numItems() { return items.length; },
     item(i) { if (i < 1 || i > items.length) fail("item index"); return items[i - 1]; },
     importFile(io) {
@@ -391,7 +446,7 @@ function makeApp(opts) {
       const f = new FootageItem(io.file.fsName); items.push(f); return f;
     },
     items: {
-      addComp(name, w, h, par, dur, fps) { const c = new CompItem(name, w, h, par, dur, fps); items.push(c); return c; },
+      addComp(name, w, h, par, dur, fps) { const c = new CompItem(name, w, h, par, dur, fps); c._project = project; project._saved = false; items.push(c); return c; },
       addFolder(name) { const f = new FolderItem(name); items.push(f); return f; },
     },
     _items: items,
@@ -402,6 +457,10 @@ function makeApp(opts) {
     project,
     fonts: opts.noFontsApi ? undefined : { getFontsByPostScriptName(n) { return installed.has(n) ? [{ postScriptName: n }] : []; } },
     newProject() { return project; },
+    preferences: {
+      havePref(section, key, type) { return opts.prefFileWrite !== undefined && key === "Pref_SCRIPTING_FILE_NETWORK_SECURITY" && section === "Main Pref Section v2"; },
+      getPrefAsLong(section, key, type) { if (!this.havePref(section, key, type)) fail("no such pref"); return opts.prefFileWrite; },
+    },
     beginUndoGroup() {}, endUndoGroup() {}, beginSuppressDialogs() {}, endSuppressDialogs() {},
   };
 }
@@ -413,18 +472,23 @@ const TrackMatteType = { NO_TRACK_MATTE: 5012, ALPHA: 5013, ALPHA_INVERTED: 5014
 const KeyframeInterpolationType = { LINEAR: 6612, BEZIER: 6613, HOLD: 6614 };
 
 function makeGlobals(opts) {
-  const app = makeApp(opts);
   const log = [];
+  opts = Object.assign({}, opts, { log });
+  MFile.deny = !!opts.denyWrite;
+  const app = makeApp(opts);
   return {
     app, log,
     Shape, KeyframeEase, MarkerValue, MaskMode, BlendingMode, ParagraphJustification, KeyframeInterpolationType, TrackMatteType,
     PropertyValueType: PVT,
+    PREFType: { PREF_Type_MACHINE_SPECIFIC: 0, PREF_Type_MACHINE_INDEPENDENT: 1, PREF_Type_MACHINE_INDEPENDENT_RENDER: 2, PREF_Type_MACHINE_INDEPENDENT_OUTPUT: 3, PREF_Type_MACHINE_INDEPENDENT_COMPOSITION: 4, PREF_Type_MACHINE_SPECIFIC_TEXT: 5, PREF_Type_MACHINE_SPECIFIC_PAINT: 6 },
+    $: { sleep() {}, fileName: "KanagawaGenba_Builder.jsx" },
     alert: (m) => log.push(["alert", String(m)]),
     confirm: (m) => { log.push(["confirm", String(m)]); return !!opts.confirm; },
     File: MFile, ImportOptions,
     Folder: Object.assign(MFolder, {
       myDocuments: new MFolder(PATH.join(MOCK_ROOT, "Documents")),
       temp: new MFolder(PATH.join(MOCK_ROOT, "tmp")),
+      userData: new MFolder(PATH.join(MOCK_ROOT, "Library", "Application Support")),
       selectDialog: (m) => (opts.folder ? new MFolder(opts.folder) : null),
     }),
   };

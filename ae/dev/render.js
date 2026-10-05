@@ -163,7 +163,7 @@ function makeRenderer(g) {
     const blend = L.blendingMode === 5220 ? ' style="mix-blend-mode:screen"' : "";
     let out = '<g opacity="' + op + '"' + blend + '><g transform="' + mat(layerMatrix(L, t)) + '">' + body + "</g></g>";
     if (L.trackMatteType === 5013 && !asMatte) { // ALPHA matte = layer directly above
-      const above = L.containingComp._layers[L.index - 2];
+      const above = L._matteLayer || L.containingComp._layers[L.index - 2];
       const mid = uid("tm"), fid = uid("tf");
       defs.push('<filter id="' + fid + '" color-interpolation-filters="sRGB"><feFlood flood-color="#fff"/><feComposite operator="in" in2="SourceAlpha"/></filter>');
       defs.push('<mask id="' + mid + '" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000"><g filter="url(#' + fid + ')">' + layerSVG(above, t, defs, true) + "</g></mask>");

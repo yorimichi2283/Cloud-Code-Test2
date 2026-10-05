@@ -54,6 +54,13 @@
     var LOGO_W = 1570;               // ロゴ全体の幅（素材のピクセル）
     var OP_LOGO_SCALE = 52;          // OP でのロゴの大きさ（%）。52% で画面幅の約4割
     var OP_DUR = 5.0;
+    // Premiere での名前（＝書き出す .mogrt のファイル名）
+    var MOGRT_NAMES = {
+        op: "かながわの現場_01_オープニング",
+        corner: "かながわの現場_02_左上ロゴ上部タイトル",
+        bottom: "かながわの現場_03_下部テロップ",
+        name: "かながわの現場_04_名前テロップ"
+    };
     var HIRA_T0 = 0.40, HIRA_STEP = 0.07;    // 「かながわの」が跳ね出す開始時間と1文字ごとの間隔
     var KANJI_T0 = 0.70, KANJI_STEP = 0.10;  // 「現場」が落ちてくる開始時間と間隔
 
@@ -711,7 +718,7 @@
 
         var ops = ["色:ひらがな", "色:漢字", "色:ライン・丸", "色:背景", "色:背景の丸", "色:左上プレート", "色:プレートの縁", "色:光の帯", "最後に左上ロゴを残す"];
         for (var oi = 0; oi < ops.length; oi++) { egpFx(comp, C, ops[oi]); }
-        setTemplateName(comp, "かながわの現場 オープニング");
+        setTemplateName(comp, MOGRT_NAMES.op);
         protect(comp, 0, 4.45, "OP（伸ばしても動きは変わらない）");
         return comp;
     }
@@ -798,7 +805,7 @@
         var cs = ["上部タイトルを表示", "ロゴもアニメーションで出す", "最後にロゴも消す", "色:タイトル帯", "色:タイトル文字", "色:丸", "色:ピン",
             "色:ひらがな", "色:漢字", "色:左上プレート", "色:プレートの縁"];
         for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
-        setTemplateName(comp, "かながわの現場 左上ロゴ＋上部タイトル");
+        setTemplateName(comp, MOGRT_NAMES.corner);
         protect(comp, 0, 0.8, "IN（伸ばしても変わらない）");
         protect(comp, D - 0.45, 0.45, "OUT（伸ばしても変わらない）");
         return comp;
@@ -840,7 +847,7 @@
         egpFx(comp, C, "色:帯");
         egpFx(comp, C, "色:文字");
         egpFx(comp, C, "色:丸");
-        setTemplateName(comp, "かながわの現場 下部テロップ");
+        setTemplateName(comp, MOGRT_NAMES.bottom);
         protect(comp, 0, 0.8, "IN（伸ばしても変わらない）");
         protect(comp, D - 0.45, 0.45, "OUT（伸ばしても変わらない）");
         return comp;
@@ -904,7 +911,7 @@
         egp(comp, srcText(org.text), "所属");
         var cs = ["色:名前の帯", "色:名前の文字", "色:肩書きタグ", "色:肩書きの文字", "色:所属の帯", "色:所属の文字", "色:丸", "色:ピン"];
         for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
-        setTemplateName(comp, "かながわの現場 名前テロップ");
+        setTemplateName(comp, MOGRT_NAMES.name);
         protect(comp, 0, 1.0, "IN（伸ばしても変わらない）");
         protect(comp, D - 0.5, 0.5, "OUT（伸ばしても変わらない）");
         return comp;
@@ -914,9 +921,7 @@
     //  MOGRT 書き出し
     // =================================================================
     function exportMogrts(list) {
-        var folder = Folder.selectDialog("MOGRT（Premiere 用テンプレート）の保存先フォルダを選んでください");
-        if (folder === null) { return "MOGRT の書き出しはキャンセルされました。"; }
-        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する
+        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する（この後はプロジェクトを変更しない）
         try {
             if (app.project.file === null) {
                 if (!app.project.saveWithDialog()) {
@@ -926,18 +931,22 @@
                 app.project.save();
             }
         } catch (eSave) {}
+        var folder = Folder.selectDialog("MOGRT（Premiere 用テンプレート）の保存先フォルダを選んでください");
+        if (folder === null) { return "MOGRT の書き出しはキャンセルされました。"; }
         var dir = folder.fsName, okNames = [], ngNames = [];
         for (var i = 0; i < list.length; i++) {
             var c = list[i].comp;
             try { var again = app.project.itemByID(list[i].id); if (again) { c = again; } } catch (eId) {}
-            var cname = list[i].name;
-            // 書き出されるファイル名＝テンプレート名（Premiere での表示名にもなる）
-            try { c.motionGraphicsTemplateName = list[i].file; } catch (eN) {}
-            var expect = new File(dir + "/" + list[i].file + ".mogrt");
-            var ret = false;
+            var tname = list[i].file;
+            try { if (c.motionGraphicsTemplateName) { tname = c.motionGraphicsTemplateName; } } catch (eT) {}
+            var expect = new File(dir + "/" + tname + ".mogrt");
+            try { if (expect.exists) { expect.remove(); } } catch (eRm) {}   // 古いファイルを「成功」と見間違えないように
+            var ret = null;
             try { ret = c.exportAsMotionGraphicsTemplate(true, dir); } catch (e) { ret = false; }   // 2つ目の引数は「フォルダ」
-            for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
-            if (ret === true || expect.exists) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(cname); }
+            if (ret !== true && ret !== false) {   // 15.0 は戻り値が無いので、ファイルができるのを少し待つ
+                for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
+            }
+            if (ret === true || (ret !== false && expect.exists)) { okNames.push(tname + ".mogrt"); } else { ngNames.push(list[i].name); }
         }
         var msg = "";
         if (okNames.length) { msg += "MOGRT を書き出しました：\n  " + okNames.join("\n  ") + "\n保存先：" + dir + "\n"; }
@@ -948,9 +957,6 @@
         return msg;
     }
 
-    // =================================================================
-    //  メイン
-    // =================================================================
     var PREF_MSG = "After Effects の［環境設定］→［スクリプトとエクスプレッション］（古い版は［一般設定］）で\n" +
         "「スクリプトによるファイルへの書き込みとネットワークへのアクセスを許可」にチェックを入れてから、もう一度実行してください。";
 
@@ -1002,8 +1008,8 @@
         }
         if (!app.project) { app.newProject(); }
         if (!scriptsCanWriteFiles()) {
-            alert("ロゴ画像を書き出すために、設定の変更が必要です。\n\n" + PREF_MSG);
-            return;
+            if (!confirm("ロゴ画像を書き出すために、設定の変更が必要なようです。\n\n" + PREF_MSG +
+                "\n\nすでに設定を変更した場合は［OK］で続けます。")) { return; }
         }
         var fresh = (app.project.numItems === 0);
 
@@ -1037,10 +1043,10 @@
 
         if (confirm("続けて、Premiere Pro 用の MOGRT（モーショングラフィックステンプレート）を書き出しますか？\n（先にプロジェクトを保存してから、保存先フォルダを選びます）")) {
             var list = [
-                { comp: R.op, file: "かながわの現場_01_オープニング" },
-                { comp: R.corner, file: "かながわの現場_02_左上ロゴ上部タイトル" },
-                { comp: R.bottom, file: "かながわの現場_03_下部テロップ" },
-                { comp: R.nameT, file: "かながわの現場_04_名前テロップ" }
+                { comp: R.op, file: MOGRT_NAMES.op },
+                { comp: R.corner, file: MOGRT_NAMES.corner },
+                { comp: R.bottom, file: MOGRT_NAMES.bottom },
+                { comp: R.nameT, file: MOGRT_NAMES.name }
             ];
             for (var i = 0; i < list.length; i++) { list[i].id = list[i].comp.id; list[i].name = list[i].comp.name; }
             alert(exportMogrts(list));

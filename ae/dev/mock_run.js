@@ -14,6 +14,7 @@ const MAC_FONTS = ["HiraginoSans-W7", "HiraginoSans-W5"];
 const MOGRT_DIR = path.join(require("os").tmpdir(), "kg_mogrt_out");
 function runScript(opts) {
   fs.rmSync(MOGRT_DIR, { recursive: true, force: true }); fs.mkdirSync(MOGRT_DIR, { recursive: true });
+  if (opts && opts.staleMogrt) fs.writeFileSync(path.join(MOGRT_DIR, "かながわの現場_01_オープニング.mogrt"), "old");
   const g = makeGlobals(Object.assign({ fonts: MAC_FONTS, confirm: true, folder: MOGRT_DIR }, opts || {}));
   const code = fs.readFileSync(JSX, "utf8").replace(/^﻿/, "");
   vm.createContext(g);
@@ -138,14 +139,16 @@ function main() {
 
   // 7) error paths must end with a clear alert, never an uncaught exception
   const cases = [
-    { label: "file-write preference OFF", opts: { prefFileWrite: 0 }, expect: /スクリプトによるファイルへの書き込み/, comps: 0 },
+    { label: "file-write preference OFF, user stops", opts: { prefFileWrite: 0, confirm: false }, expect: /スクリプトによるファイルへの書き込み/, comps: 0 },
+    { label: "file-write preference OFF, user continues", opts: { prefFileWrite: 0 }, expect: /テンプレートを作成しました[\s\S]*MOGRT を書き出しました/ },
+    { label: "stale .mogrt files in the folder are not counted", opts: { staleMogrt: true }, expect: /MOGRT を書き出しました/ },
     { label: "writes denied (pref unknown)", opts: { denyWrite: true }, expect: /止まりました[\s\S]*スクリプトによるファイルへの書き込み/ },
     { label: "save dialog cancelled before MOGRT export", opts: { saveCancel: true }, expect: /先にプロジェクトの保存が必要/ },
   ];
   for (const c of cases) {
     try {
       const gg = runScript(c.opts);
-      const alerts = gg.log.filter(([k]) => k === "alert").map(([, m]) => m).join("\n---\n");
+      const alerts = gg.log.filter(([k]) => k === "alert" || k === "confirm").map(([, m]) => m).join("\n---\n");
       const nComps = gg.app.project._items.filter((x) => x instanceof CompItem).length;
       const ok = c.expect.test(alerts) && (c.comps === undefined || nComps === c.comps);
       console.log((ok ? "OK: " : "FAIL: ") + c.label + (ok ? "" : "\n" + alerts));

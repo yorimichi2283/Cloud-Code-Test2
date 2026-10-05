@@ -396,6 +396,7 @@ class MFile {
     for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) > 255) fail("File.write: char > 255 in binary string");
     this._chunks.push(Buffer.from(s, "latin1")); return true;
   }
+  remove() { if (FS.existsSync(this.fsName)) FS.unlinkSync(this.fsName); return true; }
   close() { if (this._mode === "w") FS.writeFileSync(this.fsName, Buffer.concat(this._chunks)); this._mode = null; return true; }
 }
 class MFolder {
@@ -412,10 +413,12 @@ class CompItem extends Item {
     if (typeof name !== "string" || !(w >= 4) || !(h >= 4) || !(par > 0) || !(dur > 0) || !(fps > 0)) fail("addComp args");
     this.width = w; this.height = h; this.pixelAspect = par; this.duration = dur; this.frameRate = fps;
     this._layers = []; this.layers = new LayerCollection(this); this._egp = []; this.bgColor = [0, 0, 0];
-    this.motionGraphicsTemplateName = ""; this._markerNode = instantiate(P("ADBE Marker", "Marker", "marker", null), null); this._markerNode.keys = [];
+    this._mgtName = ""; this._markerNode = instantiate(P("ADBE Marker", "Marker", "marker", null), null); this._markerNode.keys = [];
     this.markerProperty = wrap(this._markerNode, null);
   }
   get numLayers() { return this._layers.length; }
+  get motionGraphicsTemplateName() { return this._mgtName; }
+  set motionGraphicsTemplateName(v) { if (typeof v !== "string") fail("template name must be string"); if (v !== this._mgtName && this._project) this._project._saved = false; this._mgtName = v; }
   layer(k) { if (typeof k === "number") return this._layers[k - 1] || null; return this._layers.find((l) => l.name === k) || null; }
   openInViewer() {}
   // Real AE: the 2nd argument is a FOLDER; the file is named after motionGraphicsTemplateName.

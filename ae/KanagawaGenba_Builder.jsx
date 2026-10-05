@@ -54,6 +54,13 @@
     var LOGO_W = 1570;               // ロゴ全体の幅（素材のピクセル）
     var OP_LOGO_SCALE = 52;          // OP でのロゴの大きさ（%）。52% で画面幅の約4割
     var OP_DUR = 5.0;
+    // Premiere での名前（＝書き出す .mogrt のファイル名）
+    var MOGRT_NAMES = {
+        op: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_01_\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0",
+        corner: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_02_\u5DE6\u4E0A\u30ED\u30B4\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB",
+        bottom: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_03_\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7",
+        name: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_04_\u540D\u524D\u30C6\u30ED\u30C3\u30D7"
+    };
     var HIRA_T0 = 0.40, HIRA_STEP = 0.07;    // 「かながわの」が跳ね出す開始時間と1文字ごとの間隔
     var KANJI_T0 = 0.70, KANJI_STEP = 0.10;  // 「現場」が落ちてくる開始時間と間隔
 
@@ -870,7 +877,7 @@
 
         var ops = ["\u8272:\u3072\u3089\u304C\u306A", "\u8272:\u6F22\u5B57", "\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38", "\u8272:\u80CC\u666F", "\u8272:\u80CC\u666F\u306E\u4E38", "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01", "\u8272:\u5149\u306E\u5E2F", "\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059"];
         for (var oi = 0; oi < ops.length; oi++) { egpFx(comp, C, ops[oi]); }
-        setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u30AA\u30FC\u30D7\u30CB\u30F3\u30B0");
+        setTemplateName(comp, MOGRT_NAMES.op);
         protect(comp, 0, 4.45, "OP\uFF08\u4F38\u3070\u3057\u3066\u3082\u52D5\u304D\u306F\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
     }
@@ -957,7 +964,7 @@
         var cs = ["\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A", "\u30ED\u30B4\u3082\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u3067\u51FA\u3059", "\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059", "\u8272:\u30BF\u30A4\u30C8\u30EB\u5E2F", "\u8272:\u30BF\u30A4\u30C8\u30EB\u6587\u5B57", "\u8272:\u4E38", "\u8272:\u30D4\u30F3",
             "\u8272:\u3072\u3089\u304C\u306A", "\u8272:\u6F22\u5B57", "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01"];
         for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
-        setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u5DE6\u4E0A\u30ED\u30B4\uFF0B\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB");
+        setTemplateName(comp, MOGRT_NAMES.corner);
         protect(comp, 0, 0.8, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         protect(comp, D - 0.45, 0.45, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
@@ -999,7 +1006,7 @@
         egpFx(comp, C, "\u8272:\u5E2F");
         egpFx(comp, C, "\u8272:\u6587\u5B57");
         egpFx(comp, C, "\u8272:\u4E38");
-        setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7");
+        setTemplateName(comp, MOGRT_NAMES.bottom);
         protect(comp, 0, 0.8, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         protect(comp, D - 0.45, 0.45, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
@@ -1063,7 +1070,7 @@
         egp(comp, srcText(org.text), "\u6240\u5C5E");
         var cs = ["\u8272:\u540D\u524D\u306E\u5E2F", "\u8272:\u540D\u524D\u306E\u6587\u5B57", "\u8272:\u80A9\u66F8\u304D\u30BF\u30B0", "\u8272:\u80A9\u66F8\u304D\u306E\u6587\u5B57", "\u8272:\u6240\u5C5E\u306E\u5E2F", "\u8272:\u6240\u5C5E\u306E\u6587\u5B57", "\u8272:\u4E38", "\u8272:\u30D4\u30F3"];
         for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
-        setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u540D\u524D\u30C6\u30ED\u30C3\u30D7");
+        setTemplateName(comp, MOGRT_NAMES.name);
         protect(comp, 0, 1.0, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         protect(comp, D - 0.5, 0.5, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
@@ -1073,9 +1080,7 @@
     //  MOGRT 書き出し
     // =================================================================
     function exportMogrts(list) {
-        var folder = Folder.selectDialog("MOGRT\uFF08Premiere \u7528\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u306E\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3093\u3067\u304F\u3060\u3055\u3044");
-        if (folder === null) { return "MOGRT \u306E\u66F8\u304D\u51FA\u3057\u306F\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F\u3002"; }
-        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する
+        // 未保存のまま書き出すと AE が毎回保存を求めるので、先に保存する（この後はプロジェクトを変更しない）
         try {
             if (app.project.file === null) {
                 if (!app.project.saveWithDialog()) {
@@ -1085,18 +1090,22 @@
                 app.project.save();
             }
         } catch (eSave) {}
+        var folder = Folder.selectDialog("MOGRT\uFF08Premiere \u7528\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u306E\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3093\u3067\u304F\u3060\u3055\u3044");
+        if (folder === null) { return "MOGRT \u306E\u66F8\u304D\u51FA\u3057\u306F\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F\u3002"; }
         var dir = folder.fsName, okNames = [], ngNames = [];
         for (var i = 0; i < list.length; i++) {
             var c = list[i].comp;
             try { var again = app.project.itemByID(list[i].id); if (again) { c = again; } } catch (eId) {}
-            var cname = list[i].name;
-            // 書き出されるファイル名＝テンプレート名（Premiere での表示名にもなる）
-            try { c.motionGraphicsTemplateName = list[i].file; } catch (eN) {}
-            var expect = new File(dir + "/" + list[i].file + ".mogrt");
-            var ret = false;
+            var tname = list[i].file;
+            try { if (c.motionGraphicsTemplateName) { tname = c.motionGraphicsTemplateName; } } catch (eT) {}
+            var expect = new File(dir + "/" + tname + ".mogrt");
+            try { if (expect.exists) { expect.remove(); } } catch (eRm) {}   // 古いファイルを「成功」と見間違えないように
+            var ret = null;
             try { ret = c.exportAsMotionGraphicsTemplate(true, dir); } catch (e) { ret = false; }   // 2つ目の引数は「フォルダ」
-            for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
-            if (ret === true || expect.exists) { okNames.push(list[i].file + ".mogrt"); } else { ngNames.push(cname); }
+            if (ret !== true && ret !== false) {   // 15.0 は戻り値が無いので、ファイルができるのを少し待つ
+                for (var w = 0; w < 30 && !expect.exists; w++) { try { $.sleep(100); } catch (eW) { break; } }
+            }
+            if (ret === true || (ret !== false && expect.exists)) { okNames.push(tname + ".mogrt"); } else { ngNames.push(list[i].name); }
         }
         var msg = "";
         if (okNames.length) { msg += "MOGRT \u3092\u66F8\u304D\u51FA\u3057\u307E\u3057\u305F\uFF1A\n  " + okNames.join("\n  ") + "\n\u4FDD\u5B58\u5148\uFF1A" + dir + "\n"; }
@@ -1107,9 +1116,6 @@
         return msg;
     }
 
-    // =================================================================
-    //  メイン
-    // =================================================================
     var PREF_MSG = "After Effects \u306E\uFF3B\u74B0\u5883\u8A2D\u5B9A\uFF3D\u2192\uFF3B\u30B9\u30AF\u30EA\u30D7\u30C8\u3068\u30A8\u30AF\u30B9\u30D7\u30EC\u30C3\u30B7\u30E7\u30F3\uFF3D\uFF08\u53E4\u3044\u7248\u306F\uFF3B\u4E00\u822C\u8A2D\u5B9A\uFF3D\uFF09\u3067\n" +
         "\u300C\u30B9\u30AF\u30EA\u30D7\u30C8\u306B\u3088\u308B\u30D5\u30A1\u30A4\u30EB\u3078\u306E\u66F8\u304D\u8FBC\u307F\u3068\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3078\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u8A31\u53EF\u300D\u306B\u30C1\u30A7\u30C3\u30AF\u3092\u5165\u308C\u3066\u304B\u3089\u3001\u3082\u3046\u4E00\u5EA6\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002";
 
@@ -1161,8 +1167,8 @@
         }
         if (!app.project) { app.newProject(); }
         if (!scriptsCanWriteFiles()) {
-            alert("\u30ED\u30B4\u753B\u50CF\u3092\u66F8\u304D\u51FA\u3059\u305F\u3081\u306B\u3001\u8A2D\u5B9A\u306E\u5909\u66F4\u304C\u5FC5\u8981\u3067\u3059\u3002\n\n" + PREF_MSG);
-            return;
+            if (!confirm("\u30ED\u30B4\u753B\u50CF\u3092\u66F8\u304D\u51FA\u3059\u305F\u3081\u306B\u3001\u8A2D\u5B9A\u306E\u5909\u66F4\u304C\u5FC5\u8981\u306A\u3088\u3046\u3067\u3059\u3002\n\n" + PREF_MSG +
+                "\n\n\u3059\u3067\u306B\u8A2D\u5B9A\u3092\u5909\u66F4\u3057\u305F\u5834\u5408\u306F\uFF3BOK\uFF3D\u3067\u7D9A\u3051\u307E\u3059\u3002")) { return; }
         }
         var fresh = (app.project.numItems === 0);
 
@@ -1196,10 +1202,10 @@
 
         if (confirm("\u7D9A\u3051\u3066\u3001Premiere Pro \u7528\u306E MOGRT\uFF08\u30E2\u30FC\u30B7\u30E7\u30F3\u30B0\u30E9\u30D5\u30A3\u30C3\u30AF\u30B9\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\uFF09\u3092\u66F8\u304D\u51FA\u3057\u307E\u3059\u304B\uFF1F\n\uFF08\u5148\u306B\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u4FDD\u5B58\u3057\u3066\u304B\u3089\u3001\u4FDD\u5B58\u5148\u30D5\u30A9\u30EB\u30C0\u3092\u9078\u3073\u307E\u3059\uFF09")) {
             var list = [
-                { comp: R.op, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_01_\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0" },
-                { comp: R.corner, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_02_\u5DE6\u4E0A\u30ED\u30B4\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB" },
-                { comp: R.bottom, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_03_\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7" },
-                { comp: R.nameT, file: "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834_04_\u540D\u524D\u30C6\u30ED\u30C3\u30D7" }
+                { comp: R.op, file: MOGRT_NAMES.op },
+                { comp: R.corner, file: MOGRT_NAMES.corner },
+                { comp: R.bottom, file: MOGRT_NAMES.bottom },
+                { comp: R.nameT, file: MOGRT_NAMES.name }
             ];
             for (var i = 0; i < list.length; i++) { list[i].id = list[i].comp.id; list[i].name = list[i].comp.name; }
             alert(exportMogrts(list));

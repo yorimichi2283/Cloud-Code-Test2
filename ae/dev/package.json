@@ -1,0 +1,12 @@
+{
+  "name": "jounetsu-ae-dev",
+  "private": true,
+  "description": "Dev tools: build the AE script, run it against a mock AE DOM, render previews",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node build.js && node mock_run.js"
+  },
+  "devDependencies": {
+    "acorn": "^8.12.0"
+  }
+}

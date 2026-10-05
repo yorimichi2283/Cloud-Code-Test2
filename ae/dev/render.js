@@ -62,6 +62,12 @@ function makeRenderer(g) {
         const s = val(F(it, "ADBE Vector Rect Size"), t), p = val(F(it, "ADBE Vector Rect Position"), t);
         const r = Math.min(val(F(it, "ADBE Vector Rect Roundness"), t), Math.abs(s[0]) / 2, Math.abs(s[1]) / 2);
         paths.push({ el: '<rect x="' + (p[0] - Math.abs(s[0]) / 2) + '" y="' + (p[1] - Math.abs(s[1]) / 2) + '" width="' + Math.abs(s[0]) + '" height="' + Math.abs(s[1]) + '" rx="' + r + '"' });
+      } else if (it.matchName === "ADBE Vector Shape - Group") {
+        const sh = val(F(it, "ADBE Vector Shape"), t);
+        paths.push({ el: '<path d="' + pathD(sh) + '"' });
+      } else if (it.matchName === "ADBE Vector Graphic - Stroke") {
+        const c = val(F(it, "ADBE Vector Stroke Color"), t), w = val(F(it, "ADBE Vector Stroke Width"), t), op = val(F(it, "ADBE Vector Stroke Opacity"), t) / 100;
+        push(drawPaths(paths, merge, 'fill="none" stroke="' + rgb(c) + '" stroke-width="' + w + '" stroke-opacity="' + op + '"', defs));
       } else if (it.matchName === "ADBE Vector Filter - Merge") {
         merge = val(F(it, "ADBE Vector Merge Type"), t);
       } else if (it.matchName === "ADBE Vector Graphic - Fill") {
@@ -99,8 +105,8 @@ function makeRenderer(g) {
     return s + "</text>";
   }
 
-  function layerSVG(L, t, defs) {
-    if (L.guideLayer || L.kind === "null" || !L.enabled) return "";
+  function layerSVG(L, t, defs, asMatte) {
+    if (L.guideLayer || L.kind === "null" || (!L.enabled && !asMatte)) return "";
     const tr = F(L._root, "ADBE Transform Group");
     const op = val(F(tr, "ADBE Opacity"), t) / 100;
     if (op <= 0.001) return "";
@@ -148,11 +154,22 @@ function makeRenderer(g) {
     for (let i = masks.length - 1; i >= 0; i--) {
       const sh = val(F(masks[i], "ADBE Mask Shape"), t);
       const id = uid("mk");
-      defs.push('<clipPath id="' + id + '" clipPathUnits="userSpaceOnUse"><path d="' + pathD(sh) + '"/></clipPath>');
+      if (masks[i].maskMode === 6814) // SUBTRACT
+        defs.push('<clipPath id="' + id + '" clipPathUnits="userSpaceOnUse"><path clip-rule="evenodd" d="M-10000,-10000H10000V10000H-10000Z ' + pathD(sh) + '"/></clipPath>');
+      else
+        defs.push('<clipPath id="' + id + '" clipPathUnits="userSpaceOnUse"><path d="' + pathD(sh) + '"/></clipPath>');
       body = '<g clip-path="url(#' + id + ')">' + body + "</g>";
     }
     const blend = L.blendingMode === 5220 ? ' style="mix-blend-mode:screen"' : "";
-    return '<g opacity="' + op + '"' + blend + '><g transform="' + mat(layerMatrix(L, t)) + '">' + body + "</g></g>";
+    let out = '<g opacity="' + op + '"' + blend + '><g transform="' + mat(layerMatrix(L, t)) + '">' + body + "</g></g>";
+    if (L.trackMatteType === 5013 && !asMatte) { // ALPHA matte = layer directly above
+      const above = L.containingComp._layers[L.index - 2];
+      const mid = uid("tm"), fid = uid("tf");
+      defs.push('<filter id="' + fid + '" color-interpolation-filters="sRGB"><feFlood flood-color="#fff"/><feComposite operator="in" in2="SourceAlpha"/></filter>');
+      defs.push('<mask id="' + mid + '" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000"><g filter="url(#' + fid + ')">' + layerSVG(above, t, defs, true) + "</g></mask>");
+      out = '<g mask="url(#' + mid + ')">' + out + "</g>";
+    }
+    return out;
   }
 
   function compBody(c, t, defs) {

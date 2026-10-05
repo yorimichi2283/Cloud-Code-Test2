@@ -50,6 +50,9 @@ const API = {
     return { __path: true, vertices: points, inTangents: (inT && inT.length) ? inT : z, outTangents: (outT && outT.length) ? outT : z, closed: closed !== false };
   },
   degreesToRadians(d) { return d * Math.PI / 180; },
+  add(a, b) { if (!Array.isArray(a) || !Array.isArray(b)) return a + b; return a.map((x, i) => x + (b[i] || 0)); },
+  sub(a, b) { if (!Array.isArray(a) || !Array.isArray(b)) return a - b; return a.map((x, i) => x - (b[i] || 0)); },
+  mul(a, k) { return Array.isArray(a) ? a.map((x) => x * k) : a * k; },
 };
 
 // rough text metrics (only used for sourceRectAtTime in previews/validation)
@@ -174,7 +177,7 @@ function makeEvaluator(globals) {
       let fn = fnCache.get(node.expression);
       if (!fn) {
         fn = new Function("time", "value", "thisComp", "comp", "thisLayer", "sourceRectAtTime",
-          "clamp", "linear", "createPath", "degreesToRadians", "fromComp", "toComp", "__code", "return eval(__code);");
+          "clamp", "linear", "createPath", "degreesToRadians", "fromComp", "toComp", "add", "sub", "mul", "__code", "return eval(__code);");
         fnCache.set(node.expression, fn);
       }
       const pre = node.type === "textdoc" ? node.value.data.text : keyedValue(node, t);
@@ -185,7 +188,7 @@ function makeEvaluator(globals) {
         lp, (tt) => rectOf(L, tt === undefined ? t : tt),
         API.clamp, API.linear, API.createPath, API.degreesToRadians,
         (pt, tt) => fromCompPt(L, pt, tt === undefined ? t : tt), (pt, tt) => toCompPt(L, pt, tt === undefined ? t : tt),
-        node.expression);
+        API.add, API.sub, API.mul, node.expression);
       return checkResult(node, r);
     } finally { cur.t = saved; stack.delete(node); }
   }

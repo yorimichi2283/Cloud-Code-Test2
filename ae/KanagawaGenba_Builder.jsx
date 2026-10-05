@@ -8,10 +8,10 @@
 //      実行すると「書類（Documents）/KanagawaGenba_Assets」に書き出して読み込みます。
 //
 //  作られるコンポジション：
-//    01_OP_オープニング       … ロゴ登場 → 画面が上下に割れて次のシーンへ（5秒）
+//    01_OP_オープニング       … 点→線→ロゴが跳ねて登場 → 円形に広がる穴から次のシーンへ（5秒）
 //    02_左上ロゴ＋上部タイトル … OP の最後と同じ位置の左上ロゴ＋上部タイトル
 //    03_下部テロップ          … 画面下中央のテロップ
-//    04_名前テロップ          … 左下の名前テロップ（肩書きタグ＋名前＋所属）
+//    04_名前テロップ          … 左下の名前テロップ（丸＋ピン、名前、肩書きタグ、所属）
 //
 //  色・文字：各コンポの「CTRL」レイヤーのエフェクト、または
 //            エッセンシャルグラフィックス（Premiere で編集できる項目）で変更。
@@ -29,7 +29,8 @@
     var COL = {
         cyan:  "#069DD4",   // ロゴの水色（ひらがな・アクセント）
         black: "#141414",   // ロゴの黒（漢字・帯）
-        white: "#FFFFFF"
+        white: "#FFFFFF",
+        soft:  "#E3F4FB"    // 背景にふわふわ浮かぶ丸
     };
 
     var TXT = {
@@ -51,11 +52,13 @@
     var LOGO_SPLIT_Y = 727;          // 「かながわの」と「現場」の間の線
     var OP_LOGO_SCALE = 70;          // OP でのロゴの大きさ（%）
     var OP_DUR = 5.0;
+    var HIRA_T0 = 0.40, HIRA_STEP = 0.07;    // 「かながわの」が跳ね出す開始時間と1文字ごとの間隔
+    var KANJI_T0 = 0.70, KANJI_STEP = 0.10;  // 「現場」が落ちてくる開始時間と間隔
 
     // 左上ロゴ（OP の最後と 02 のコンポで同じ値を使います）
     var CORNER_POS = [187, 139];     // 左上ロゴの中心
     var CORNER_SIZE = 22.7;          // OP のロゴに対する大きさ（%）
-    var PLATE = { w: 294, h: 210, r: 16 }; // 左上ロゴの白いプレート（画面上のピクセル）
+    var PLATE = { w: 294, h: 210, r: 40, stroke: 4 }; // 左上ロゴのプレート（画面上のピクセル。r＝角の丸み、stroke＝縁の太さ）
 
     // =================================================================
     //  ロゴ画像（ビルド時に埋め込まれます）
@@ -366,6 +369,27 @@
     function rectSize(L, g) { return gp(L, g, "R").property("ADBE Vector Rect Size"); }
     function rectPos(L, g) { return gp(L, g, "R").property("ADBE Vector Rect Position"); }
     function fillColor(L, g) { return gp(L, g, "F").property("ADBE Vector Fill Color"); }
+    function gxf(L, g, m) { return root(L).property(g).property("ADBE Vector Transform Group").property(m); }
+    function addEllipse(L, g, name, size, pos) {
+        var p = gc(L, g).addProperty("ADBE Vector Shape - Ellipse");
+        p.name = name;
+        p.property("ADBE Vector Ellipse Size").setValue(size);
+        p.property("ADBE Vector Ellipse Position").setValue(pos);
+    }
+    function addPath(L, g, name, verts) {
+        var p = gc(L, g).addProperty("ADBE Vector Shape - Group");
+        p.name = name;
+        var s = new Shape();
+        s.vertices = verts;
+        s.closed = true;
+        p.property("ADBE Vector Shape").setValue(s);
+    }
+    function addStroke(L, g, name, color, width) {
+        var p = gc(L, g).addProperty("ADBE Vector Graphic - Stroke");
+        p.name = name;
+        p.property("ADBE Vector Stroke Color").setValue(color);
+        p.property("ADBE Vector Stroke Width").setValue(width);
+    }
     // 長方形1つだけのシェイプレイヤー（座標＝コンポ座標）
     function rectLayer(comp, name, size, pos, round, hex) {
         var L = comp.layers.addShape();
@@ -385,10 +409,10 @@
         s.closed = true;
         return s;
     }
-    function addMask(L, name, shape) {
+    function addMask(L, name, shape, mode) {
         var m = L.property("ADBE Mask Parade").addProperty("ADBE Mask Atom");
         m.name = name;
-        m.maskMode = MaskMode.ADD;
+        m.maskMode = mode || MaskMode.ADD;
         m.property("ADBE Mask Shape").setValue(shape);
     }
     function maskPath(L, name) { return L.property("ADBE Mask Parade").property(name).property("ADBE Mask Shape"); }
@@ -475,63 +499,95 @@
     var CR = 'var C=thisComp.layer("CTRL");';
 
     // =================================================================
-    //  テロップ共通：文字の長さに合わせて伸びる帯＋帯の中から現れる文字
+    //  テロップ共通パーツ
     // =================================================================
-    //  o = { name, text, font, size, textColor(CTRL名), boxColor(CTRL名),
-    //        x(帯の左端 or 中心), y(帯の中心), h(帯の高さ), padL, padR,
-    //        grow: "left" | "center", slider(帯の伸び %), textIn:[[t,値]...], textOut }
+
+    // 丸（＋位置ピンのマーク）。中心 (cx,cy)、直径 h。コンポ座標で描き、中心で拡大縮小できる
+    function addDot(comp, name, cx, cy, h, dotColor, pinColor) {
+        var L = comp.layers.addShape();
+        L.name = name;
+        setXY(L, [cx, cy], [cx, cy]);
+        if (pinColor) {
+            var hy = cy - 0.07 * h;
+            newGroup(L, "HOLE");
+            addEllipse(L, "HOLE", "E", [0.15 * h, 0.15 * h], [cx, hy]);
+            addFill(L, "HOLE", "F", hex4(COL.cyan));
+            setExpr(fillColor(L, "HOLE"), CR + 'C.effect(' + q(dotColor) + ')(1)', name + " \u7A74");
+            newGroup(L, "PIN");
+            addEllipse(L, "PIN", "E", [0.38 * h, 0.38 * h], [cx, hy]);
+            addPath(L, "PIN", "P", [[cx - 0.165 * h, hy + 0.09 * h], [cx + 0.165 * h, hy + 0.09 * h], [cx, cy + 0.31 * h]]);
+            addFill(L, "PIN", "F", hex4(COL.white));
+            setExpr(fillColor(L, "PIN"), CR + 'C.effect(' + q(pinColor) + ')(1)', name + " \u30D4\u30F3");
+        }
+        newGroup(L, "DOT");
+        addEllipse(L, "DOT", "E", [h, h], [cx, cy]);
+        addFill(L, "DOT", "F", hex4(COL.cyan));
+        setExpr(fillColor(L, "DOT"), CR + 'C.effect(' + q(dotColor) + ')(1)', name + " \u8272");
+        blur(L);
+        return L;
+    }
+    // 丸がポンと出て、最後にポンと消える
+    function popKeys(L, tIn, D) {
+        keys(xf(L, "ADBE Scale"), [[tIn, [0, 0]], [tIn + 0.14, [118, 118]], [tIn + 0.26, [100, 100]],
+            [D - 0.2, [100, 100]], [D - 0.1, [118, 118]], [D, [0, 0]]], 50, 40);
+    }
+    // 帯の伸び（少し行き過ぎて戻る）
+    function barKeys(prop, tIn, tOut, D) {
+        keys(prop, [[tIn, 0], [tIn + 0.32, 104], [tIn + 0.42, 100], [D - tOut, 100], [D - tOut + 0.28, 0]], 75, 25);
+    }
+
+    // カプセル型の帯（文字の長さに合わせて伸びる）＋帯の中から現れる文字
+    //  o = { name, text, font, size, textColor, boxColor (CTRL の色の名前),
+    //        x (帯の左端 / 中央), y (帯の中心), h, padL, padR,
+    //        grow: "left" | "center", slider (帯の伸び %) }
     function makeBar(comp, o) {
         var T = addText(comp, o.text, {
             name: o.name, font: o.font, size: o.size, color: [1, 1, 1],
             just: ParagraphJustification.LEFT_JUSTIFY
         });
-        var tq = q(o.name);
-        var wExp = 'var r=thisComp.layer(' + tq + ').sourceRectAtTime(time,false);' +
-            'var p=clamp(thisComp.layer("CTRL").effect(' + q(o.slider) + ')(1)/100,0,1);' +
+        var wExp = 'var r=thisComp.layer(' + q(o.name) + ').sourceRectAtTime(time,false);' +
+            'var p=Math.max(thisComp.layer("CTRL").effect(' + q(o.slider) + ')(1)/100,0);' +
             'var w=(r.width+' + o.padL + '+' + o.padR + ')*p;';
-        var xL = (o.grow === "center")
-            ? 'var x0=' + o.x + '-(r.width+' + o.padL + '+' + o.padR + ')/2*p;'
-            : 'var x0=' + o.x + ';';
+        var xL = (o.grow === "center") ? 'var x0=' + o.x + '-w/2;' : 'var x0=' + o.x + ';';
 
         var B = comp.layers.addShape();
         B.name = o.name + "\uFF08\u5E2F\uFF09";
         setXY(B, [0, 0], [0, 0]);
         newGroup(B, "G");
-        addRect(B, "G", "R", [100, o.h], [o.x, o.y], 0);
+        addRect(B, "G", "R", [100, o.h], [o.x, o.y], o.h / 2);
         addFill(B, "G", "F", hex4(COL.black));
         setExpr(rectSize(B, "G"), wExp + '[Math.max(w,0.01),' + o.h + ']', B.name + " \u30B5\u30A4\u30BA");
         setExpr(rectPos(B, "G"), wExp + xL + '[x0+w/2,' + o.y + ']', B.name + " \u4F4D\u7F6E");
         setExpr(fillColor(B, "G"), CR + 'C.effect(' + q(o.boxColor) + ')(1)', B.name + " \u8272");
         blur(B);
 
-        // 文字（帯の範囲だけ見えるマスク付き）
         T.moveBefore(B);
-        var textX = (o.grow === "center") ? 0 : o.x + o.padL;
-        setXY(T, [0, 0], [textX, o.y]);
         if (o.grow === "center") {
+            setXY(T, [0, 0], [o.x + (o.padL - o.padR) / 2, o.y]);
             setExpr(xf(T, "ADBE Anchor Point"), EXP_ANCHOR_CENTER, o.name + " \u30A2\u30F3\u30AB\u30FC");
-            setExpr(xf(T, "ADBE Position"), 'var r=sourceRectAtTime(time,false);[' + o.x + '+(' + o.padL + '-' + o.padR + ')/2,value[1]]', o.name + " \u4F4D\u7F6E");
         } else {
+            setXY(T, [0, 0], [o.x + o.padL, o.y]);
             setExpr(xf(T, "ADBE Anchor Point"), EXP_ANCHOR_LEFTMID, o.name + " \u30A2\u30F3\u30AB\u30FC");
         }
         addFillFx(T, CR + 'C.effect(' + q(o.textColor) + ')(1)');
-        addMask(T, "\u5E2F\u306E\u4E2D\u3060\u3051\u8868\u793A", rectShape(0, 0, 10, 10));
+        addMask(T, "\u5E2F\u306E\u4E2D\u3060\u3051\u8868\u793A", rectShape(0, 0, 10, 10), MaskMode.ADD);
         setExpr(maskPath(T, "\u5E2F\u306E\u4E2D\u3060\u3051\u8868\u793A"),
             wExp + xL + 'var y0=' + (o.y - o.h / 2) + ',y1=' + (o.y + o.h / 2) + ';' +
             'createPath([fromComp([x0,y0]),fromComp([x0+w,y0]),fromComp([x0+w,y1]),fromComp([x0,y1])],[],[],true)',
             o.name + " \u30DE\u30B9\u30AF");
-        return { text: T, box: B };
+        return { text: T, box: B, wExp: wExp };
     }
-    // 文字を少し下から上げつつフェードイン、最後にフェードアウト
-    function textMotion(T, tIn, tOut, D) {
+    // 文字の出入り（dir: "left"＝左からスライド / "up"＝下から上がる）
+    function textMotion(T, tIn, tOut, D, dir) {
         var p = xf(T, "ADBE Position");
         var v = p.value;
-        keys(p, [[tIn, [v[0], v[1] + 22]], [tIn + 0.33, [v[0], v[1]]]], 80, 15);
-        keys(xf(T, "ADBE Opacity"), [[tIn, 0], [tIn + 0.2, 100], [D - tOut, 100], [D - tOut + 0.2, 0]]);
+        var from = (dir === "left") ? [v[0] - 28, v[1]] : [v[0], v[1] + 20];
+        keys(p, [[tIn, from], [tIn + 0.36, [v[0], v[1]]]], 80, 15);
+        keys(xf(T, "ADBE Opacity"), [[tIn, 0], [tIn + 0.2, 100], [D - tOut, 100], [D - tOut + 0.18, 0]]);
     }
 
     // =================================================================
-    //  ロゴの文字プリコンポ（OP 用。文字ごとに動く）
+    //  ロゴの文字プリコンポ（OP 用。文字ごとに跳ねる・着地する）
     // =================================================================
     function buildGlyphComp(name, row) {
         var c = newComp(name, OP_DUR, FOLDER_PARTS, 2000, 2000);
@@ -541,21 +597,31 @@
             var L = c.layers.add(FOOTAGE[a.name], OP_DUR);
             L.name = a.name;
             blur(L);
-            var bx = a.x + a.w / 2, by = a.y + a.h / 2;
-            var p = xf(L, "ADBE Position");
+            // 足元（下中央）を基準にして、伸び縮みしても足元がずれないようにする
+            var bx = a.x + a.w / 2, by = a.y + a.h;
+            setXY(L, [a.w / 2, a.h], [bx, by]);
+            var p = xf(L, "ADBE Position"), s = xf(L, "ADBE Scale");
             if (row === "hira") {
-                // 線の下から1文字ずつ跳ねて出る
-                var t0 = 0.30 + 0.07 * i;
-                keys(p, [[t0, [bx, by + 300]], [t0 + 0.34, [bx, by - 14]], [t0 + 0.50, [bx, by]]], 55, 30);
-                keys(xf(L, "ADBE Rotate Z"), [[t0, (i % 2 === 0) ? 7 : -7], [t0 + 0.50, 0]], 60, 30);
+                var t0 = HIRA_T0 + HIRA_STEP * i, sg = (i % 2 === 0) ? 1 : -1;
+                keys(p, [[t0, [bx, by + 340]], [t0 + 0.30, [bx, by - 26]], [t0 + 0.46, [bx, by + 3]], [t0 + 0.56, [bx, by]]], 50, 30);
+                keys(s, [[t0, [90, 115]], [t0 + 0.28, [100, 100]], [t0 + 0.44, [110, 90]], [t0 + 0.56, [100, 100]]], 50, 50);
+                keys(xf(L, "ADBE Rotate Z"), [[t0, 10 * sg], [t0 + 0.30, -3 * sg], [t0 + 0.56, 0]], 50, 40);
             } else {
-                // 線の上から落ちてきて着地
-                var t1 = 0.58 + 0.10 * i;
-                keys(p, [[t1, [bx, by - 800]], [t1 + 0.38, [bx, by + 16]], [t1 + 0.54, [bx, by]]], 55, 30);
+                var t1 = KANJI_T0 + KANJI_STEP * i;
+                keys(p, [[t1, [bx, by - 800]], [t1 + 0.34, [bx, by + 10]], [t1 + 0.46, [bx, by - 5]], [t1 + 0.56, [bx, by]]], 50, 30);
+                keys(s, [[t1, [94, 110]], [t1 + 0.34, [112, 88]], [t1 + 0.46, [97, 103]], [t1 + 0.56, [100, 100]]], 50, 50);
             }
         }
         return c;
     }
+    // 素材座標 → OP のロゴ空間（LOGO ヌルの中の座標）
+    function toLogoSpace(x, y) {
+        return [960 + (x - LOGO_CENTER[0]) * OP_LOGO_SCALE / 100, 540 + (y - LOGO_CENTER[1]) * OP_LOGO_SCALE / 100];
+    }
+
+    // 円形の穴のマスク（中心と半径を CTRL から読む）
+    var IRIS_PATH = CR + 'var c=C.effect("\u7A74\u306E\u4E2D\u5FC3")(1);var r=Math.max(C.effect("\u80CC\u666F\u306E\u7A74(px)")(1),0.01);var k=r*0.5523;' +
+        'createPath([[c[0],c[1]-r],[c[0]+r,c[1]],[c[0],c[1]+r],[c[0]-r,c[1]]],[[-k,0],[0,-k],[k,0],[0,k]],[[k,0],[0,k],[-k,0],[0,-k]],true)';
 
     // =================================================================
     //  01 オープニング
@@ -567,48 +633,86 @@
         C.name = "CTRL";
         addColorCtl(C, "\u8272:\u3072\u3089\u304C\u306A", COL.cyan);
         addColorCtl(C, "\u8272:\u6F22\u5B57", COL.black);
-        addColorCtl(C, "\u8272:\u30E9\u30A4\u30F3", COL.cyan);
+        addColorCtl(C, "\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38", COL.cyan);
         addColorCtl(C, "\u8272:\u80CC\u666F", COL.white);
+        addColorCtl(C, "\u8272:\u80CC\u666F\u306E\u4E38", COL.soft);
         addColorCtl(C, "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", COL.white);
+        addColorCtl(C, "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01", COL.cyan);
+        addColorCtl(C, "\u8272:\u5149\u306E\u5E2F", COL.white);
         addCheckbox(C, "\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059", true);
         addPoint(C, "\u5DE6\u4E0A\u30ED\u30B4\u306E\u4F4D\u7F6E", CORNER_POS);
         addSlider(C, "\u5DE6\u4E0A\u30ED\u30B4\u306E\u30B5\u30A4\u30BA(%)", CORNER_SIZE);
+        addPoint(C, "\u7A74\u306E\u4E2D\u5FC3", [960, 540]);
         addSlider(C, "\u30E9\u30A4\u30F3(%)", 0);
         addSlider(C, "\u3086\u3063\u304F\u308A\u30BA\u30FC\u30E0(%)", 100);
         addSlider(C, "\u30ED\u30B4\u79FB\u52D5(%)", 0);
-        keys(fxp(C, "\u30E9\u30A4\u30F3(%)"), [[0, 0], [0.45, 100], [1.35, 100], [1.75, 0]], 75, 20);
-        keys(fxp(C, "\u3086\u3063\u304F\u308A\u30BA\u30FC\u30E0(%)"), [[1.2, 100], [3.4, 103]]);
-        keys(fxp(C, "\u30ED\u30B4\u79FB\u52D5(%)"), [[3.35, 0], [4.25, 100]], 75, 70);
+        addSlider(C, "\u80CC\u666F\u306E\u7A74(px)", 0);
+        keys(fxp(C, "\u30E9\u30A4\u30F3(%)"), [[0.12, 0], [0.55, 100], [1.35, 100], [1.68, 0]], 75, 20);
+        keys(fxp(C, "\u3086\u3063\u304F\u308A\u30BA\u30FC\u30E0(%)"), [[1.2, 100], [3.3, 103]]);
+        keys(fxp(C, "\u30ED\u30B4\u79FB\u52D5(%)"), [[3.30, 0], [4.20, 100]], 75, 70);
+        keys(fxp(C, "\u80CC\u666F\u306E\u7A74(px)"), [[3.55, 0], [4.45, 1200]], 65, 55);
 
         var keep = 'var keep=(C.effect("\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059")(1)==1);var p=C.effect("\u30ED\u30B4\u79FB\u52D5(%)")(1)/100;';
+        var cyanExp = CR + 'C.effect("\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38")(1)';
 
-        // ---- 背景（上下2枚のパネル。最後に上下へ割れて次のシーンが見える）----
-        //  シェイプの中身は「上にあるグループほど手前」なので、LINE を先に作る
-        var panels = [
-            { name: "\u80CC\u666F\u30D1\u30CD\u30EB\uFF08\u4E0B\uFF09", bgY: 840, lineY: 542, move: 620 },
-            { name: "\u80CC\u666F\u30D1\u30CD\u30EB\uFF08\u4E0A\uFF09", bgY: 240, lineY: 538, move: -620 }
-        ];
-        var PT = null, PB = null;
-        for (var pi = 0; pi < panels.length; pi++) {
-            var pn = panels[pi];
-            var PN = comp.layers.addShape();
-            PN.name = pn.name;
-            setXY(PN, [0, 0], [0, 0]);
-            newGroup(PN, "LINE");
-            addRect(PN, "LINE", "R", [0, 4], [960, pn.lineY], 0);
-            addFill(PN, "LINE", "F", hex4(COL.cyan));
-            newGroup(PN, "BG");
-            addRect(PN, "BG", "R", [2100, 600], [960, pn.bgY], 0);
-            addFill(PN, "BG", "F", hex4(COL.white));
-            keys(rectSize(PN, "LINE"), [[3.50, [0, 4]], [3.80, [2100, 4]]], 85, 10);
-            setExpr(fillColor(PN, "BG"), CR + 'C.effect("\u8272:\u80CC\u666F")(1)', pn.name + " \u8272");
-            setExpr(fillColor(PN, "LINE"), CR + 'C.effect("\u8272:\u30E9\u30A4\u30F3")(1)', pn.name + " \u30E9\u30A4\u30F3\u8272");
-            keys(xf(PN, "ADBE Position"), [[3.80, [0, 0]], [4.55, [0, pn.move]]], 70, 60);
-            blur(PN);
-            if (pi === 0) { PB = PN; } else { PT = PN; }
+        // ---------- 背景（白）と、ふわふわ漂う丸。最後に円形の穴が広がって次のシーンが見える ----------
+        var BG = rectLayer(comp, "\u80CC\u666F\uFF08\u767D\uFF09", [2200, 1400], [960, 540], 0, COL.white);
+        setExpr(fillColor(BG, "G"), CR + 'C.effect("\u8272:\u80CC\u666F")(1)', "\u80CC\u666F \u8272");
+        addMask(BG, "\u5186\u5F62\u306E\u7A74", rectShape(0, 0, 1, 1), MaskMode.SUBTRACT);
+        setExpr(maskPath(BG, "\u5186\u5F62\u306E\u7A74"), IRIS_PATH, "\u80CC\u666F \u7A74");
+
+        var DECO = comp.layers.addShape();
+        DECO.name = "\u80CC\u666F\u306E\u4E38\uFF08\u3075\u308F\u3075\u308F\uFF09";
+        setXY(DECO, [0, 0], [0, 0]);
+        var deco = [[230, 860, 280, 75], [1720, 230, 330, 50], [1610, 915, 200, 75], [320, 190, 150, 50], [1170, 1010, 120, 75], [790, 105, 90, 50]];
+        for (var di = 0; di < deco.length; di++) {
+            var dg = "\u4E38" + (di + 1), dd = deco[di];
+            newGroup(DECO, dg);
+            addEllipse(DECO, dg, "E", [dd[2] * 2, dd[2] * 2], [0, 0]);
+            addFill(DECO, dg, "F", hex4(COL.soft));
+            setExpr(fillColor(DECO, dg), CR + 'C.effect("\u8272:\u80CC\u666F\u306E\u4E38")(1)', "\u80CC\u666F\u306E\u4E38 \u8272");
+            gxf(DECO, dg, "ADBE Vector Group Opacity").setValue(dd[3]);
+            gxf(DECO, dg, "ADBE Vector Position").setValue([dd[0], dd[1]]);
+            setExpr(gxf(DECO, dg, "ADBE Vector Position"),
+                'add(value,[Math.sin(time*' + (0.5 + di * 0.13).toFixed(2) + '+' + di + ')*16,Math.cos(time*' + (0.4 + di * 0.11).toFixed(2) + '+' + di + ')*12])',
+                "\u80CC\u666F\u306E\u4E38 \u6F02\u3044");
+            var dt = 0.05 + di * 0.07;
+            keys(gxf(DECO, dg, "ADBE Vector Scale"), [[dt, [0, 0]], [dt + 0.32, [106, 106]], [dt + 0.46, [100, 100]]], 50, 30);
         }
+        addMask(DECO, "\u5186\u5F62\u306E\u7A74", rectShape(0, 0, 1, 1), MaskMode.SUBTRACT);
+        setExpr(maskPath(DECO, "\u5186\u5F62\u306E\u7A74"), IRIS_PATH, "\u80CC\u666F\u306E\u4E38 \u7A74");
 
-        // ---- ロゴの親ヌル（ゆっくりズーム → 左上へ移動）----
+        // 穴のふち（水色のリング2本）と、はじまりの点
+        var rings = [
+            { name: "\u7A74\u306E\u30EA\u30F3\u30B0\uFF08\u5916\uFF09", add: 40, width: 6, op: 45 },
+            { name: "\u7A74\u306E\u30EA\u30F3\u30B0", add: 0, width: 16, op: 100 }
+        ];
+        for (var ri = 0; ri < rings.length; ri++) {
+            var rg = rings[ri];
+            var RL = comp.layers.addShape();
+            RL.name = rg.name;
+            setXY(RL, [0, 0], [960, 540]);
+            newGroup(RL, "G");
+            addEllipse(RL, "G", "E", [10, 10], [0, 0]);
+            addStroke(RL, "G", "S", hex4(COL.cyan), rg.width);
+            setExpr(gp(RL, "G", "E").property("ADBE Vector Ellipse Size"),
+                CR + 'var r=C.effect("\u80CC\u666F\u306E\u7A74(px)")(1)+' + rg.add + ';[r*2,r*2]', rg.name + " \u5927\u304D\u3055");
+            setExpr(gp(RL, "G", "S").property("ADBE Vector Stroke Color"), cyanExp, rg.name + " \u8272");
+            setExpr(xf(RL, "ADBE Position"), CR + 'C.effect("\u7A74\u306E\u4E2D\u5FC3")(1)', rg.name + " \u4F4D\u7F6E");
+            setExpr(xf(RL, "ADBE Opacity"), CR + '(C.effect("\u80CC\u666F\u306E\u7A74(px)")(1)>1)?' + rg.op + ':0', rg.name + " \u4E0D\u900F\u660E\u5EA6");
+        }
+        var ID = comp.layers.addShape();
+        ID.name = "\u7A74\u306E\u306F\u3058\u307E\u308A\uFF08\u70B9\uFF09";
+        setXY(ID, [0, 0], [960, 540]);
+        newGroup(ID, "G");
+        addEllipse(ID, "G", "E", [56, 56], [0, 0]);
+        addFill(ID, "G", "F", hex4(COL.cyan));
+        setExpr(fillColor(ID, "G"), cyanExp, "\u306F\u3058\u307E\u308A\u306E\u70B9 \u8272");
+        setExpr(xf(ID, "ADBE Position"), CR + 'C.effect("\u7A74\u306E\u4E2D\u5FC3")(1)', "\u306F\u3058\u307E\u308A\u306E\u70B9 \u4F4D\u7F6E");
+        keys(xf(ID, "ADBE Scale"), [[3.38, [0, 0]], [3.50, [125, 125]], [3.58, [100, 100]]], 50, 40);
+        keys(xf(ID, "ADBE Opacity"), [[3.56, 100], [3.70, 0]]);
+
+        // ---------- ロゴの親ヌル（ゆっくりズーム → 左上へ）----------
         var LN = addNull(comp, "LOGO\uFF08\u30ED\u30B4\u306E\u4F4D\u7F6E\u30FB\u5927\u304D\u3055\uFF09", [960, 540], [960, 540]);
         setExpr(xf(LN, "ADBE Position"),
             CR + keep + 'keep?linear(p,0,1,[960,540],C.effect("\u5DE6\u4E0A\u30ED\u30B4\u306E\u4F4D\u7F6E")(1)):[960,540]', "LOGO \u4F4D\u7F6E");
@@ -616,22 +720,50 @@
             CR + keep + 'var z=C.effect("\u3086\u3063\u304F\u308A\u30BA\u30FC\u30E0(%)")(1);var s=keep?linear(p,0,1,z,C.effect("\u5DE6\u4E0A\u30ED\u30B4\u306E\u30B5\u30A4\u30BA(%)")(1)):linear(p,0,1,z,80);[s,s]',
             "LOGO \u30B9\u30B1\u30FC\u30EB");
         blur(LN);
+        var logoOp = CR + keep + 'keep?100:linear(p,0,0.7,100,0)';
 
-        // 左上プレート（ロゴが左上に移るときに出てくる）
+        // 左上プレート（角の丸い白いプレート＋水色の縁。最後にポンと出る）
         var k = 100 / CORNER_SIZE;
-        var PL = rectLayer(comp, "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", [PLATE.w * k, PLATE.h * k], [960, 540], PLATE.r * k, COL.white);
+        var PL = comp.layers.addShape();
+        PL.name = "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8";
         PL.parent = LN;
-        setXY(PL, [0, 0], [0, 0]);
+        setXY(PL, [960, 540], [960, 540]);
+        newGroup(PL, "G");
+        addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], [960, 540], PLATE.r * k);
+        addStroke(PL, "G", "S", hex4(COL.cyan), PLATE.stroke * k);
+        addFill(PL, "G", "F", hex4(COL.white));
         setExpr(fillColor(PL, "G"), CR + 'C.effect("\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8")(1)', "\u30D7\u30EC\u30FC\u30C8 \u8272");
+        setExpr(gp(PL, "G", "S").property("ADBE Vector Stroke Color"), CR + 'C.effect("\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01")(1)', "\u30D7\u30EC\u30FC\u30C8 \u7E01\u306E\u8272");
         setExpr(xf(PL, "ADBE Opacity"), CR + keep + 'keep?linear(p,0.35,0.75,0,100):0', "\u30D7\u30EC\u30FC\u30C8 \u4E0D\u900F\u660E\u5EA6");
+        setExpr(xf(PL, "ADBE Scale"), CR + keep + 'var q=clamp((p-0.55)/0.45,0,1);var b=100*(1+0.08*Math.sin(Math.PI*q));[b,b]', "\u30D7\u30EC\u30FC\u30C8 \u30DD\u30F3");
         blur(PL);
 
-        // ロゴの文字（ひらがな＝線より上だけ、漢字＝線より下だけ見える）
-        var splitComp = OP_LOGO_SCALE / 100;
+        // 「現場」着地の波紋（文字の後ろ）
+        var kanji = glyphs("kanji");
+        var RP = comp.layers.addShape();
+        RP.name = "\u7740\u5730\u306E\u6CE2\u7D0B";
+        RP.parent = LN;
+        setXY(RP, [0, 0], [0, 0]);
+        for (var ki = 0; ki < kanji.length; ki++) {
+            var kg = "\u6CE2\u7D0B" + (ki + 1);
+            var kp = toLogoSpace(kanji[ki].x + kanji[ki].w / 2, kanji[ki].y + kanji[ki].h);
+            var tI = KANJI_T0 + KANJI_STEP * ki + 0.34;
+            newGroup(RP, kg);
+            addEllipse(RP, kg, "E", [700, 84], [0, 0]);
+            addStroke(RP, kg, "S", hex4(COL.cyan), 10);
+            setExpr(gp(RP, kg, "S").property("ADBE Vector Stroke Color"), cyanExp, "\u6CE2\u7D0B \u8272");
+            gxf(RP, kg, "ADBE Vector Position").setValue([kp[0], kp[1] + 2]);
+            setExpr(gxf(RP, kg, "ADBE Vector Scale"), 'var p=clamp((time-' + f2(tI) + ')/0.5,0,1);var s=linear(p,0,1,25,125);[s,s]', "\u6CE2\u7D0B \u5927\u304D\u3055");
+            setExpr(gxf(RP, kg, "ADBE Vector Group Opacity"), 'var p=clamp((time-' + f2(tI) + ')/0.5,0,1);(p<=0||p>=1)?0:linear(p,0,1,90,0)', "\u6CE2\u7D0B \u4E0D\u900F\u660E\u5EA6");
+        }
+        setExpr(xf(RP, "ADBE Opacity"), logoOp, "\u6CE2\u7D0B \u5168\u4F53");
+
+        // ロゴの文字（漢字＝線より下だけ、ひらがな＝線より上だけ見える）
         var parts = [
             { row: "kanji", name: "\u30ED\u30B4 \u6F22\u5B57\uFF08\u73FE\u5834\uFF09", color: "\u8272:\u6F22\u5B57", mask: rectShape(-200, LOGO_SPLIT_Y, 2200, 2200) },
             { row: "hira", name: "\u30ED\u30B4 \u3072\u3089\u304C\u306A\uFF08\u304B\u306A\u304C\u308F\u306E\uFF09", color: "\u8272:\u3072\u3089\u304C\u306A", mask: rectShape(-200, -200, 2200, LOGO_SPLIT_Y) }
         ];
+        var kanjiComp = null, kanjiLayer = null;
         for (var i = 0; i < parts.length; i++) {
             var gcomp = buildGlyphComp(uniqueName("_\u30ED\u30B4_" + parts[i].row), parts[i].row);
             var GL = comp.layers.add(gcomp, OP_DUR);
@@ -640,30 +772,79 @@
             setXY(GL, LOGO_CENTER, [960, 540]);
             xf(GL, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
             try { GL.collapseTransformation = true; } catch (eC) {}
-            addMask(GL, "\u7DDA\u3067\u5207\u308B", parts[i].mask);
+            addMask(GL, "\u7DDA\u3067\u5207\u308B", parts[i].mask, MaskMode.ADD);
             addFillFx(GL, CR + 'C.effect(' + q(parts[i].color) + ')(1)');
-            setExpr(xf(GL, "ADBE Opacity"), CR + keep + 'keep?100:linear(p,0,0.7,100,0)', parts[i].name + " \u4E0D\u900F\u660E\u5EA6");
+            setExpr(xf(GL, "ADBE Opacity"), logoOp, parts[i].name + " \u4E0D\u900F\u660E\u5EA6");
             blur(GL);
+            if (parts[i].row === "kanji") { kanjiComp = gcomp; kanjiLayer = GL; }
         }
 
-        // 最初に引かれる線
-        var ly = 540 + (LOGO_SPLIT_Y - LOGO_CENTER[1]) * splitComp;
-        var LI = rectLayer(comp, "\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0\u306E\u7DDA", [0, 8], [960, ly], 0, COL.cyan);
+        // 「現場」の上を通る光の帯（漢字の形でくり抜き）
+        var SH = comp.layers.addShape();
+        SH.name = "\u5149\u306E\u5E2F";
+        SH.parent = LN;
+        setXY(SH, [0, 0], [330, 700]);
+        newGroup(SH, "G");
+        addRect(SH, "G", "R", [120, 1400], [0, 0], 0);
+        addFill(SH, "G", "F", hex4(COL.white));
+        gxf(SH, "G", "ADBE Vector Rotation").setValue(18);
+        setExpr(fillColor(SH, "G"), CR + 'C.effect("\u8272:\u5149\u306E\u5E2F")(1)', "\u5149\u306E\u5E2F \u8272");
+        keys(xf(SH, "ADBE Position"), [[2.05, [330, 700]], [2.75, [1650, 700]]], 60, 60);
+        xf(SH, "ADBE Opacity").setValue(55);
+        var MT = comp.layers.add(kanjiComp, OP_DUR);
+        MT.name = "\u5149\u306E\u5E2F\u306E\u5F62\uFF08\u6F22\u5B57\uFF09";
+        MT.parent = LN;
+        setXY(MT, LOGO_CENTER, [960, 540]);
+        xf(MT, "ADBE Scale").setValue([OP_LOGO_SCALE, OP_LOGO_SCALE]);
+        try { MT.collapseTransformation = true; } catch (eC2) {}
+        addMask(MT, "\u7DDA\u3067\u5207\u308B", parts[0].mask, MaskMode.ADD);
+        MT.enabled = false;
+        try { SH.trackMatteType = TrackMatteType.ALPHA; } catch (eM) { SH.enabled = false; }
+
+        // ひらがなが飛び出すときのキラキラ
+        var hira = glyphs("hira");
+        var ly = toLogoSpace(0, LOGO_SPLIT_Y)[1];
+        var SP = comp.layers.addShape();
+        SP.name = "\u30AD\u30E9\u30AD\u30E9";
+        SP.parent = LN;
+        setXY(SP, [0, 0], [0, 0]);
+        var dirs = [[-110, -190, 26], [120, -165, 17]];
+        for (var hi = 0; hi < hira.length; hi++) {
+            var hx = toLogoSpace(hira[hi].x + hira[hi].w / 2, 0)[0];
+            var ts = HIRA_T0 + HIRA_STEP * hi + 0.06;
+            for (var dj = 0; dj < dirs.length; dj++) {
+                var sg = "\u7C92" + (hi + 1) + "_" + (dj + 1), dv = dirs[dj];
+                var dx = dv[0] * ((hi % 2 === 0) ? 1 : 0.8), dy = dv[1] * ((dj + hi) % 2 === 0 ? 1 : 0.85);
+                newGroup(SP, sg);
+                addEllipse(SP, sg, "E", [dv[2], dv[2]], [0, 0]);
+                addFill(SP, sg, "F", hex4(COL.cyan));
+                setExpr(fillColor(SP, sg), cyanExp, "\u30AD\u30E9\u30AD\u30E9 \u8272");
+                setExpr(gxf(SP, sg, "ADBE Vector Position"),
+                    'var p=clamp((time-' + f2(ts) + ')/0.55,0,1);var e=1-Math.pow(1-p,3);[' + f2(hx) + '+(' + f2(dx) + ')*e,' + f2(ly) + '+(' + f2(dy) + ')*e]',
+                    "\u30AD\u30E9\u30AD\u30E9 \u4F4D\u7F6E");
+                setExpr(gxf(SP, sg, "ADBE Vector Scale"),
+                    'var p=clamp((time-' + f2(ts) + ')/0.55,0,1);var s=(p<=0||p>=1)?0:100*(1-p*p);[s,s]', "\u30AD\u30E9\u30AD\u30E9 \u5927\u304D\u3055");
+            }
+        }
+
+        // 最初の線（点がポンと出て、横に伸びて線になる）
+        var LI = comp.layers.addShape();
+        LI.name = "\u30AA\u30FC\u30D7\u30CB\u30F3\u30B0\u306E\u7DDA";
         LI.parent = LN;
-        setXY(LI, [0, 0], [0, 0]);
-        setExpr(rectSize(LI, "G"), CR + 'var w=1240*C.effect("\u30E9\u30A4\u30F3(%)")(1)/100;[Math.max(w,0.01),8]', "\u7DDA \u30B5\u30A4\u30BA");
-        setExpr(fillColor(LI, "G"), CR + 'C.effect("\u8272:\u30E9\u30A4\u30F3")(1)', "\u7DDA \u8272");
+        setXY(LI, [960, ly], [960, ly]);
+        newGroup(LI, "G");
+        addRect(LI, "G", "R", [10, 10], [960, ly], 5);
+        addFill(LI, "G", "F", hex4(COL.cyan));
+        setExpr(rectSize(LI, "G"), CR + 'var p=C.effect("\u30E9\u30A4\u30F3(%)")(1)/100;[10+1230*p,10]', "\u7DDA \u30B5\u30A4\u30BA");
+        setExpr(fillColor(LI, "G"), cyanExp, "\u7DDA \u8272");
+        keys(xf(LI, "ADBE Scale"), [[0, [0, 0]], [0.08, [150, 150]], [0.16, [100, 100]], [1.68, [100, 100]], [1.82, [0, 0]]], 50, 40);
 
         // ---- 並び順 ----
         C.moveToBeginning();
         LN.moveToEnd();
 
-        egpFx(comp, C, "\u8272:\u3072\u3089\u304C\u306A");
-        egpFx(comp, C, "\u8272:\u6F22\u5B57");
-        egpFx(comp, C, "\u8272:\u30E9\u30A4\u30F3");
-        egpFx(comp, C, "\u8272:\u80CC\u666F");
-        egpFx(comp, C, "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8");
-        egpFx(comp, C, "\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059");
+        var ops = ["\u8272:\u3072\u3089\u304C\u306A", "\u8272:\u6F22\u5B57", "\u8272:\u30E9\u30A4\u30F3\u30FB\u4E38", "\u8272:\u80CC\u666F", "\u8272:\u80CC\u666F\u306E\u4E38", "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01", "\u8272:\u5149\u306E\u5E2F", "\u6700\u5F8C\u306B\u5DE6\u4E0A\u30ED\u30B4\u3092\u6B8B\u3059"];
+        for (var oi = 0; oi < ops.length; oi++) { egpFx(comp, C, ops[oi]); }
         setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u30AA\u30FC\u30D7\u30CB\u30F3\u30B0");
         return comp;
     }
@@ -680,16 +861,18 @@
         addColorCtl(C, "\u8272:\u3072\u3089\u304C\u306A", COL.cyan);
         addColorCtl(C, "\u8272:\u6F22\u5B57", COL.black);
         addColorCtl(C, "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", COL.white);
+        addColorCtl(C, "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01", COL.cyan);
         addColorCtl(C, "\u8272:\u30BF\u30A4\u30C8\u30EB\u5E2F", COL.black);
         addColorCtl(C, "\u8272:\u30BF\u30A4\u30C8\u30EB\u6587\u5B57", COL.white);
-        addColorCtl(C, "\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8", COL.cyan);
+        addColorCtl(C, "\u8272:\u4E38", COL.cyan);
+        addColorCtl(C, "\u8272:\u30D4\u30F3", COL.white);
         addCheckbox(C, "\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A", true);
         addCheckbox(C, "\u30ED\u30B4\u3082\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u3067\u51FA\u3059", false);
         addCheckbox(C, "\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059", false);
         addSlider(C, "\u30ED\u30B4\u306E\u30DD\u30C3\u30D7(%)", 0);
         addSlider(C, "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)", 0);
         keys(fxp(C, "\u30ED\u30B4\u306E\u30DD\u30C3\u30D7(%)"), [[0, 0], [0.22, 108], [0.38, 100]], 50, 30);
-        keys(fxp(C, "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)"), [[0.08, 0], [0.42, 100], [D - 0.35, 100], [D - 0.08, 0]], 80, 15);
+        barKeys(fxp(C, "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)"), 0.10, 0.42, D);
 
         var showT = '*thisComp.layer("CTRL").effect("\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A")(1)';
         var logoOp = CR + 'var o=(C.effect("\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059")(1)==1)?linear(time,thisComp.duration-0.3,thisComp.duration,100,0):100;o';
@@ -703,10 +886,16 @@
             "\u5DE6\u4E0A\u30ED\u30B4 \u30B9\u30B1\u30FC\u30EB");
 
         var k = 100 / s;
-        var PL = rectLayer(comp, "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", [PLATE.w * k, PLATE.h * k], LOGO_CENTER, PLATE.r * k, COL.white);
+        var PL = comp.layers.addShape();
+        PL.name = "\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8";
         PL.parent = LN;
         setXY(PL, [0, 0], [0, 0]);
+        newGroup(PL, "G");
+        addRect(PL, "G", "R", [PLATE.w * k, PLATE.h * k], LOGO_CENTER, PLATE.r * k);
+        addStroke(PL, "G", "S", hex4(COL.cyan), PLATE.stroke * k);
+        addFill(PL, "G", "F", hex4(COL.white));
         setExpr(fillColor(PL, "G"), CR + 'C.effect("\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8")(1)', "\u30D7\u30EC\u30FC\u30C8 \u8272");
+        setExpr(gp(PL, "G", "S").property("ADBE Vector Stroke Color"), CR + 'C.effect("\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01")(1)', "\u30D7\u30EC\u30FC\u30C8 \u7E01\u306E\u8272");
         setExpr(xf(PL, "ADBE Opacity"), logoOp, "\u30D7\u30EC\u30FC\u30C8 \u4E0D\u900F\u660E\u5EA6");
 
         var list = glyphs(null);
@@ -720,46 +909,35 @@
             setExpr(xf(L, "ADBE Opacity"), logoOp, "\u30ED\u30B4\u6587\u5B57 \u4E0D\u900F\u660E\u5EA6");
         }
 
-        // ---- 上部タイトル（プレートの右に帯が伸びる）----
-        var x0 = CORNER_POS[0] + PLATE.w / 2 + 14, y0 = CORNER_POS[1], bh = 72;
-        var AC = rectLayer(comp, "\u30BF\u30A4\u30C8\u30EB \u30A2\u30AF\u30BB\u30F3\u30C8", [10, bh], [x0 + 5, y0], 0, COL.cyan);
-        setXY(AC, [x0 + 5, y0], [x0 + 5, y0]);
-        setExpr(fillColor(AC, "G"), CR + 'C.effect("\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8")(1)', "\u30A2\u30AF\u30BB\u30F3\u30C8 \u8272");
-        keys(xf(AC, "ADBE Scale"), [[0, [100, 0]], [0.2, [100, 100]], [D - 0.12, [100, 100]], [D, [100, 0]]], 80, 20);
-        setExpr(xf(AC, "ADBE Opacity"), 'value' + showT, "\u30A2\u30AF\u30BB\u30F3\u30C8 \u4E0D\u900F\u660E\u5EA6");
-
+        // ---- 上部タイトル（丸＋ピンから、カプセル型の帯が伸びる）----
+        var bh = 72, x0 = CORNER_POS[0] + PLATE.w / 2 + 16, y0 = CORNER_POS[1];
         var bar = makeBar(comp, {
-            name: "\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB", text: TXT.title, font: FONT.bold, size: 44,
+            name: "\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB", text: TXT.title, font: FONT.bold, size: 42,
             textColor: "\u8272:\u30BF\u30A4\u30C8\u30EB\u6587\u5B57", boxColor: "\u8272:\u30BF\u30A4\u30C8\u30EB\u5E2F",
-            x: x0 + 10, y: y0, h: bh, padL: 26, padR: 30, grow: "left", slider: "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)"
+            x: x0, y: y0, h: bh, padL: bh + 16, padR: 36, grow: "left", slider: "\u30BF\u30A4\u30C8\u30EB\u5E2F(%)"
         });
-        textMotion(bar.text, 0.22, 0.4, D);
+        textMotion(bar.text, 0.24, 0.42, D, "left");
         setExpr(xf(bar.text, "ADBE Opacity"), 'value' + showT, "\u30BF\u30A4\u30C8\u30EB \u4E0D\u900F\u660E\u5EA6");
         setExpr(xf(bar.box, "ADBE Opacity"), '100' + showT, "\u30BF\u30A4\u30C8\u30EB\u5E2F \u4E0D\u900F\u660E\u5EA6");
-        AC.moveToBeginning();
-        bar.text.moveToBeginning();
+        var DT = addDot(comp, "\u30BF\u30A4\u30C8\u30EB\u306E\u4E38", x0 + bh / 2, y0, bh, "\u8272:\u4E38", "\u8272:\u30D4\u30F3");
+        popKeys(DT, 0, D);
+        setExpr(xf(DT, "ADBE Opacity"), '100' + showT, "\u30BF\u30A4\u30C8\u30EB\u306E\u4E38 \u4E0D\u900F\u660E\u5EA6");
 
         C.moveToBeginning();
         LN.moveToEnd();
 
         egp(comp, srcText(bar.text), "\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB");
-        egpFx(comp, C, "\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A");
-        egpFx(comp, C, "\u30ED\u30B4\u3082\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u3067\u51FA\u3059");
-        egpFx(comp, C, "\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059");
-        egpFx(comp, C, "\u8272:\u30BF\u30A4\u30C8\u30EB\u5E2F");
-        egpFx(comp, C, "\u8272:\u30BF\u30A4\u30C8\u30EB\u6587\u5B57");
-        egpFx(comp, C, "\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8");
-        egpFx(comp, C, "\u8272:\u3072\u3089\u304C\u306A");
-        egpFx(comp, C, "\u8272:\u6F22\u5B57");
-        egpFx(comp, C, "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8");
+        var cs = ["\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB\u3092\u8868\u793A", "\u30ED\u30B4\u3082\u30A2\u30CB\u30E1\u30FC\u30B7\u30E7\u30F3\u3067\u51FA\u3059", "\u6700\u5F8C\u306B\u30ED\u30B4\u3082\u6D88\u3059", "\u8272:\u30BF\u30A4\u30C8\u30EB\u5E2F", "\u8272:\u30BF\u30A4\u30C8\u30EB\u6587\u5B57", "\u8272:\u4E38", "\u8272:\u30D4\u30F3",
+            "\u8272:\u3072\u3089\u304C\u306A", "\u8272:\u6F22\u5B57", "\u8272:\u5DE6\u4E0A\u30D7\u30EC\u30FC\u30C8", "\u8272:\u30D7\u30EC\u30FC\u30C8\u306E\u7E01"];
+        for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
         setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u5DE6\u4E0A\u30ED\u30B4\uFF0B\u4E0A\u90E8\u30BF\u30A4\u30C8\u30EB");
-        protect(comp, 0, 0.7, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
-        protect(comp, D - 0.4, 0.4, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
+        protect(comp, 0, 0.8, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
+        protect(comp, D - 0.45, 0.45, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
     }
 
     // =================================================================
-    //  03 下部テロップ（中央から左右に伸びる）
+    //  03 下部テロップ（中央から左右に開く。両端の丸が外へ移動）
     // =================================================================
     function buildBottom(N) {
         var D = 8;
@@ -769,39 +947,38 @@
         C.name = "CTRL";
         addColorCtl(C, "\u8272:\u5E2F", COL.black);
         addColorCtl(C, "\u8272:\u6587\u5B57", COL.white);
-        addColorCtl(C, "\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8", COL.cyan);
+        addColorCtl(C, "\u8272:\u4E38", COL.cyan);
         addSlider(C, "\u5E2F(%)", 0);
-        addSlider(C, "\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA(%)", 0);
-        keys(fxp(C, "\u5E2F(%)"), [[0, 0], [0.35, 100], [D - 0.35, 100], [D - 0.05, 0]], 80, 15);
-        keys(fxp(C, "\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA(%)"), [[0.25, 0], [0.6, 100], [D - 0.45, 100], [D - 0.25, 0]], 80, 15);
+        barKeys(fxp(C, "\u5E2F(%)"), 0.10, 0.42, D);
 
-        var y = 958, h = 84;
+        var y = 958, h = 84, pad = h + 22;
         var bar = makeBar(comp, {
-            name: "\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7", text: TXT.bottom, font: FONT.bold, size: 48,
+            name: "\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7", text: TXT.bottom, font: FONT.bold, size: 46,
             textColor: "\u8272:\u6587\u5B57", boxColor: "\u8272:\u5E2F",
-            x: 960, y: y, h: h, padL: 44, padR: 44, grow: "center", slider: "\u5E2F(%)"
+            x: 960, y: y, h: h, padL: pad, padR: pad, grow: "center", slider: "\u5E2F(%)"
         });
-        textMotion(bar.text, 0.15, 0.35, D);
+        textMotion(bar.text, 0.26, 0.42, D, "up");
 
-        var AL = rectLayer(comp, "\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA", [10, 6], [960, y + h / 2 + 3], 0, COL.cyan);
-        setExpr(rectSize(AL, "G"),
-            'var r=thisComp.layer("\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7").sourceRectAtTime(time,false);var p=thisComp.layer("CTRL").effect("\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA(%)")(1)/100;[Math.max((r.width+88)*p,0.01),6]',
-            "\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA \u30B5\u30A4\u30BA");
-        setExpr(fillColor(AL, "G"), CR + 'C.effect("\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8")(1)', "\u30A2\u30AF\u30BB\u30F3\u30C8\u7DDA \u8272");
+        for (var side = -1; side <= 1; side += 2) {
+            var DT = addDot(comp, side < 0 ? "\u5DE6\u306E\u4E38" : "\u53F3\u306E\u4E38", 960, y, h * 0.62, "\u8272:\u4E38", null);
+            setExpr(xf(DT, "ADBE Position"),
+                bar.wExp + 'var d=Math.max(w/2-' + (h / 2) + ',0);[960' + (side < 0 ? "-" : "+") + 'd,' + y + ']', "\u4E38 \u4F4D\u7F6E");
+            popKeys(DT, 0, D);
+        }
 
         C.moveToBeginning();
         egp(comp, srcText(bar.text), "\u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7");
         egpFx(comp, C, "\u8272:\u5E2F");
         egpFx(comp, C, "\u8272:\u6587\u5B57");
-        egpFx(comp, C, "\u8272:\u30A2\u30AF\u30BB\u30F3\u30C8");
+        egpFx(comp, C, "\u8272:\u4E38");
         setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u4E0B\u90E8\u30C6\u30ED\u30C3\u30D7");
-        protect(comp, 0, 0.7, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
+        protect(comp, 0, 0.8, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         protect(comp, D - 0.45, 0.45, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
     }
 
     // =================================================================
-    //  04 名前テロップ（左下：肩書きタグ＋名前＋所属）
+    //  04 名前テロップ（左下：丸＋ピン → 名前の帯、上に肩書きタグ、下に所属）
     // =================================================================
     function buildName(N) {
         var D = 8;
@@ -815,48 +992,51 @@
         addColorCtl(C, "\u8272:\u80A9\u66F8\u304D\u306E\u6587\u5B57", COL.white);
         addColorCtl(C, "\u8272:\u6240\u5C5E\u306E\u5E2F", COL.white);
         addColorCtl(C, "\u8272:\u6240\u5C5E\u306E\u6587\u5B57", COL.black);
+        addColorCtl(C, "\u8272:\u4E38", COL.cyan);
+        addColorCtl(C, "\u8272:\u30D4\u30F3", COL.white);
         addSlider(C, "\u540D\u524D\u306E\u5E2F(%)", 0);
         addSlider(C, "\u80A9\u66F8\u304D\u30BF\u30B0(%)", 0);
         addSlider(C, "\u6240\u5C5E\u306E\u5E2F(%)", 0);
-        keys(fxp(C, "\u540D\u524D\u306E\u5E2F(%)"), [[0, 0], [0.35, 100], [D - 0.3, 100], [D - 0.02, 0]], 80, 15);
-        keys(fxp(C, "\u80A9\u66F8\u304D\u30BF\u30B0(%)"), [[0.22, 0], [0.5, 100], [D - 0.4, 100], [D - 0.16, 0]], 80, 15);
-        keys(fxp(C, "\u6240\u5C5E\u306E\u5E2F(%)"), [[0.32, 0], [0.62, 100], [D - 0.36, 100], [D - 0.1, 0]], 80, 15);
+        barKeys(fxp(C, "\u540D\u524D\u306E\u5E2F(%)"), 0.10, 0.36, D);
+        barKeys(fxp(C, "\u80A9\u66F8\u304D\u30BF\u30B0(%)"), 0.30, 0.48, D);
+        barKeys(fxp(C, "\u6240\u5C5E\u306E\u5E2F(%)"), 0.38, 0.44, D);
 
-        var X = 110;
+        var X = 100, NH = 92, NY = 880;
+        var TX = X + NH + 18;   // 名前の文字の始まり（タグと所属もここにそろえる）
+
         var org = makeBar(comp, {
-            name: "\u6240\u5C5E", text: TXT.org, font: FONT.medium, size: 34,
+            name: "\u6240\u5C5E", text: TXT.org, font: FONT.medium, size: 32,
             textColor: "\u8272:\u6240\u5C5E\u306E\u6587\u5B57", boxColor: "\u8272:\u6240\u5C5E\u306E\u5E2F",
-            x: X, y: 955, h: 60, padL: 26, padR: 28, grow: "left", slider: "\u6240\u5C5E\u306E\u5E2F(%)"
+            x: TX, y: NY + NH / 2 + 8 + 28, h: 56, padL: 24, padR: 26, grow: "left", slider: "\u6240\u5C5E\u306E\u5E2F(%)"
         });
-        textMotion(org.text, 0.4, 0.36, D);
+        textMotion(org.text, 0.48, 0.44, D, "left");
 
         var nm = makeBar(comp, {
-            name: "\u540D\u524D", text: TXT.name, font: FONT.bold, size: 62,
+            name: "\u540D\u524D", text: TXT.name, font: FONT.bold, size: 60,
             textColor: "\u8272:\u540D\u524D\u306E\u6587\u5B57", boxColor: "\u8272:\u540D\u524D\u306E\u5E2F",
-            x: X, y: 879, h: 92, padL: 30, padR: 36, grow: "left", slider: "\u540D\u524D\u306E\u5E2F(%)"
+            x: X, y: NY, h: NH, padL: NH + 18, padR: 42, grow: "left", slider: "\u540D\u524D\u306E\u5E2F(%)"
         });
-        textMotion(nm.text, 0.12, 0.3, D);
+        textMotion(nm.text, 0.22, 0.36, D, "left");
 
         var rl = makeBar(comp, {
-            name: "\u80A9\u66F8\u304D", text: TXT.role, font: FONT.bold, size: 28,
+            name: "\u80A9\u66F8\u304D", text: TXT.role, font: FONT.bold, size: 26,
             textColor: "\u8272:\u80A9\u66F8\u304D\u306E\u6587\u5B57", boxColor: "\u8272:\u80A9\u66F8\u304D\u30BF\u30B0",
-            x: X, y: 809, h: 48, padL: 18, padR: 20, grow: "left", slider: "\u80A9\u66F8\u304D\u30BF\u30B0(%)"
+            x: TX, y: NY - NH / 2 - 8 - 23, h: 46, padL: 20, padR: 22, grow: "left", slider: "\u80A9\u66F8\u304D\u30BF\u30B0(%)"
         });
-        textMotion(rl.text, 0.3, 0.4, D);
+        textMotion(rl.text, 0.40, 0.48, D, "left");
+
+        var DT = addDot(comp, "\u540D\u524D\u306E\u4E38", X + NH / 2, NY, NH, "\u8272:\u4E38", "\u8272:\u30D4\u30F3");
+        popKeys(DT, 0, D);
 
         C.moveToBeginning();
         egp(comp, srcText(nm.text), "\u540D\u524D");
         egp(comp, srcText(rl.text), "\u80A9\u66F8\u304D");
         egp(comp, srcText(org.text), "\u6240\u5C5E");
-        egpFx(comp, C, "\u8272:\u540D\u524D\u306E\u5E2F");
-        egpFx(comp, C, "\u8272:\u540D\u524D\u306E\u6587\u5B57");
-        egpFx(comp, C, "\u8272:\u80A9\u66F8\u304D\u30BF\u30B0");
-        egpFx(comp, C, "\u8272:\u80A9\u66F8\u304D\u306E\u6587\u5B57");
-        egpFx(comp, C, "\u8272:\u6240\u5C5E\u306E\u5E2F");
-        egpFx(comp, C, "\u8272:\u6240\u5C5E\u306E\u6587\u5B57");
+        var cs = ["\u8272:\u540D\u524D\u306E\u5E2F", "\u8272:\u540D\u524D\u306E\u6587\u5B57", "\u8272:\u80A9\u66F8\u304D\u30BF\u30B0", "\u8272:\u80A9\u66F8\u304D\u306E\u6587\u5B57", "\u8272:\u6240\u5C5E\u306E\u5E2F", "\u8272:\u6240\u5C5E\u306E\u6587\u5B57", "\u8272:\u4E38", "\u8272:\u30D4\u30F3"];
+        for (var ci = 0; ci < cs.length; ci++) { egpFx(comp, C, cs[ci]); }
         setTemplateName(comp, "\u304B\u306A\u304C\u308F\u306E\u73FE\u5834 \u540D\u524D\u30C6\u30ED\u30C3\u30D7");
         protect(comp, 0, 1.0, "IN\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
-        protect(comp, D - 0.45, 0.45, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
+        protect(comp, D - 0.5, 0.5, "OUT\uFF08\u4F38\u3070\u3057\u3066\u3082\u5909\u308F\u3089\u306A\u3044\uFF09");
         return comp;
     }
 

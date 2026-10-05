@@ -96,6 +96,20 @@ const SCHEMA = {
     P("ADBE Vector Fill Color", "Color", "color", [1, 0, 0, 1]),
     P("ADBE Vector Fill Opacity", "Opacity", "oned", 100),
   ]),
+  "ADBE Vector Graphic - Stroke": () => G("ADBE Vector Graphic - Stroke", "Stroke 1", [
+    P("ADBE Vector Blend Mode", "Blend Mode", "oned", 1),
+    P("ADBE Vector Composite Order", "Composite", "oned", 1),
+    P("ADBE Vector Stroke Color", "Color", "color", [1, 1, 1, 1]),
+    P("ADBE Vector Stroke Opacity", "Opacity", "oned", 100),
+    P("ADBE Vector Stroke Width", "Stroke Width", "oned", 2),
+    P("ADBE Vector Stroke Line Cap", "Line Cap", "oned", 1),
+    P("ADBE Vector Stroke Line Join", "Line Join", "oned", 1),
+    P("ADBE Vector Stroke Miter Limit", "Miter Limit", "oned", 4),
+  ]),
+  "ADBE Vector Shape - Group": () => G("ADBE Vector Shape - Group", "Path 1", [
+    P("ADBE Vector Shape Direction", "Shape Direction", "oned", 1),
+    P("ADBE Vector Shape", "Path", "shape", null),
+  ]),
   "ADBE Vector Graphic - G-Fill": () => G("ADBE Vector Graphic - G-Fill", "Gradient Fill 1", [
     P("ADBE Vector Blend Mode", "Blend Mode", "oned", 1),
     P("ADBE Vector Composite Order", "Composite", "oned", 1),
@@ -254,6 +268,7 @@ class Layer extends Handle {
     this.id = ++LAYER_ID; this.containingComp = comp; this.kind = kind;
     this._parent = null; this.guideLayer = false; this.enabled = true; this.shy = false; this.locked = false;
     this.blendingMode = BlendingMode.NORMAL; this.collapseTransformation = false; this.startTime = 0; this.threeDLayer = false;
+    this._trackMatteType = 5012; // NO_TRACK_MATTE
     this.inPoint = 0; this.outPoint = comp.duration; this.source = extra.source || null; this.solidColor = extra.color || null;
     root.children.push(instantiate(G("ADBE Marker", "Marker", []), root));
     root.children.push(instantiate(transformSchema(), root));
@@ -284,6 +299,12 @@ class Layer extends Handle {
     this._parent = p;
   }
   get index() { return this.containingComp._layers.indexOf(this) + 1; }
+  get trackMatteType() { return this._trackMatteType; }
+  set trackMatteType(v) {
+    if (!Object.values(TrackMatteType).includes(v)) fail("bad TrackMatteType");
+    if (v !== TrackMatteType.NO_TRACK_MATTE && this.index === 1) fail("track matte needs a layer above");
+    this._trackMatteType = v;
+  }
   get transform() { return this.property("ADBE Transform Group"); }
   moveToBeginning() { const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
   moveToEnd() { const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
@@ -388,6 +409,7 @@ function makeApp(opts) {
 const MaskMode = { NONE: 6812 + 0, ADD: 6813, SUBTRACT: 6814, INTERSECT: 6815, LIGHTEN: 6816, DARKEN: 6817, DIFFERENCE: 6818 };
 const BlendingMode = { NORMAL: 5212, SCREEN: 5220, ADD: 5213, MULTIPLY: 5216 };
 const ParagraphJustification = { LEFT_JUSTIFY: 7413, RIGHT_JUSTIFY: 7414, CENTER_JUSTIFY: 7415 };
+const TrackMatteType = { NO_TRACK_MATTE: 5012, ALPHA: 5013, ALPHA_INVERTED: 5014, LUMA: 5015, LUMA_INVERTED: 5016 };
 const KeyframeInterpolationType = { LINEAR: 6612, BEZIER: 6613, HOLD: 6614 };
 
 function makeGlobals(opts) {
@@ -395,7 +417,7 @@ function makeGlobals(opts) {
   const log = [];
   return {
     app, log,
-    Shape, KeyframeEase, MarkerValue, MaskMode, BlendingMode, ParagraphJustification, KeyframeInterpolationType,
+    Shape, KeyframeEase, MarkerValue, MaskMode, BlendingMode, ParagraphJustification, KeyframeInterpolationType, TrackMatteType,
     PropertyValueType: PVT,
     alert: (m) => log.push(["alert", String(m)]),
     confirm: (m) => { log.push(["confirm", String(m)]); return !!opts.confirm; },

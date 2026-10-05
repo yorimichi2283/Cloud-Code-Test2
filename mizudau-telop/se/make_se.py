@@ -253,14 +253,15 @@ def se_shakin():
     return finish(reverb(taper(stereo), wet=0.25, decay=1.2), -5)
 
 
+# ファイル名の先頭の SE01〜 は After Effects 用スクリプトが音を探す目印（変更しないこと）
 SINGLES = {
-    "シュッ_横ブラー": se_whoosh,
-    "キラーン_光る": se_shine,
-    "ドン_箱が出る": se_don,
-    "ジャン_決め": se_jan,
-    "ドーン_デカ文字": se_doon,
-    "ピコン_テロップ": se_pikon,
-    "シャキーン": se_shakin,
+    "シュッ_横ブラー": ("SE01", se_whoosh),
+    "キラーン_光る": ("SE02", se_shine),
+    "ドン_箱が出る": ("SE03", se_don),
+    "ドーン_デカ文字": ("SE04", se_doon),
+    "ジャン_決め": ("SE05", se_jan),
+    "ピコン_テロップ": ("SE06", se_pikon),
+    "シャキーン": ("SE07", se_shakin),
 }
 
 # テンプレートの初期設定どおりのタイミングで並べた音（.mogrt と同じ位置に置くだけで合う）
@@ -281,9 +282,12 @@ def write(path, stereo):
 
 def main():
     rendered = {}
-    for name, fn in SINGLES.items():
+    for old in os.listdir(os.path.join(HERE, "単体")) if os.path.isdir(os.path.join(HERE, "単体")) else []:
+        if old.endswith(".wav"):
+            os.remove(os.path.join(HERE, "単体", old))
+    for name, (key, fn) in SINGLES.items():
         rendered[name] = fn()
-        write(os.path.join(HERE, "単体", "SE_" + name + ".wav"), rendered[name])
+        write(os.path.join(HERE, "単体", key + "_" + name + ".wav"), rendered[name])
     for name, events in SYNCED.items():
         length = max(int(round(f / FPS * SR)) + len(rendered[se]) for se, f in events)
         mix = np.zeros((length, 2))

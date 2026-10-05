@@ -305,6 +305,9 @@ class Layer {
         this._parent = p;
     }
     get index() { return this.comp._layers.indexOf(this) + 1; }
+    get startTime() { return this._startTime || 0; }
+    set startTime(v) { if (typeof v !== "number" || !isFinite(v)) throw new Error("bad startTime"); this._startTime = v; }
+    moveToEnd() { const a = this.comp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
     property(k) { return new GroupHandle(this.root).property(k); }
     get numProperties() { return this.root.children.length; }
     moveToBeginning() { const a = this.comp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
@@ -335,6 +338,10 @@ class Comp {
             addText(str) { const l = new Layer(self, "text", "Text " + (self._layers.length + 1)); l.root.children[0].children[0].value = new TextDocument(str); self._layers.unshift(l); return l; },
             addShape() { const l = new Layer(self, "shape", "Shape Layer " + (self._layers.length + 1)); self._layers.unshift(l); return l; },
             addNull() { const l = new Layer(self, "null", "Null " + (self._layers.length + 1)); self._layers.unshift(l); return l; },
+            add(item) {
+                if (!item || !item._isFootage) throw new Error("layers.add needs a footage item");
+                const l = new Layer(self, "av", item.name); l.source = item; self._layers.unshift(l); return l;
+            },
         };
         this.markerProperty = {
             setValueAtTime(t, mv) { if (!(mv instanceof MarkerValue)) throw new Error("MarkerValue expected"); self._markers.push({ t, mv }); },
@@ -356,6 +363,26 @@ class MarkerValue {
     constructor(comment) { this.comment = comment; this.duration = 0; this.protectedRegion = false; }
 }
 
+class FileObj {
+    constructor(p) { this.fsName = String(p); this.name = path.basename(this.fsName); }
+    get parent() { return new FolderObj(path.dirname(this.fsName)); }
+    get exists() { return fs.existsSync(this.fsName); }
+}
+class FolderObj {
+    constructor(p) { this.fsName = String(p); this.name = path.basename(this.fsName); }
+    get exists() { return fs.existsSync(this.fsName) && fs.statSync(this.fsName).isDirectory(); }
+    getFiles(mask) {
+        if (!this.exists) return [];
+        const re = new RegExp("^" + String(mask || "*").replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$");
+        return fs.readdirSync(this.fsName).filter(n => re.test(n)).sort().map(n => new FileObj(path.join(this.fsName, n)));
+    }
+    static selectDialog() { selectDialogs.push(1); return new FolderObj(args.out || "/tmp/out"); }
+}
+class ImportOptions {
+    constructor(file) { if (!file || !file.fsName) throw new Error("ImportOptions needs File"); this.file = file; }
+}
+const imported = [];
+const selectDialogs = [];
 const comps = [];
 const exported = [];
 const alerts = [];
@@ -368,6 +395,13 @@ const project = {
         addFolder(name) { return { name }; },
     },
     save(file) { if (!file || !file.fsName) throw new Error("save needs File"); },
+    importFile(io) {
+        if (!(io instanceof ImportOptions)) throw new Error("importFile needs ImportOptions");
+        if (!fs.existsSync(io.file.fsName)) throw new Error("file not found " + io.file.fsName);
+        const item = { _isFootage: true, name: path.basename(io.file.fsName), file: io.file, parentFolder: null };
+        imported.push(item);
+        return item;
+    },
 };
 
 const sandbox = {
@@ -378,11 +412,12 @@ const sandbox = {
         beginUndoGroup() {}, endUndoGroup() {},
         fonts: args.nofontapi === undefined ? { getFontsByPostScriptName(ps) { return installed.has(ps) ? [{ postScriptName: ps }] : []; } } : undefined,
     },
-    $: { os: args.os || "Macintosh OS 15.1.0" },
+    $: { os: args.os || "Macintosh OS 15.1.0", fileName: args.scriptpath || SCRIPT },
     alert(m) { alerts.push(m); },
     confirm() { return true; },
-    Folder: { selectDialog() { return { fsName: "/tmp/out" }; } },
-    File: function (p) { this.fsName = p; },
+    Folder: FolderObj,
+    File: FileObj,
+    ImportOptions,
     ParagraphJustification: { LEFT_JUSTIFY: "LEFT_JUSTIFY", CENTER_JUSTIFY: "CENTER_JUSTIFY", RIGHT_JUSTIFY: "RIGHT_JUSTIFY" },
     PropertyType: { PROPERTY: "PROPERTY", INDEXED_GROUP: "INDEXED_GROUP", NAMED_GROUP: "NAMED_GROUP" },
     MarkerValue,
@@ -395,11 +430,15 @@ const src = fs.readFileSync(SCRIPT, "utf8").replace(/^﻿/, "");
 vm.createContext(sandbox);
 vm.runInContext(src, sandbox, { filename: "MizudauTelop_MOGRT_Builder.jsx" });
 
-module.exports = { comps, exported, alerts, project, TextDocument, PropNode, GroupNode };
+module.exports = { comps, exported, alerts, project, imported, selectDialogs, TextDocument, PropNode, GroupNode };
 
 if (require.main === module) {
     console.log("comps:", comps.map(c => c.name));
     console.log("expression engine:", project.expressionEngine);
-    console.log("exported:", exported.map(e => e.path));
+    console.log("exported:", exported.map(e => path.basename(e.path)));
+    console.log("imported:", imported.map(i => i.name));
+    console.log("folder dialogs:", selectDialogs.length);
+    comps.forEach(c => console.log("  " + c.name + ": " + c._layers.filter(l => l.type === "av")
+        .map(l => l.name + " @" + Math.round(l.startTime / c.frameDuration) + "f (index " + l.index + "/" + c.numLayers + ")").join(", ")));
     console.log("alerts:\n" + alerts.join("\n---\n"));
 }

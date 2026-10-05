@@ -13,7 +13,8 @@
  * 使い方
  *   After Effects >［ファイル］>［スクリプト］>［スクリプトファイルを実行...］
  *   → このファイルを選ぶ → 保存先フォルダを選ぶ
- *   → .mogrt 4 つと、編集用の .aep が保存されます。
+ *   → .mogrt 8 つ（効果音なし 4 つ ＋「（効果音あり）」4 つ）と、編集用の .aep が保存されます。
+ *   ※ 効果音は、このスクリプトと同じフォルダの se/単体/ にある WAV を使います。
  *
  * 動作環境: After Effects 2020 (17.0) 以降（2022 以降推奨）
  *
@@ -1034,11 +1035,94 @@
     }
 
     // =================================================================
+    // 効果音
+    //   se/単体/ の WAV（ファイル名の先頭が SE01〜SE07）を読み込み、
+    //   各テンプレートの初期設定のタイミングに配置する。
+    // =================================================================
+
+    // [効果音の番号, 開始フレーム]。フレームは各テンプレートのスライダー初期値に合わせてある
+    var SE_PLAN = {
+        "水ダウ風_地名＋日数": [["SE06", 0]],                        // ピコン（出た瞬間）
+        "水ダウ風_黄色デカ文字ズーム": [["SE04", 0]],                  // ドーン（出た瞬間）
+        "水ダウ風_青グロー2段": [["SE01", 30], ["SE02", 30 + 11]],     // シュッ（2段目）＋キラーン（光る瞬間）
+        "水ダウ風_ランキングボード": [["SE03", 30]]                    // ドン（下の箱が出る瞬間）
+    };
+
+    function hasSeFiles(folder) {
+        return folder && folder.exists && folder.getFiles("SE0*.wav").length > 0;
+    }
+
+    function findSeFolder() {
+        var candidates = [];
+        try {
+            var here = new File($.fileName).parent;
+            candidates.push(new Folder(here.fsName + "/se/単体"));
+            candidates.push(new Folder(here.fsName + "/単体"));
+            candidates.push(here);
+        } catch (e) {}
+        for (var i = 0; i < candidates.length; i++) {
+            if (hasSeFiles(candidates[i])) return candidates[i];
+        }
+        var picked = Folder.selectDialog(
+            "効果音のフォルダ（se/単体）を選んでください。\nキャンセルすると効果音なしで続けます。");
+        if (hasSeFiles(picked)) return picked;
+        if (picked) log("選ばれたフォルダに効果音（SE01〜SE07 の WAV）が見つかりませんでした");
+        return null;
+    }
+
+    function addSoundEffects(comps, seFolder) {
+        var projFolder = app.project.items.addFolder("効果音");
+        var items = {};
+        var added = 0;
+        for (var c = 0; c < comps.length; c++) {
+            var plan = SE_PLAN[comps[c].name];
+            if (!plan) continue;
+            for (var i = 0; i < plan.length; i++) {
+                var key = plan[i][0];
+                try {
+                    if (!items[key]) {
+                        var files = seFolder.getFiles(key + "_*.wav");
+                        if (files.length === 0) {
+                            log(key + " の効果音ファイルが見つかりませんでした");
+                            continue;
+                        }
+                        items[key] = app.project.importFile(new ImportOptions(files[0]));
+                        items[key].parentFolder = projFolder;
+                    }
+                    var layer = comps[c].layers.add(items[key]);
+                    layer.startTime = plan[i][1] * comps[c].frameDuration;
+                    layer.moveToEnd();
+                    added++;
+                } catch (e) {
+                    log(comps[c].name + ": 効果音 " + key + " を追加できませんでした（" + e.toString() + "）");
+                }
+            }
+        }
+        return added;
+    }
+
+    function exportAll(comps, outFolder, suffix, exported) {
+        for (var c = 0; c < comps.length; c++) {
+            var fileName = safeFileName(comps[c].name + suffix) + ".mogrt";
+            try {
+                if (comps[c].exportAsMotionGraphicsTemplate(true, outFolder.fsName + "/" + fileName)) {
+                    exported.push(fileName);
+                } else {
+                    log(fileName + " を書き出せませんでした");
+                }
+            } catch (e) {
+                log(fileName + " の書き出しでエラー: " + e.toString());
+            }
+        }
+    }
+
+    // =================================================================
     // 実行
     // =================================================================
 
     var ok = confirm(TITLE + "\n\n" +
         "新しいプロジェクトを作り、水ダウ風テロップ 4 種類を .mogrt として書き出します。\n" +
+        "（効果音なし版と、効果音入りの「（効果音あり）」版の両方を作ります）\n" +
         "（今開いているプロジェクトに未保存の変更がある場合は、保存するか確認が出ます）\n\n" +
         "続けますか？");
     if (!ok) return;
@@ -1071,26 +1155,30 @@
 
     var outFolder = Folder.selectDialog("保存先フォルダを選んでください（.mogrt と .aep を保存します）");
     var exported = [];
+
+    // 1) 効果音なし版
+    if (outFolder) exportAll(comps, outFolder, "", exported);
+    else log("保存先が選ばれなかったため、書き出しはしていません（コンポジションはプロジェクト内にあります）。");
+
+    // 2) 効果音を配置して、効果音あり版
+    var seCount = 0;
+    var seFolder = findSeFolder();
+    if (seFolder) {
+        app.beginUndoGroup(TITLE + "（効果音）");
+        seCount = addSoundEffects(comps, seFolder);
+        app.endUndoGroup();
+        if (outFolder && seCount > 0) exportAll(comps, outFolder, "（効果音あり）", exported);
+    } else {
+        log("効果音のフォルダが見つからなかったため、効果音あり版は作っていません。");
+    }
+
+    // 3) 効果音入りのプロジェクトを保存
     if (outFolder) {
         try {
             app.project.save(new File(outFolder.fsName + "/水ダウ風テロップ.aep"));
         } catch (eSave) {
             log("プロジェクトを保存できませんでした: " + eSave.toString());
         }
-        for (var c = 0; c < comps.length; c++) {
-            var path = outFolder.fsName + "/" + safeFileName(comps[c].name) + ".mogrt";
-            try {
-                if (comps[c].exportAsMotionGraphicsTemplate(true, path)) {
-                    exported.push(comps[c].name + ".mogrt");
-                } else {
-                    log(comps[c].name + " を書き出せませんでした");
-                }
-            } catch (eExp) {
-                log(comps[c].name + " の書き出しでエラー: " + eExp.toString());
-            }
-        }
-    } else {
-        log("保存先が選ばれなかったため、書き出しはしていません（コンポジションはプロジェクト内にあります）。");
     }
 
     var msg = TITLE + "\n\n";
@@ -1099,6 +1187,12 @@
             "Premiere Pro での使い方:\n" +
             "  .mogrt をタイムラインにドラッグ → エッセンシャルグラフィックスパネルの［編集］で\n" +
             "  文字・色・大きさ・書体・アニメーションを変更できます。\n";
+        if (seCount > 0) {
+            msg += "  「（効果音あり）」の .mogrt は、初期設定のタイミングで効果音が鳴ります。\n";
+        }
+    }
+    if (seCount > 0) {
+        msg += "\n効果音を " + seCount + " 個、各コンポジションに配置しました（After Effects のプレビューでも鳴ります）。\n";
     }
     if (exprErrors.length > 0) {
         msg += "\nエクスプレッションのエラー（" + exprErrors.length + " 件）:\n  " +

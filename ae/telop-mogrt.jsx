@@ -706,13 +706,22 @@
         }
       }
       report.push(ok + " 個のテンプレート（.mogrt）を書き出しました。");
-      report.push("場所：" + outFolder.fsName);
-      report.push("Premiere の「エッセンシャルグラフィックス → 参照」にも入っています。");
+      report.push("");
+      report.push("保存先（このあと Finder で開きます）：");
+      report.push(outFolder.fsName);
+      report.push("");
+      report.push("Premiere が読むテンプレートフォルダにも入れました：");
+      report.push(Folder.userData.fsName + "/Adobe/Common/Motion Graphics Templates");
+      report.push("（Premiere の「エッセンシャルグラフィックス → 参照」に出ます）");
     }
     report.push("書体：" + (fontsUsed.mincho || "-") + "（なぞり：" + (fontsUsed.nazori || "-") + "）");
     if (warnings.length) report.push("\n気になった点：\n- " + warnings.join("\n- "));
     writeLog(report);
     alert(report.join("\n"), "説テロップ工房");
+    // 書き出したフォルダを Finder で開く
+    if (canWrite) {
+      try { new Folder(CONFIG.outputFolder).execute(); } catch (e) {}
+    }
   }
 
   main();

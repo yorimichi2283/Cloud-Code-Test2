@@ -1,5 +1,5 @@
 {
-  "name": "jounetsu-ae-dev",
+  "name": "kanagawa-genba-ae-dev",
   "private": true,
   "description": "Dev tools: build the AE script, run it against a mock AE DOM, render previews",
   "scripts": {

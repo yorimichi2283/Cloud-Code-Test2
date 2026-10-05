@@ -128,6 +128,8 @@ function makeEvaluator(globals) {
         return { sourceText: valueOf(tp.children[0], cur.t) };
       },
       sourceRectAtTime(t) { return rectOf(L, t === undefined ? cur.t : t); },
+      toComp(pt, t) { return toCompPt(L, pt, t === undefined ? cur.t : t); },
+      fromComp(pt, t) { return fromCompPt(L, pt, t === undefined ? cur.t : t); },
     };
   }
   function rectOf(L, t) {
@@ -136,6 +138,29 @@ function makeEvaluator(globals) {
     const node = tp.children[0];
     const txt = valueOf(node, t);
     return measure(txt, node.value.data);
+  }
+
+  // layer space -> comp space affine matrix [a b c d e f] (2D, with parenting)
+  function layerMatrix(L, t) {
+    const tr = layerNode(L, "ADBE Transform Group");
+    const a = valueOf(findChild(tr, "ADBE Anchor Point"), t), p = valueOf(findChild(tr, "ADBE Position"), t), s = valueOf(findChild(tr, "ADBE Scale"), t);
+    const r = valueOf(findChild(tr, "ADBE Rotate Z"), t) * Math.PI / 180;
+    const sx = s[0] / 100, sy = s[1] / 100, cs = Math.cos(r), sn = Math.sin(r);
+    let m = [cs * sx, sn * sx, -sn * sy, cs * sy, 0, 0];
+    m[4] = p[0] - (m[0] * a[0] + m[2] * a[1]);
+    m[5] = p[1] - (m[1] * a[0] + m[3] * a[1]);
+    if (L.parent) {
+      const q = layerMatrix(L.parent, t);
+      m = [q[0] * m[0] + q[2] * m[1], q[1] * m[0] + q[3] * m[1], q[0] * m[2] + q[2] * m[3], q[1] * m[2] + q[3] * m[3], q[0] * m[4] + q[2] * m[5] + q[4], q[1] * m[4] + q[3] * m[5] + q[5]];
+    }
+    return m;
+  }
+  function toCompPt(L, pt, t) { const m = layerMatrix(L, t); return [m[0] * pt[0] + m[2] * pt[1] + m[4], m[1] * pt[0] + m[3] * pt[1] + m[5]]; }
+  function fromCompPt(L, pt, t) {
+    const m = layerMatrix(L, t), det = m[0] * m[3] - m[1] * m[2];
+    if (Math.abs(det) < 1e-12) throw new AEError("fromComp: singular transform on " + L.name);
+    const x = pt[0] - m[4], y = pt[1] - m[5];
+    return [(m[3] * x - m[2] * y) / det, (-m[1] * x + m[0] * y) / det];
   }
 
   const cur = { t: 0 };
@@ -149,7 +174,7 @@ function makeEvaluator(globals) {
       let fn = fnCache.get(node.expression);
       if (!fn) {
         fn = new Function("time", "value", "thisComp", "comp", "thisLayer", "sourceRectAtTime",
-          "clamp", "linear", "createPath", "degreesToRadians", "__code", "return eval(__code);");
+          "clamp", "linear", "createPath", "degreesToRadians", "fromComp", "toComp", "__code", "return eval(__code);");
         fnCache.set(node.expression, fn);
       }
       const pre = node.type === "textdoc" ? node.value.data.text : keyedValue(node, t);
@@ -158,7 +183,9 @@ function makeEvaluator(globals) {
       const r = fn(t, pre, C ? compProxy(C) : null,
         (name) => { const c = compsByName.get(name); if (!c) throw new AEError("expression: comp not found: " + name); return compProxy(c); },
         lp, (tt) => rectOf(L, tt === undefined ? t : tt),
-        API.clamp, API.linear, API.createPath, API.degreesToRadians, node.expression);
+        API.clamp, API.linear, API.createPath, API.degreesToRadians,
+        (pt, tt) => fromCompPt(L, pt, tt === undefined ? t : tt), (pt, tt) => toCompPt(L, pt, tt === undefined ? t : tt),
+        node.expression);
       return checkResult(node, r);
     } finally { cur.t = saved; stack.delete(node); }
   }
@@ -176,7 +203,7 @@ function makeEvaluator(globals) {
     return r;
   }
 
-  return { valueOf, evalExpr, keyedValue, layerOfNode, compsByName, stats, measure, findChild };
+  return { valueOf, evalExpr, keyedValue, layerOfNode, compsByName, stats, measure, findChild, layerMatrix };
 }
 
 module.exports = { makeEvaluator, keyedValue, measure };

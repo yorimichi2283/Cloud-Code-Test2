@@ -5,17 +5,17 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const acorn = require("acorn");
-const { makeGlobals, CompItem } = require("./mock_ae.js");
+const { makeGlobals, CompItem, MOCK_ROOT } = require("./mock_ae.js");
 const { makeEvaluator } = require("./expr_eval.js");
 
-const JSX = path.join(__dirname, "..", "JounetsuStyle_Builder.jsx");
-const MAC_FONTS = ["HiraginoSans-W8", "HiraginoSans-W7", "HiraMinProN-W6", "AvenirNext-Bold", "Klee-Demibold"];
+const JSX = path.join(__dirname, "..", "KanagawaGenba_Builder.jsx");
+const MAC_FONTS = ["HiraginoSans-W7", "HiraginoSans-W5"];
 
 function runScript(opts) {
   const g = makeGlobals(Object.assign({ fonts: MAC_FONTS, confirm: true, folder: "/tmp/mogrt" }, opts || {}));
   const code = fs.readFileSync(JSX, "utf8").replace(/^﻿/, "");
   vm.createContext(g);
-  vm.runInContext(code, g, { filename: "JounetsuStyle_Builder.jsx", timeout: 60000 });
+  vm.runInContext(code, g, { filename: "KanagawaGenba_Builder.jsx", timeout: 60000 });
   return g;
 }
 
@@ -64,7 +64,17 @@ function main() {
   }
   console.log("evaluations:", ev.stats.evals);
 
-  // 3) structure checks
+  // 3) embedded logo PNGs were written byte-for-byte
+  const outDir = path.join(MOCK_ROOT, "Documents", "KanagawaGenba_Assets");
+  const layout = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "assets", "logo_layout.json"), "utf8"));
+  for (const gl of layout.glyphs) {
+    const want = fs.readFileSync(path.join(__dirname, "..", "assets", gl.file));
+    const got = path.join(outDir, "KanagawaGenba_" + gl.file);
+    if (!fs.existsSync(got) || !fs.readFileSync(got).equals(want)) problems.push("asset not written correctly: " + gl.file);
+  }
+  console.log("assets checked:", layout.glyphs.length);
+
+  // 4) structure checks
   for (const c of comps) {
     const names = new Map();
     for (const L of c._layers) {
@@ -83,7 +93,7 @@ function main() {
     console.log("\nOK: no problems found");
   }
 
-  // 4) also run once without the fonts API (older AE) and without MOGRT export
+  // 5) also run once without the fonts API (older AE) and without MOGRT export
   try { runScript({ noFontsApi: true, confirm: false, version: "17.0" }); console.log("OK: runs on an AE without app.fonts"); }
   catch (e) { console.log("FAIL (no fonts api): " + e.message); process.exitCode = 1; }
   return g;

@@ -1,0 +1,75 @@
+{
+ "source": [
+  1999,
+  2000
+ ],
+ "colors": {
+  "hira": "#069DD4",
+  "kanji": "#141414"
+ },
+ "glyphs": [
+  {
+   "name": "ka",
+   "row": "hira",
+   "file": "logo_ka.png",
+   "x": 296,
+   "y": 452,
+   "w": 268,
+   "h": 249
+  },
+  {
+   "name": "na",
+   "row": "hira",
+   "file": "logo_na.png",
+   "x": 595,
+   "y": 443,
+   "w": 273,
+   "h": 259
+  },
+  {
+   "name": "ga",
+   "row": "hira",
+   "file": "logo_ga.png",
+   "x": 899,
+   "y": 433,
+   "w": 286,
+   "h": 268
+  },
+  {
+   "name": "wa",
+   "row": "hira",
+   "file": "logo_wa.png",
+   "x": 1208,
+   "y": 443,
+   "w": 266,
+   "h": 258
+  },
+  {
+   "name": "no",
+   "row": "hira",
+   "file": "logo_no.png",
+   "x": 1507,
+   "y": 531,
+   "w": 195,
+   "h": 170
+  },
+  {
+   "name": "gen",
+   "row": "kanji",
+   "file": "logo_gen.png",
+   "x": 208,
+   "y": 754,
+   "w": 749,
+   "h": 739
+  },
+  {
+   "name": "ba",
+   "row": "kanji",
+   "file": "logo_ba.png",
+   "x": 1037,
+   "y": 754,
+   "w": 753,
+   "h": 740
+  }
+ ]
+}

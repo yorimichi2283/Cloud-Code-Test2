@@ -27,22 +27,17 @@ function pathD(sh) {
   return d + (sh.closed ? "Z" : "");
 }
 
+const IMG = new Map();
+function imgHref(file) {
+  if (!IMG.has(file)) IMG.set(file, "data:image/png;base64," + fs.readFileSync(file).toString("base64"));
+  return IMG.get(file);
+}
 function makeRenderer(g) {
   const ev = makeEvaluator(g);
   const F = ev.findChild;
   const val = (n, t) => ev.valueOf(n, t);
 
-  function layerMatrix(L, t) {
-    const tr = F(L._root, "ADBE Transform Group");
-    const a = val(F(tr, "ADBE Anchor Point"), t), p = val(F(tr, "ADBE Position"), t), s = val(F(tr, "ADBE Scale"), t);
-    const r = val(F(tr, "ADBE Rotate Z"), t) * Math.PI / 180;
-    const sx = s[0] / 100, sy = s[1] / 100, cs = Math.cos(r), sn = Math.sin(r);
-    let m = [cs * sx, sn * sx, -sn * sy, cs * sy, 0, 0];
-    m[4] = p[0] - (m[0] * a[0] + m[2] * a[1]);
-    m[5] = p[1] - (m[1] * a[0] + m[3] * a[1]);
-    if (L.parent) m = mul(layerMatrix(L.parent, t), m);
-    return m;
-  }
+  const layerMatrix = ev.layerMatrix;
   function fillFxColor(L, t) {
     const fx = F(L._root, "ADBE Effect Parade");
     const e = fx.children.find((c) => c.matchName === "ADBE Fill");
@@ -50,14 +45,16 @@ function makeRenderer(g) {
   }
 
   function shapeGroup(grp, t, defs) {
-    // grp = node "ADBE Vectors Group" (contents)
-    let out = "", paths = [], merge = null;
+    // grp = node "ADBE Vectors Group" (contents). Items higher in the list are in front.
+    const els = [];
+    let paths = [], merge = null;
+    const push = (x) => els.push(x);
     for (const it of grp.children) {
       if (it.matchName === "ADBE Vector Group") {
         const xt = F(it, "ADBE Vector Transform Group");
         const a = val(F(xt, "ADBE Vector Anchor"), t), p = val(F(xt, "ADBE Vector Position"), t), s = val(F(xt, "ADBE Vector Scale"), t);
         const op = val(F(xt, "ADBE Vector Group Opacity"), t) / 100;
-        out += '<g opacity="' + op + '" transform="translate(' + p[0] + "," + p[1] + ") scale(" + s[0] / 100 + "," + s[1] / 100 + ") translate(" + -a[0] + "," + -a[1] + ')">' + shapeGroup(F(it, "ADBE Vectors Group"), t, defs) + "</g>";
+        push('<g opacity="' + op + '" transform="translate(' + p[0] + "," + p[1] + ") scale(" + s[0] / 100 + "," + s[1] / 100 + ") translate(" + -a[0] + "," + -a[1] + ')">' + shapeGroup(F(it, "ADBE Vectors Group"), t, defs) + "</g>");
       } else if (it.matchName === "ADBE Vector Shape - Ellipse") {
         const s = val(F(it, "ADBE Vector Ellipse Size"), t), p = val(F(it, "ADBE Vector Ellipse Position"), t);
         paths.push({ el: '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="' + Math.abs(s[0]) / 2 + '" ry="' + Math.abs(s[1]) / 2 + '"' });
@@ -69,15 +66,15 @@ function makeRenderer(g) {
         merge = val(F(it, "ADBE Vector Merge Type"), t);
       } else if (it.matchName === "ADBE Vector Graphic - Fill") {
         const c = val(F(it, "ADBE Vector Fill Color"), t), op = val(F(it, "ADBE Vector Fill Opacity"), t) / 100;
-        out += drawPaths(paths, merge, 'fill="' + rgb(c) + '" fill-opacity="' + op + '"', defs);
+        push(drawPaths(paths, merge, 'fill="' + rgb(c) + '" fill-opacity="' + op + '"', defs));
       } else if (it.matchName === "ADBE Vector Graphic - G-Fill") {
         const sp = val(F(it, "ADBE Vector Grad Start Pt"), t), epp = val(F(it, "ADBE Vector Grad End Pt"), t);
         const id = uid("rg"), r = Math.hypot(epp[0] - sp[0], epp[1] - sp[1]);
         defs.push('<radialGradient id="' + id + '" gradientUnits="userSpaceOnUse" cx="' + sp[0] + '" cy="' + sp[1] + '" r="' + r + '"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>');
-        out += drawPaths(paths, merge, 'fill="url(#' + id + ')"', defs);
+        push(drawPaths(paths, merge, 'fill="url(#' + id + ')"', defs));
       }
     }
-    return out;
+    return els.reverse().join("");
   }
   function drawPaths(paths, merge, attr, defs) {
     if (merge === 4 && paths.length >= 2) {
@@ -111,6 +108,7 @@ function makeRenderer(g) {
     if (L.kind === "solid") body = '<rect x="0" y="0" width="' + L.width + '" height="' + L.height + '" fill="' + rgb(fillFxColor(L, t) || L.solidColor) + '"/>';
     else if (L.kind === "shape") body = shapeGroup(F(L._root, "ADBE Root Vectors Group"), t, defs);
     else if (L.kind === "text") body = textEl(L, t);
+    else if (L.kind === "footage") body = '<image href="' + imgHref(L.source.file) + '" x="0" y="0" width="' + L.width + '" height="' + L.height + '"/>';
     else if (L.kind === "precomp") {
       const src = L.source;
       body = compBody(src, t - L.startTime, defs);
@@ -118,6 +116,14 @@ function makeRenderer(g) {
         const id = uid("pc");
         defs.push('<clipPath id="' + id + '" clipPathUnits="userSpaceOnUse"><rect x="0" y="0" width="' + src.width + '" height="' + src.height + '"/></clipPath>');
         body = '<g clip-path="url(#' + id + ')">' + body + "</g>";
+      }
+    }
+    if (L.kind === "footage" || L.kind === "precomp") {
+      const fc = fillFxColor(L, t);
+      if (fc) {
+        const id = uid("fl");
+        defs.push('<filter id="' + id + '" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feFlood flood-color="' + rgb(fc) + '"/><feComposite operator="in" in2="SourceAlpha"/></filter>');
+        body = '<g filter="url(#' + id + ')">' + body + "</g>";
       }
     }
     // linear wipe effects (layer space, bounds = comp-sized for shape layers)

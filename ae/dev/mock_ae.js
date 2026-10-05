@@ -121,6 +121,7 @@ const SCHEMA = {
   "ADBE Slider Control": () => G("ADBE Slider Control", "Slider Control", [P("ADBE Slider Control-0001", "Slider", "oned", 0)]),
   "ADBE Color Control": () => G("ADBE Color Control", "Color Control", [P("ADBE Color Control-0001", "Color", "color", [1, 0, 0, 1])]),
   "ADBE Checkbox Control": () => G("ADBE Checkbox Control", "Checkbox Control", [P("ADBE Checkbox Control-0001", "Checkbox", "oned", 0)]),
+  "ADBE Point Control": () => G("ADBE Point Control", "Point Control", [P("ADBE Point Control-0001", "Point", "twods", [0, 0])]),
   "ADBE Fill": () => G("ADBE Fill", "Fill", [
     P("ADBE Fill-0001", "Fill Mask", "maskindex", 0),
     P("ADBE Fill-0007", "All Masks", "oned", 0),
@@ -136,7 +137,7 @@ const SCHEMA = {
     P("ADBE Linear Wipe-0003", "Feather", "oned", 0),
   ]),
 };
-const EFFECTS = new Set(["ADBE Slider Control", "ADBE Color Control", "ADBE Checkbox Control", "ADBE Fill", "ADBE Linear Wipe"]);
+const EFFECTS = new Set(["ADBE Slider Control", "ADBE Color Control", "ADBE Checkbox Control", "ADBE Point Control", "ADBE Fill", "ADBE Linear Wipe"]);
 
 function transformSchema() {
   return G("ADBE Transform Group", "Transform", [
@@ -270,7 +271,7 @@ class Layer extends Handle {
     const set = (m, v) => { tr.children.find((c) => c.matchName === m).value = v; };
     set("ADBE Position", [comp.width / 2, comp.height / 2, 0]);
     if (kind === "null") set("ADBE Anchor Point", [50, 50, 0]);
-    if (kind === "solid" || kind === "precomp") { const w = extra.w, h = extra.h; set("ADBE Anchor Point", [w / 2, h / 2, 0]); this.width = w; this.height = h; }
+    if (kind === "solid" || kind === "precomp" || kind === "footage") { const w = extra.w, h = extra.h; set("ADBE Anchor Point", [w / 2, h / 2, 0]); this.width = w; this.height = h; }
   }
   _chk() { return this._root; }
   get name() { return this._root.name; }
@@ -286,6 +287,8 @@ class Layer extends Handle {
   get transform() { return this.property("ADBE Transform Group"); }
   moveToBeginning() { const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
   moveToEnd() { const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
+  moveBefore(L) { if (!(L instanceof Layer) || L.containingComp !== this.containingComp || L === this) fail("moveBefore arg"); const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L), 0, this); }
+  moveAfter(L) { if (!(L instanceof Layer) || L.containingComp !== this.containingComp || L === this) fail("moveAfter arg"); const a = this.containingComp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L) + 1, 0, this); }
 }
 
 class LayerCollection {
@@ -300,6 +303,7 @@ class LayerCollection {
     return this._add(new Layer(this.comp, "solid", { name, color, w, h }));
   }
   add(item, dur) {
+    if (item instanceof FootageItem) return this._add(new Layer(this.comp, "footage", { name: item.name, source: item, w: item.width, h: item.height }));
     if (!(item instanceof CompItem)) fail("layers.add needs an item");
     if (item === this.comp) fail("cannot add comp to itself");
     return this._add(new Layer(this.comp, "precomp", { name: item.name, source: item, w: item.width, h: item.height }));
@@ -309,6 +313,36 @@ class LayerCollection {
 // ------------------------------------------------------------------ project
 class Item { constructor(name) { this.name = name; this._parentFolder = null; } get parentFolder() { return this._parentFolder; } set parentFolder(f) { if (!(f instanceof FolderItem)) fail("parentFolder must be FolderItem"); this._parentFolder = f; } }
 class FolderItem extends Item {}
+class FootageItem extends Item {
+  constructor(file) {
+    super(require("path").basename(file));
+    const buf = require("fs").readFileSync(file);
+    if (buf.readUInt32BE(0) !== 0x89504e47) fail("importFile: not a PNG: " + file);
+    this.width = buf.readUInt32BE(16); this.height = buf.readUInt32BE(20); this.file = file;
+  }
+}
+const FS = require("fs"), PATH = require("path"), OS = require("os");
+const MOCK_ROOT = PATH.join(OS.tmpdir(), "kg_mock_fs");
+class MFile {
+  constructor(p) { this.fsName = String(p); this.encoding = "UTF-8"; this._mode = null; this._chunks = null; }
+  get exists() { return FS.existsSync(this.fsName); }
+  get name() { return PATH.basename(this.fsName); }
+  get parent() { return new MFolder(PATH.dirname(this.fsName)); }
+  open(mode) { if (!FS.existsSync(PATH.dirname(this.fsName))) return false; this._mode = mode; this._chunks = []; return true; }
+  write(s) {
+    if (this._mode !== "w") fail("File.write without open('w')");
+    if (this.encoding !== "BINARY") fail("binary data must be written with encoding BINARY");
+    for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) > 255) fail("File.write: char > 255 in binary string");
+    this._chunks.push(Buffer.from(s, "latin1")); return true;
+  }
+  close() { if (this._mode === "w") FS.writeFileSync(this.fsName, Buffer.concat(this._chunks)); this._mode = null; return true; }
+}
+class MFolder {
+  constructor(p) { this.fsName = String(p); }
+  get exists() { return FS.existsSync(this.fsName) && FS.statSync(this.fsName).isDirectory(); }
+  create() { FS.mkdirSync(this.fsName, { recursive: true }); return true; }
+}
+class ImportOptions { constructor(f) { if (!(f instanceof MFile)) fail("ImportOptions needs a File"); this.file = f; } }
 class CompItem extends Item {
   constructor(name, w, h, par, dur, fps) {
     super(name);
@@ -330,6 +364,11 @@ function makeApp(opts) {
     expressionEngine: "extendscript",
     get numItems() { return items.length; },
     item(i) { if (i < 1 || i > items.length) fail("item index"); return items[i - 1]; },
+    importFile(io) {
+      if (!(io instanceof ImportOptions)) fail("importFile needs ImportOptions");
+      if (!io.file.exists) fail("importFile: file missing " + io.file.fsName);
+      const f = new FootageItem(io.file.fsName); items.push(f); return f;
+    },
     items: {
       addComp(name, w, h, par, dur, fps) { const c = new CompItem(name, w, h, par, dur, fps); items.push(c); return c; },
       addFolder(name) { const f = new FolderItem(name); items.push(f); return f; },
@@ -360,8 +399,13 @@ function makeGlobals(opts) {
     PropertyValueType: PVT,
     alert: (m) => log.push(["alert", String(m)]),
     confirm: (m) => { log.push(["confirm", String(m)]); return !!opts.confirm; },
-    Folder: { selectDialog: (m) => (opts.folder ? { fsName: opts.folder } : null) },
+    File: MFile, ImportOptions,
+    Folder: Object.assign(MFolder, {
+      myDocuments: new MFolder(PATH.join(MOCK_ROOT, "Documents")),
+      temp: new MFolder(PATH.join(MOCK_ROOT, "tmp")),
+      selectDialog: (m) => (opts.folder ? new MFolder(opts.folder) : null),
+    }),
   };
 }
 
-module.exports = { makeGlobals, Layer, CompItem, FolderItem, Shape, AEError, PVT, MaskMode, BlendingMode, ParagraphJustification, cloneTD };
+module.exports = { makeGlobals, Layer, CompItem, FolderItem, FootageItem, MOCK_ROOT, Shape, AEError, PVT, MaskMode, BlendingMode, ParagraphJustification, cloneTD };

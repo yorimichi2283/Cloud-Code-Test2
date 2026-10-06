@@ -5,923 +5,1667 @@ var DATA = {
  "duration": 42.233,
  "telops": [
   {
-   "name": "00.15 \u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u306e",
-   "t0": 0.15,
+   "name": "00.20 \u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u306e \u30a4\u30b1\u30a2\u3092",
+   "t0": 0.2,
    "t1": 2.1,
-   "text": "\u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u306e",
-   "x": 510,
-   "y": 520,
-   "size": 120,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.5,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "00.40 IKEA",
-   "t0": 0.4,
-   "t1": 2.1,
-   "text": "IKEA",
-   "x": 510,
-   "y": 760,
-   "size": 360,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "cascade",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 420,
-   "dur": 0.35,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.07
-  },
-  {
-   "name": "00.75 IKEA",
-   "t0": 0.75,
-   "t1": 2.1,
-   "text": "IKEA",
-   "x": 532,
-   "y": 782,
-   "size": 360,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 5,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "02.30 \u672c\u5834\u306e",
-   "t0": 2.3,
-   "t1": 4.6,
-   "text": "\u672c\u5834\u306e",
-   "x": 230,
-   "y": 905,
-   "size": 120,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": -6,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "02.55 \u30bd\u30d5\u30c8",
-   "t0": 2.55,
-   "t1": 4.6,
-   "text": "\u30bd\u30d5\u30c8",
-   "x": 510,
-   "y": 1015,
-   "size": 230,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    -1,
-    0
-   ],
-   "dist": 900,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "02.85 \u30af\u30ea\u30fc\u30e0",
-   "t0": 2.85,
-   "t1": 4.6,
-   "text": "\u30af\u30ea\u30fc\u30e0",
-   "x": 510,
-   "y": 1150,
-   "size": 200,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    1,
-    0
-   ],
-   "dist": 900,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "08.90 \u6ce8\u6587\u306f",
-   "t0": 8.9,
-   "t1": 11.0,
-   "text": "\u6ce8\u6587\u306f",
-   "x": 510,
-   "y": 520,
-   "size": 130,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.35,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "09.15 \u30bf\u30c3\u30c1\u30d1\u30cd\u30eb",
-   "t0": 9.15,
-   "t1": 11.0,
-   "text": "\u30bf\u30c3\u30c1\u30d1\u30cd\u30eb",
    "x": 510,
    "y": 700,
-   "size": 145,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 100,
+     "runs": [
+      {
+       "text": "\u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u306e",
+       "accent": false
+      }
+     ]
+    },
+    {
+     "size": 226,
+     "runs": [
+      {
+       "text": "\u30a4\u30b1\u30a2",
+       "accent": true
+      },
+      {
+       "text": "\u3092",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "fly",
    "color": [
     1.0,
     1.0,
     1.0
    ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
    "frm": [
     0,
-    1
+    -1
    ],
-   "dist": 600,
+   "dist": 650,
    "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
+   "stagger": 0.06,
+   "behind": false
   },
   {
-   "name": "11.10 \u305f\u3063\u305f\u306e",
-   "t0": 11.1,
-   "t1": 14.23,
-   "text": "\u305f\u3063\u305f\u306e",
+   "name": "00.76 \u898b\u3064\u3051\u305f\u3093\u3067",
+   "t0": 0.76,
+   "t1": 1.18,
    "x": 510,
-   "y": 400,
-   "size": 130,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u898b\u3064\u3051\u305f\u3093\u3067",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
    "color": [
     1.0,
     1.0,
     1.0
    ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.4,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "11.40 9",
-   "t0": 11.4,
-   "t1": 14.23,
-   "text": "9",
-   "x": 400,
-   "y": 760,
-   "size": 600,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "pop",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.32,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "11.50 9",
-   "t0": 11.5,
-   "t1": 14.23,
-   "text": "9",
-   "x": 428,
-   "y": 788,
-   "size": 600,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 6,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "11.70 SEK",
-   "t0": 11.7,
-   "t1": 14.23,
-   "text": "SEK",
-   "x": 735,
-   "y": 760,
-   "size": 190,
-   "color": [
+   "accent": [
     1.0,
-    1.0,
-    1.0
+    0.8235294117647058,
+    0.12156862745098039
    ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
    "frm": [
     0,
-    1
+    -1
    ],
    "dist": 500,
-   "dur": 0.3,
-   "behind": false,
-   "rot": -90,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
   },
   {
-   "name": "14.45 \u3061\u306a\u307f\u306b",
-   "t0": 14.45,
-   "t1": 17.37,
-   "text": "\u3061\u306a\u307f\u306b",
+   "name": "01.18 \u884c\u3063\u3066\u307f\u305f\u3044\u3068\u601d\u3044\u307e\u3059",
+   "t0": 1.18,
+   "t1": 2.1,
    "x": 510,
-   "y": 420,
-   "size": 120,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 82,
+     "runs": [
+      {
+       "text": "\u884c\u3063\u3066\u307f\u305f\u3044\u3068\u601d\u3044\u307e\u3059",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
    "color": [
     1.0,
     1.0,
     1.0
    ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
    "frm": [
     0,
     -1
-   ],
-   "dist": 600,
-   "dur": 0.4,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "14.75 \u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb",
-   "t0": 14.75,
-   "t1": 17.37,
-   "text": "\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb",
-   "x": 510,
-   "y": 600,
-   "size": 126,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    1,
-    0
-   ],
-   "dist": 900,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "15.10 7 SEK",
-   "t0": 15.1,
-   "t1": 17.37,
-   "text": "7 SEK",
-   "x": 510,
-   "y": 830,
-   "size": 240,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "pop",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "19.00 \u30dc\u30bf\u30f3\u3092",
-   "t0": 19.0,
-   "t1": 21.1,
-   "text": "\u30dc\u30bf\u30f3\u3092",
-   "x": 510,
-   "y": 420,
-   "size": 140,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "19.25 \u62bc\u3059\u3060\u3051",
-   "t0": 19.25,
-   "t1": 21.1,
-   "text": "\u62bc\u3059\u3060\u3051",
-   "x": 510,
-   "y": 610,
-   "size": 215,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    0,
-    1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "19.70 \u30dd\u30c1\u30c3",
-   "t0": 19.7,
-   "t1": 21.1,
-   "text": "\u30dd\u30c1\u30c3",
-   "x": 700,
-   "y": 880,
-   "size": 170,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "pop",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.25,
-   "behind": false,
-   "rot": 12,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "21.30 \u81ea\u52d5\u3067",
-   "t0": 21.3,
-   "t1": 23.2,
-   "text": "\u81ea\u52d5\u3067",
-   "x": 510,
-   "y": 420,
-   "size": 140,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.35,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "21.60 \u51fa\u3066\u304f\u308b",
-   "t0": 21.6,
-   "t1": 23.2,
-   "text": "\u51fa\u3066\u304f\u308b",
-   "x": 510,
-   "y": 610,
-   "size": 240,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    -1,
-    0
-   ],
-   "dist": 900,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "22.20 \u306b\u3085\u301c",
-   "t0": 22.2,
-   "t1": 23.2,
-   "text": "\u306b\u3085\u301c",
-   "x": 690,
-   "y": 880,
-   "size": 170,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": -10,
-   "outline": 5,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "23.30 \u5b8c\u6210",
-   "t0": 23.3,
-   "t1": 24.4,
-   "text": "\u5b8c\u6210",
-   "x": 510,
-   "y": 640,
-   "size": 400,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "pop",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "23.40 \u5b8c\u6210",
-   "t0": 23.4,
-   "t1": 24.4,
-   "text": "\u5b8c\u6210",
-   "x": 534,
-   "y": 664,
-   "size": 400,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 6,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "27.10 !!",
-   "t0": 27.1,
-   "t1": 28.77,
-   "text": "!!",
-   "x": 760,
-   "y": 470,
-   "size": 380,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "pop",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.28,
-   "behind": false,
-   "rot": 10,
-   "outline": 0,
-   "tracking": -120,
-   "stagger": 0.05
-  },
-  {
-   "name": "28.90 VANILJ",
-   "t0": 28.9,
-   "t1": 31.5,
-   "text": "VANILJ",
-   "x": 510,
-   "y": 440,
-   "size": 240,
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "blur",
-   "frm": [
-    0,
-    -1
-   ],
-   "dist": 600,
-   "dur": 0.3,
-   "behind": true,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
-  },
-  {
-   "name": "29.15 GLASS",
-   "t0": 29.15,
-   "t1": 31.5,
-   "text": "GLASS",
-   "x": 885,
-   "y": 800,
-   "size": 150,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
-   ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
-   "frm": [
-    0,
-    1
    ],
    "dist": 500,
-   "dur": 0.3,
-   "behind": false,
-   "rot": -90,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
   },
   {
-   "name": "29.60 \u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u8a9e\u3067\u30d0\u30cb\u30e9\u30a2\u30a4\u30b9",
-   "t0": 29.6,
-   "t1": 31.5,
-   "text": "\u30b9\u30a6\u30a7\u30fc\u30c7\u30f3\u8a9e\u3067\u30d0\u30cb\u30e9\u30a2\u30a4\u30b9",
+   "name": "02.38 \u65e5\u672c\u3060\u3068",
+   "t0": 2.38,
+   "t1": 2.84,
    "x": 510,
-   "y": 1180,
-   "size": 66,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u65e5\u672c\u3060\u3068",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
    "color": [
     1.0,
     1.0,
     1.0
    ],
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "anim": "type",
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
    "frm": [
     0,
     -1
    ],
-   "dist": 600,
-   "dur": 0.6,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
   },
   {
-   "name": "38.95 IKEA",
-   "t0": 38.95,
-   "t1": 42.3,
-   "text": "IKEA",
+   "name": "02.84 \u30a4\u30b1\u30a2\u306e",
+   "t0": 2.84,
+   "t1": 3.16,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u30a4\u30b1\u30a2\u306e",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "03.16 \u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0\u3063\u3066",
+   "t0": 3.16,
+   "t1": 3.7,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0\u3063\u3066",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "03.70 1\u500b50\u5186",
+   "t0": 3.7,
+   "t1": 4.38,
    "x": 510,
    "y": 985,
-   "size": 270,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 190,
+     "runs": [
+      {
+       "text": "1\u500b",
+       "accent": false
+      },
+      {
+       "text": "50\u5186",
+       "accent": true
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
    "color": [
     1.0,
     1.0,
     1.0
    ],
-   "font": "RoundedMplus1c-Black",
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "04.38 \u3060\u3068\u601d\u3046\u3093\u3067\u3059\u3051\u3069",
+   "t0": 4.38,
+   "t1": 5.2,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3060\u3068\u601d\u3046\u3093\u3067\u3059\u3051\u3069",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "05.66 \u5b9f\u969b",
+   "t0": 5.66,
+   "t1": 6.02,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u5b9f\u969b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "06.02 \u672c\u5834\u306e\u30a4\u30b1\u30a2\u306f",
+   "t0": 6.02,
+   "t1": 7.22,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u672c\u5834\u306e\u30a4\u30b1\u30a2\u306f",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "07.75 \u8cb7\u3048\u308b\u306e\u304b\u3092",
+   "t0": 7.75,
+   "t1": 8.04,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u8cb7\u3048\u308b\u306e\u304b\u3092",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "08.04 \u898b\u3066\u307f\u307e\u3059",
+   "t0": 8.04,
+   "t1": 8.8,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u898b\u3066\u307f\u307e\u3059",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "08.98 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
+   "t0": 8.98,
+   "t1": 10.22,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "10.22 9\u306a\u3093\u3067",
+   "t0": 10.22,
+   "t1": 11.74,
+   "x": 510,
+   "y": 985,
+   "rot": -2,
+   "lines": [
+    {
+     "size": 190,
+     "runs": [
+      {
+       "text": "9",
+       "accent": true
+      },
+      {
+       "text": "\u306a\u3093\u3067",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "11.74 150\u5186",
+   "t0": 11.74,
+   "t1": 12.96,
+   "x": 480,
+   "y": 950,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 210,
+     "runs": [
+      {
+       "text": "150\u5186",
+       "accent": true
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "12.10 \u3050\u3089\u3044\u3067\u8cb7\u3048\u308b\u308f",
+   "t0": 12.1,
+   "t1": 12.96,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3050\u3089\u3044\u3067\u8cb7\u3048\u308b\u308f",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "12.96 \u3053\u308c\u666e\u901a\u306b",
+   "t0": 12.96,
+   "t1": 13.74,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3053\u308c\u666e\u901a\u306b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "13.74 \u5b89\u3044\u3093\u3058\u3083\u306a\u3044\uff1f",
+   "t0": 13.74,
+   "t1": 14.38,
+   "x": 510,
+   "y": 985,
+   "rot": -3,
+   "lines": [
+    {
+     "size": 113,
+     "runs": [
+      {
+       "text": "\u5b89\u3044",
+       "accent": true
+      },
+      {
+       "text": "\u3093\u3058\u3083\u306a\u3044\uff1f",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "14.38 \u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
+   "t0": 14.38,
+   "t1": 15.54,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "15.54 1\u500b112\u5186",
+   "t0": 15.54,
+   "t1": 16.72,
+   "x": 510,
+   "y": 985,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 190,
+     "runs": [
+      {
+       "text": "1\u500b",
+       "accent": false
+      },
+      {
+       "text": "112\u5186",
+       "accent": true
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "16.72 \u3067\u8cb7\u3048\u307e\u3059\u306d",
+   "t0": 16.72,
+   "t1": 17.5,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3067\u8cb7\u3048\u307e\u3059\u306d",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "17.76 \u30bb\u30c3\u30c8\u3057\u3066",
+   "t0": 17.76,
+   "t1": 18.8,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u30bb\u30c3\u30c8\u3057\u3066",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "19.16 \u3042\u3068\u306f\u3053\u3053\u3092",
+   "t0": 19.16,
+   "t1": 20.08,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3042\u3068\u306f\u3053\u3053\u3092",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "20.08 \u62bc\u3059\u3060\u3051\u3067\u3059\u306d",
+   "t0": 20.08,
+   "t1": 21.0,
+   "x": 510,
+   "y": 985,
+   "rot": 2,
+   "lines": [
+    {
+     "size": 129,
+     "runs": [
+      {
+       "text": "\u62bc\u3059\u3060\u3051",
+       "accent": true
+      },
+      {
+       "text": "\u3067\u3059\u306d",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "23.04 \u81ea\u52d5\u3067\u3084\u3063\u3066\u304f\u308c\u308b",
+   "t0": 23.04,
+   "t1": 24.0,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u81ea\u52d5\u3067\u3084\u3063\u3066\u304f\u308c\u308b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "24.84 \u5b9f\u969b\u306b",
+   "t0": 24.84,
+   "t1": 26.04,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u5b9f\u969b\u306b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "26.04 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0 \u98df\u3079\u307e\u3059",
+   "t0": 26.04,
+   "t1": 26.95,
+   "x": 510,
+   "y": 985,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 90,
+     "runs": [
+      {
+       "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
+       "accent": false
+      }
+     ]
+    },
+    {
+     "size": 190,
+     "runs": [
+      {
+       "text": "\u98df\u3079\u307e\u3059",
+       "accent": true
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "29.48 \u53e3\u306e\u4e2d\u306b\u5165\u308c\u305f",
+   "t0": 29.48,
+   "t1": 30.48,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u53e3\u306e\u4e2d\u306b\u5165\u308c\u305f",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "30.48 \u77ac\u9593\u306b",
+   "t0": 30.48,
+   "t1": 31.3,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u77ac\u9593\u306b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "31.90 \u3046\u308f\u3063\uff01\u3063\u3066",
+   "t0": 31.9,
+   "t1": 32.78,
+   "x": 530,
+   "y": 985,
+   "rot": -4,
+   "lines": [
+    {
+     "size": 151,
+     "runs": [
+      {
+       "text": "\u3046\u308f\u3063\uff01",
+       "accent": true
+      },
+      {
+       "text": "\u3063\u3066",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "32.78 \u8272\u3005\u3046\u307e\u3044",
+   "t0": 32.78,
+   "t1": 33.68,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u8272\u3005\u3046\u307e\u3044",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "33.68 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
+   "t0": 33.68,
+   "t1": 34.16,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "34.16 \u3042\u308b\u3058\u3083\u306a\u3044\u3067\u3059\u304b",
+   "t0": 34.16,
+   "t1": 35.0,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3042\u308b\u3058\u3083\u306a\u3044\u3067\u3059\u304b",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "35.14 \u307e\u3042\u30cf\u30fc\u30b2\u30f3\u30c0\u30c3\u30c4\u306e",
+   "t0": 35.14,
+   "t1": 36.18,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u307e\u3042\u30cf\u30fc\u30b2\u30f3\u30c0\u30c3\u30c4\u306e",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "36.18 5\u500d\u6fc3\u7e2e",
+   "t0": 36.18,
+   "t1": 37.4,
+   "x": 510,
+   "y": 400,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 210,
+     "runs": [
+      {
+       "text": "5\u500d\u6fc3\u7e2e",
+       "accent": true
+      }
+     ]
+    }
+   ],
    "anim": "cascade",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
    "frm": [
     0,
     -1
    ],
    "dist": 260,
    "dur": 0.3,
-   "behind": false,
-   "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.07
+   "stagger": 0.07,
+   "behind": true
   },
   {
-   "name": "39.30 \u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0",
-   "t0": 39.3,
-   "t1": 42.3,
-   "text": "\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0",
+   "name": "36.84 \u3057\u305f\u307f\u305f\u3044\u306a",
+   "t0": 36.84,
+   "t1": 37.28,
    "x": 510,
-   "y": 1170,
-   "size": 126,
-   "color": [
-    0.6352941176470588,
-    0.2549019607843137,
-    0.1450980392156863
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3057\u305f\u307f\u305f\u3044\u306a",
+       "accent": false
+      }
+     ]
+    }
    ],
-   "font": "RoundedMplus1c-Black",
-   "anim": "fly",
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
    "frm": [
     0,
-    1
+    -1
    ],
    "dist": 500,
-   "dur": 0.3,
-   "behind": false,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "37.28 \u611f\u3058\u306e\u5473\u304c\u3057\u307e\u3059",
+   "t0": 37.28,
+   "t1": 38.0,
+   "x": 510,
+   "y": 1150,
    "rot": 0.0,
-   "outline": 0,
-   "tracking": -40,
-   "stagger": 0.05
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u611f\u3058\u306e\u5473\u304c\u3057\u307e\u3059",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "38.00 \u3053\u308c",
+   "t0": 38.0,
+   "t1": 38.6,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u3053\u308c",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "39.24 \u610f\u5916\u3068\u306d",
+   "t0": 39.24,
+   "t1": 39.68,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 84,
+     "runs": [
+      {
+       "text": "\u610f\u5916\u3068\u306d",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "39.68 \u30ea\u30fc\u30ba\u30ca\u30d6\u30eb\u306a\u306e\u3067",
+   "t0": 39.68,
+   "t1": 40.42,
+   "x": 510,
+   "y": 985,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 100,
+     "runs": [
+      {
+       "text": "\u30ea\u30fc\u30ba\u30ca\u30d6\u30eb",
+       "accent": true
+      },
+      {
+       "text": "\u306a\u306e\u3067",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "pop",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
+  },
+  {
+   "name": "40.42 \u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
+   "t0": 40.42,
+   "t1": 42.3,
+   "x": 510,
+   "y": 1150,
+   "rot": 0.0,
+   "lines": [
+    {
+     "size": 82,
+     "runs": [
+      {
+       "text": "\u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
+       "accent": false
+      }
+     ]
+    }
+   ],
+   "anim": "settle",
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "accent": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "frm": [
+    0,
+    -1
+   ],
+   "dist": 500,
+   "dur": 0.22,
+   "stagger": 0.06,
+   "behind": false
   }
  ],
  "cards": [
   {
-   "t0": 6.6,
-   "t1": 7.35,
-   "style": "rust",
-   "telops": [
-    {
-     "name": "06.60 \u98df\u3079\u3066\u307f\u305f",
-     "t0": 6.6,
-     "t1": 7.35,
-     "text": "\u98df\u3079\u3066\u307f\u305f",
-     "x": 510,
-     "y": 760,
-     "size": 190,
-     "color": [
-      1.0,
-      1.0,
-      1.0
-     ],
-     "font": "RoundedMplus1c-Black",
-     "anim": "cascade",
-     "frm": [
-      0,
-      -1
-     ],
-     "dist": 260,
-     "dur": 0.3,
-     "behind": false,
-     "rot": 0.0,
-     "outline": 0,
-     "tracking": -40,
-     "stagger": 0.06
-    }
-   ]
-  },
-  {
-   "t0": 17.37,
-   "t1": 18.1,
-   "style": "beige",
-   "telops": [
-    {
-     "name": "17.37 \u30bb\u30eb\u30d5\u5f0f",
-     "t0": 17.37,
-     "t1": 18.1,
-     "text": "\u30bb\u30eb\u30d5\u5f0f",
-     "x": 510,
-     "y": 760,
-     "size": 215,
-     "color": [
-      0.6352941176470588,
-      0.2549019607843137,
-      0.1450980392156863
-     ],
-     "font": "RoundedMplus1c-Black",
-     "anim": "cascade",
-     "frm": [
-      0,
-      -1
-     ],
-     "dist": 260,
-     "dur": 0.3,
-     "behind": false,
-     "rot": 0.0,
-     "outline": 0,
-     "tracking": -40,
-     "stagger": 0.05
-    }
-   ]
-  },
-  {
-   "t0": 24.4,
-   "t1": 25.15,
-   "style": "rust",
-   "telops": [
-    {
-     "name": "24.40 \u5b9f\u98df",
-     "t0": 24.4,
-     "t1": 25.15,
-     "text": "\u5b9f\u98df",
-     "x": 510,
-     "y": 760,
-     "size": 400,
-     "color": [
-      1.0,
-      1.0,
-      1.0
-     ],
-     "font": "RoundedMplus1c-Black",
-     "anim": "cascade",
-     "frm": [
-      0,
-      -1
-     ],
-     "dist": 320,
-     "dur": 0.3,
-     "behind": false,
-     "rot": 0.0,
-     "outline": 0,
-     "tracking": -40,
-     "stagger": 0.09
-    }
-   ]
+   "t0": 7.22,
+   "t1": 7.75,
+   "bg": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "telop": {
+    "name": "07.22 \u3044\u304f\u3089\uff1f",
+    "t0": 7.22,
+    "t1": 7.75,
+    "x": 510,
+    "y": 760,
+    "rot": 0.0,
+    "lines": [
+     {
+      "size": 226,
+      "runs": [
+       {
+        "text": "\u3044\u304f\u3089\uff1f",
+        "accent": false
+       }
+      ]
+     }
+    ],
+    "anim": "pop",
+    "color": [
+     0.11764705882352941,
+     0.10980392156862745,
+     0.10196078431372549
+    ],
+    "accent": [
+     0.11764705882352941,
+     0.10980392156862745,
+     0.10196078431372549
+    ],
+    "frm": [
+     0,
+     -1
+    ],
+    "dist": 500,
+    "dur": 0.2,
+    "stagger": 0.06,
+    "behind": false
+   }
   }
  ],
  "behindSegments": [
   [
-   28.9,
-   31.5
-  ]
- ],
- "brackets": [
-  [
-   80,
-   270,
-   1,
-   1
-  ],
-  [
-   940,
-   270,
-   -1,
-   1
-  ],
-  [
-   80,
-   1230,
-   1,
-   -1
-  ],
-  [
-   940,
-   1230,
-   -1,
-   -1
+   36.18,
+   37.4
   ]
  ],
  "safe": {
@@ -930,157 +1674,143 @@ var DATA = {
   "right": 960,
   "bottom": 1250
  },
- "colors": {
-  "rust": [
-   0.6352941176470588,
-   0.2549019607843137,
-   0.1450980392156863
-  ],
-  "beige": [
-   0.9372549019607843,
-   0.9137254901960784,
-   0.8745098039215686
-  ],
-  "ink": [
-   0.1568627450980392,
-   0.1411764705882353,
-   0.13333333333333333
-  ]
- },
- "fonts": {
-  "gothic": "RoundedMplus1c-Black",
-  "mincho": "ShipporiMinchoB1-ExtraBold"
- }
+ "font": "RoundedMplus1c-Black",
+ "tracking": -30,
+ "border": 0.045,
+ "dark": [
+  0.11764705882352941,
+  0.10980392156862745,
+  0.10196078431372549
+ ]
 };
-var MSG = {"intro": "IKEA\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0 \u7de8\u96c6\u30d7\u30ed\u30b8\u30a7\u30af\u30c8\u3092\u4f5c\u308a\u307e\u3059\u3002\n\u5148\u306b fonts \u30d5\u30a9\u30eb\u30c0\u306e2\u3064\u306e\u30d5\u30a9\u30f3\u30c8\u3092\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3057\u3066\u304a\u3044\u3066\u304f\u3060\u3055\u3044\u3002\n\u6b21\u306e\u753b\u9762\u3067\u7d20\u6750\u52d5\u753b\uff08\u7de8\u96c6\u524d\u306e\u9ad8\u753b\u8cea\u7248\uff09\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044\u3002", "pick": "\u7d20\u6750\u52d5\u753b\u3092\u9078\u629e", "done": "\u5b8c\u6210\u3057\u307e\u3057\u305f\u3002\u8d64\u3044\u90e8\u5206\u306f\u30ea\u30fc\u30eb\u306eUI\u3067\u96a0\u308c\u308b\u7bc4\u56f2\u3067\u3059\uff08\u30ac\u30a4\u30c9\u30ec\u30a4\u30e4\u30fc\u306a\u306e\u3067\u66f8\u304d\u51fa\u3057\u306b\u306f\u5165\u308a\u307e\u305b\u3093\uff09\u3002"};
+var MSG = {"intro": "IKEA\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0 \u7de8\u96c6\u30d7\u30ed\u30b8\u30a7\u30af\u30c8\u3092\u4f5c\u308a\u307e\u3059\u3002\n\u5148\u306b fonts \u30d5\u30a9\u30eb\u30c0\u306e\u30d5\u30a9\u30f3\u30c8\u3092\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3057\u3066\u304a\u3044\u3066\u304f\u3060\u3055\u3044\u3002\n\u6b21\u306e\u753b\u9762\u3067\u7d20\u6750\u52d5\u753b\uff08\u7de8\u96c6\u524d\u306e\u9ad8\u753b\u8cea\u7248\uff09\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044\u3002", "pick": "\u7d20\u6750\u52d5\u753b\u3092\u9078\u629e", "done": "\u5b8c\u6210\u3057\u307e\u3057\u305f\u3002\u8d64\u3044\u90e8\u5206\u306f\u30ea\u30fc\u30eb\u306eUI\u3067\u96a0\u308c\u308b\u7bc4\u56f2\u3067\u3059\uff08\u30ac\u30a4\u30c9\u30ec\u30a4\u30e4\u30fc\u306a\u306e\u3067\u66f8\u304d\u51fa\u3057\u306b\u306f\u5165\u308a\u307e\u305b\u3093\uff09\u3002"};
 var W = 1080, H = 1920, FPS = 30;
 var root = File($.fileName).parent;
 
 function ease(prop, k, inInf, outInf) {
-    var n = prop.value instanceof Array && !prop.isSpatial ? prop.value.length : 1;
+    var n = (prop.value instanceof Array && !prop.isSpatial) ? prop.value.length : 1;
     var ins = [], outs = [];
     for (var i = 0; i < n; i++) { ins.push(new KeyframeEase(0, inInf)); outs.push(new KeyframeEase(0, outInf)); }
     prop.setTemporalEaseAtKey(k, ins, outs);
 }
-function expoOut(prop) { // fast start, long soft landing
-    ease(prop, 1, 33, 0.1); ease(prop, 2, 92, 33);
-}
+function expoOut(prop) { ease(prop, 1, 33, 0.1); ease(prop, 2, 92, 33); }
 function setMax(prop, frac) { prop.setValue(prop.hasMax ? prop.maxValue * frac : frac * 100); }
-function textProps(L) { return L.property("ADBE Text Properties"); }
+function xf(L) { return L.property("ADBE Transform Group"); }
 
-function addDropShadow(L) {
+// tight dark halo: keeps white / yellow readable on bright shots
+function addHalo(L, size) {
     var ds = L.property("ADBE Effect Parade").addProperty("ADBE Drop Shadow");
     ds.property("ADBE Drop Shadow-0001").setValue([0, 0, 0, 1]);
-    setMax(ds.property("ADBE Drop Shadow-0002"), 0.55);
-    ds.property("ADBE Drop Shadow-0003").setValue(160);
-    ds.property("ADBE Drop Shadow-0004").setValue(10);
-    ds.property("ADBE Drop Shadow-0005").setValue(40);
+    setMax(ds.property("ADBE Drop Shadow-0002"), 0.8);
+    ds.property("ADBE Drop Shadow-0003").setValue(180);
+    ds.property("ADBE Drop Shadow-0004").setValue(Math.max(2, size * 0.03));
+    ds.property("ADBE Drop Shadow-0005").setValue(Math.max(6, size * 0.14));
 }
 
-function addTelop(comp, o) {
-    var L = comp.layers.addText(o.text);
-    L.name = o.name;
-    var src = textProps(L).property("ADBE Text Document");
+function addRun(comp, text, size, color, halo) {
+    // halo == true: dark border (stroke behind fill) + soft shadow
+    var L = comp.layers.addText(text);
+    var src = L.property("ADBE Text Properties").property("ADBE Text Document");
     var td = src.value;
     try { td.resetCharStyle(); td.resetParagraphStyle(); } catch (e) {}
-    td.font = o.font;
-    td.fontSize = o.size;
-    td.tracking = o.tracking;
-    td.justification = ParagraphJustification.CENTER_JUSTIFY;
-    if (o.outline > 0) {
-        td.applyFill = false; td.applyStroke = true;
-        td.strokeColor = o.color; td.strokeWidth = o.outline * 2; td.strokeOverFill = true;
-    } else {
-        td.applyFill = true; td.fillColor = o.color; td.applyStroke = false;
-    }
+    td.font = DATA.font; td.fontSize = size; td.tracking = DATA.tracking;
+    td.applyFill = true; td.fillColor = color;
+    if (halo) {
+        td.applyStroke = true; td.strokeColor = DATA.dark; td.strokeOverFill = false;
+        td.strokeWidth = Math.max(4, Math.round(size * DATA.border * 2));
+    } else td.applyStroke = false;
+    td.justification = ParagraphJustification.LEFT_JUSTIFY;
     src.setValue(td);
-    L.startTime = 0; L.inPoint = o.t0; L.outPoint = o.t1;
-    var r = L.sourceRectAtTime(o.t1 - 0.01, false);
-    var tr = L.property("ADBE Transform Group");
-    tr.property("ADBE Anchor Point").setValue([r.left + r.width / 2, r.top + r.height / 2]);
-    tr.property("ADBE Position").setValue([o.x, o.y]);
-    tr.property("ADBE Rotate Z").setValue(o.rot);
-    addDropShadow(L);
-    animate(L, o);
+    if (halo) addHalo(L, size);
     return L;
 }
 
-function opacityIn(L, t0, frames) {
-    var op = L.property("ADBE Transform Group").property("ADBE Opacity");
-    op.setValuesAtTimes([t0, t0 + frames / FPS], [0, 100]);
+// One telop = a null (position / rotation / scale animation) + one text layer per colour run.
+function addPhrase(comp, p, halo) {
+    var nul = comp.layers.addNull(comp.duration);
+    nul.name = "TELOP " + p.name;
+    nul.startTime = 0; nul.inPoint = p.t0; nul.outPoint = p.t1;
+    xf(nul).property("ADBE Anchor Point").setValue([0, 0, 0]);
+    xf(nul).property("ADBE Position").setValue([p.x, p.y]);
+    xf(nul).property("ADBE Rotate Z").setValue(p.rot);
+    var runs = [], lineBoxes = [], totalH = 0;
+    for (var li = 0; li < p.lines.length; li++) {
+        var line = p.lines[li], lw = 0, top = 1e9, bot = -1e9, items = [];
+        for (var ri = 0; ri < line.runs.length; ri++) {
+            var run = line.runs[ri];
+            var L = addRun(comp, run.text, line.size, run.accent ? p.accent : p.color, halo);
+            L.startTime = 0; L.inPoint = p.t0; L.outPoint = p.t1;
+            var r = L.sourceRectAtTime(p.t0, false);
+            items.push({ layer: L, rect: r, x: lw });
+            lw += r.width + line.size * DATA.tracking / 1000;
+            top = Math.min(top, r.top); bot = Math.max(bot, r.top + r.height);
+        }
+        lineBoxes.push({ items: items, width: lw - line.size * DATA.tracking / 1000, top: top, bot: bot, size: line.size });
+        totalH += (bot - top) + (li ? line.size * 0.12 : 0);
+    }
+    var y = -totalH / 2;
+    for (var lj = 0; lj < lineBoxes.length; lj++) {
+        var lb = lineBoxes[lj];
+        if (lj) y += lb.size * 0.12;
+        var baseline = y - lb.top;
+        for (var k = 0; k < lb.items.length; k++) {
+            var it = lb.items[k];
+            it.layer.parent = nul;
+            xf(it.layer).property("ADBE Position").setValue([-lb.width / 2 + it.x - it.rect.left, baseline]);
+            it.layer.name = "  " + p.name + " / " + (lj + 1) + "-" + (k + 1);
+            runs.push(it.layer);
+        }
+        y += lb.bot - lb.top;
+    }
+    animate(comp, p, nul, runs);
+    return nul;
 }
 
-function addAnimator(L, name) {
-    var anims = textProps(L).property("ADBE Text Animators");
-    var a = anims.addProperty("ADBE Text Animator");
-    a.name = name;
-    return anims.numProperties;  // index (references get invalidated after adds)
-}
-function animatorAt(L, idx) { return textProps(L).property("ADBE Text Animators").property(idx); }
-
-function animate(L, o) {
-    var tr = L.property("ADBE Transform Group");
-    var t0 = o.t0, t1 = o.t0 + o.dur;
-    if (o.anim === "fly") {
-        L.motionBlur = true;
-        var pos = tr.property("ADBE Position");
-        pos.setValuesAtTimes([t0, t1], [[o.x + o.frm[0] * o.dist, o.y + o.frm[1] * o.dist], [o.x, o.y]]);
+function animate(comp, p, nul, runs) {
+    var t0 = p.t0, t1 = p.t0 + p.dur, i;
+    var sc = xf(nul).property("ADBE Scale");
+    if (p.anim === "settle") {
+        sc.setValuesAtTimes([t0, t0 + 0.15], [[105, 105, 100], [100, 100, 100]]); expoOut(sc);
+    } else if (p.anim === "pop") {
+        sc.setValuesAtTimes([t0, t0 + p.dur * 0.6, t1], [[70, 70, 100], [106, 106, 100], [100, 100, 100]]);
+        ease(sc, 1, 33, 0.1); ease(sc, 2, 50, 50); ease(sc, 3, 80, 33);
+    } else if (p.anim === "fly") {
+        var pos = xf(nul).property("ADBE Position");
+        pos.setValuesAtTimes([t0, t1], [[p.x + p.frm[0] * p.dist, p.y + p.frm[1] * p.dist], [p.x, p.y]]);
         expoOut(pos);
-        opacityIn(L, t0, 2);
-    } else if (o.anim === "blur") {
-        var sc = tr.property("ADBE Scale");
-        sc.setValuesAtTimes([t0, t1], [[118, 118, 100], [100, 100, 100]]); expoOut(sc);
-        opacityIn(L, t0, 6);
-        var gb = L.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
-        var bl = gb.property("ADBE Gaussian Blur 2-0001");
-        bl.setValuesAtTimes([t0, t1], [60, 0]); expoOut(bl);
-        // keep the blur under the drop shadow so the shadow stays soft
-        gb.moveTo(1);
-    } else if (o.anim === "pop") {
-        var sc2 = tr.property("ADBE Scale");
-        sc2.setValuesAtTimes([t0, t0 + o.dur * 0.6, t1], [[55, 55, 100], [108, 108, 100], [100, 100, 100]]);
-        ease(sc2, 1, 33, 0.1); ease(sc2, 2, 50, 50); ease(sc2, 3, 80, 33);
-        opacityIn(L, t0, 2);
-    } else if (o.anim === "type") {
-        var i = addAnimator(L, "Typewriter");
-        animatorAt(L, i).property("ADBE Text Animator Properties").addProperty("ADBE Text Opacity");
-        animatorAt(L, i).property("ADBE Text Animator Properties").property("ADBE Text Opacity").setValue(0);
-        animatorAt(L, i).property("ADBE Text Selectors").addProperty("ADBE Text Selector");
-        var sel = animatorAt(L, i).property("ADBE Text Selectors").property(1);
-        sel.property("ADBE Text Range Advanced").property("ADBE Text Selector Smoothness").setValue(0);
-        sel = animatorAt(L, i).property("ADBE Text Selectors").property(1);
-        sel.property("ADBE Text Percent Start").setValuesAtTimes([t0, t1], [0, 100]);
-    } else if (o.anim === "cascade") {
-        L.motionBlur = true;
-        var j = addAnimator(L, "Cascade");
-        var props = animatorAt(L, j).property("ADBE Text Animator Properties");
-        props.addProperty("ADBE Text Position 3D");
-        animatorAt(L, j).property("ADBE Text Animator Properties").addProperty("ADBE Text Opacity");
-        props = animatorAt(L, j).property("ADBE Text Animator Properties");
-        props.property("ADBE Text Position 3D").setValue([0, -o.dist, 0]);
-        props.property("ADBE Text Opacity").setValue(0);
-        animatorAt(L, j).property("ADBE Text Selectors").addProperty("ADBE Text Selector");
-        var s2 = animatorAt(L, j).property("ADBE Text Selectors").property(1);
-        var adv = s2.property("ADBE Text Range Advanced");
-        adv.property("ADBE Text Range Shape").setValue(2);       // Ramp Up
-        adv.property("ADBE Text Levels Max Ease").setValue(100); // Ease High
-        s2 = animatorAt(L, j).property("ADBE Text Selectors").property(1);
-        var off = s2.property("ADBE Text Percent Offset");
-        var total = o.dur + o.stagger * o.text.length;
-        off.setValuesAtTimes([t0, t0 + total], [-100, 100]);
-        ease(off, 1, 33, 0.1); ease(off, 2, 75, 33);
+        for (i = 0; i < runs.length; i++) runs[i].motionBlur = true;
+    } else if (p.anim === "cascade") {
+        for (i = 0; i < runs.length; i++) {
+            var L = runs[i];
+            L.motionBlur = true;
+            var anims = L.property("ADBE Text Properties").property("ADBE Text Animators");
+            anims.addProperty("ADBE Text Animator");
+            var A = function () { return L.property("ADBE Text Properties").property("ADBE Text Animators").property(1); };
+            A().name = "Cascade";
+            A().property("ADBE Text Animator Properties").addProperty("ADBE Text Position 3D");
+            A().property("ADBE Text Animator Properties").addProperty("ADBE Text Opacity");
+            A().property("ADBE Text Animator Properties").property("ADBE Text Position 3D").setValue([0, -p.dist, 0]);
+            A().property("ADBE Text Animator Properties").property("ADBE Text Opacity").setValue(0);
+            A().property("ADBE Text Selectors").addProperty("ADBE Text Selector");
+            var adv = A().property("ADBE Text Selectors").property(1).property("ADBE Text Range Advanced");
+            adv.property("ADBE Text Range Shape").setValue(2);       // Ramp Up
+            adv.property("ADBE Text Levels Max Ease").setValue(100); // Ease High
+            var off = A().property("ADBE Text Selectors").property(1).property("ADBE Text Percent Offset");
+            off.setValuesAtTimes([t0, t0 + p.dur + p.stagger * 4], [-100, 100]);
+            ease(off, 1, 33, 0.1); ease(off, 2, 75, 33);
+        }
     }
 }
 
 // ---------- shape helpers
 function shapeLayer(comp, name) {
     var L = comp.layers.addShape(); L.name = name;
-    L.property("ADBE Transform Group").property("ADBE Position").setValue([0, 0]);
+    xf(L).property("ADBE Position").setValue([0, 0]);
     return L;
 }
 function addRect(L, cx, cy, w, h, color, opacity) {
     var root = L.property("ADBE Root Vectors Group");
-    var g = root.addProperty("ADBE Vector Group");
+    root.addProperty("ADBE Vector Group");
     var gi = root.numProperties;
     root.property(gi).property("ADBE Vectors Group").addProperty("ADBE Vector Shape - Rect");
     root.property(gi).property("ADBE Vectors Group").addProperty("ADBE Vector Graphic - Fill");
@@ -1090,57 +1820,18 @@ function addRect(L, cx, cy, w, h, color, opacity) {
     c.property(2).property("ADBE Vector Fill Opacity").setValue(opacity);
     root.property(gi).property("ADBE Vector Transform Group").property("ADBE Vector Position").setValue([cx, cy]);
 }
-function addPolyline(L, pts, color, width) {
-    var root = L.property("ADBE Root Vectors Group");
-    root.addProperty("ADBE Vector Group");
-    var gi = root.numProperties;
-    root.property(gi).property("ADBE Vectors Group").addProperty("ADBE Vector Shape - Group");
-    root.property(gi).property("ADBE Vectors Group").addProperty("ADBE Vector Graphic - Stroke");
-    var c = root.property(gi).property("ADBE Vectors Group");
-    var s = new Shape(); s.vertices = pts; s.closed = false;
-    c.property(1).property("ADBE Vector Shape").setValue(s);
-    c.property(2).property("ADBE Vector Stroke Color").setValue(color);
-    c.property(2).property("ADBE Vector Stroke Width").setValue(width);
-}
 
-function addCard(comp, c, cardIndex) {
-    var dur = comp.duration;
-    var base = c.style === "rust" ? DATA.colors.rust : DATA.colors.beige;
-    var solid = comp.layers.addSolid(base, "CARD " + (cardIndex + 1) + " bg", W, H, 1, dur);
+function addCard(comp, c, idx) {
+    var solid = comp.layers.addSolid(c.bg, "CARD " + idx + " bg", W, H, 1, comp.duration);
     solid.inPoint = c.t0; solid.outPoint = c.t1;
-    if (c.style === "rust") {
-        // window-blind light: wide soft bands drifting diagonally
-        var st = shapeLayer(comp, "CARD " + (cardIndex + 1) + " light streaks");
-        for (var k = -6; k <= 6; k++) addRect(st, 540, 960 + k * 300, 3200, 120, k % 2 ? [1, 1, 1] : [0, 0, 0], 14);
-        var tr = st.property("ADBE Transform Group");
-        tr.property("ADBE Anchor Point").setValue([540, 960]);
-        tr.property("ADBE Rotate Z").setValue(-30);
-        tr.property("ADBE Position").setValuesAtTimes([c.t0, c.t1], [[540, 960], [610, 1000]]);
-        st.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2")
-          .property("ADBE Gaussian Blur 2-0001").setValue(90);
-        st.inPoint = c.t0; st.outPoint = c.t1;
-    } else {
-        var br = shapeLayer(comp, "CARD " + (cardIndex + 1) + " corner brackets");
-        for (var b = 0; b < DATA.brackets.length; b++) {
-            var p = DATA.brackets[b];
-            addPolyline(br, [[p[0] + p[2] * 110, p[1]], [p[0], p[1]], [p[0], p[1] + p[3] * 110]], DATA.colors.ink, 9);
-        }
-        br.inPoint = c.t0; br.outPoint = c.t1;
-        var small = comp.layers.addText("SOFT ICE CREAM  \u30fb  IKEA SWEDEN");
-        var sd = small.property("ADBE Text Properties").property("ADBE Text Document");
-        var td = sd.value;
-        td.font = DATA.fonts.mincho; td.fontSize = 30; td.tracking = 50; td.applyFill = true;
-        td.fillColor = DATA.colors.ink; td.applyStroke = false;
-        td.justification = ParagraphJustification.CENTER_JUSTIFY; sd.setValue(td);
-        var r = small.sourceRectAtTime(c.t0, false);
-        var tr2 = small.property("ADBE Transform Group");
-        tr2.property("ADBE Anchor Point").setValue([r.left + r.width / 2, r.top + r.height / 2]);
-        tr2.property("ADBE Position").setValue([DATA.safe.left + 55, (DATA.safe.top + DATA.safe.bottom) / 2]);
-        tr2.property("ADBE Rotate Z").setValue(-90);
-        tr2.property("ADBE Opacity").setValue(80);
-        small.inPoint = c.t0; small.outPoint = c.t1; small.name = "CARD " + (cardIndex + 1) + " small text";
-    }
-    for (var i = 0; i < c.telops.length; i++) addTelop(comp, c.telops[i]);
+    var st = shapeLayer(comp, "CARD " + idx + " light");
+    for (var k = -6; k <= 6; k++) addRect(st, 540, 960 + k * 320, 3200, 140, k % 2 ? [1, 1, 1] : [0, 0, 0], 7);
+    xf(st).property("ADBE Anchor Point").setValue([540, 960]);
+    xf(st).property("ADBE Rotate Z").setValue(-30);
+    xf(st).property("ADBE Position").setValuesAtTimes([c.t0, c.t1], [[540, 960], [590, 990]]);
+    st.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2").property("ADBE Gaussian Blur 2-0001").setValue(90);
+    st.inPoint = c.t0; st.outPoint = c.t1;
+    addPhrase(comp, c.telop, false);
 }
 
 function addSafeGuide(comp) {
@@ -1151,7 +1842,6 @@ function addSafeGuide(comp) {
     addRect(g, s.left / 2, (s.top + s.bottom) / 2, s.left, s.bottom - s.top, red, 25);
     addRect(g, (s.right + W) / 2, (s.top + s.bottom) / 2, W - s.right, s.bottom - s.top, red, 25);
     g.guideLayer = true;
-    return g;
 }
 
 function importFile(path) {
@@ -1179,16 +1869,15 @@ try {
         L.name = name;
         if (srcItem && srcItem.width) {
             var s = Math.max(W / srcItem.width, H / srcItem.height) * 100;
-            L.property("ADBE Transform Group").property("ADBE Scale").setValue([s, s, 100]);
+            xf(L).property("ADBE Scale").setValue([s, s, 100]);
         }
         return L;
     }
     addFootage("FOOTAGE (base)");
 
-    // texts that sit behind the person
-    for (var i = 0; i < DATA.telops.length; i++) if (DATA.telops[i].behind) addTelop(comp, DATA.telops[i]);
+    var i;
+    for (i = 0; i < DATA.telops.length; i++) if (DATA.telops[i].behind) addPhrase(comp, DATA.telops[i], true);
 
-    // person cut-out on top of the behind-texts (footage x luma matte)
     var matteItem = importFile(root.fsName + "/matte/person_matte.mp4");
     if (matteItem) matteItem.parentFolder = folder;
     for (var sgi = 0; sgi < DATA.behindSegments.length; sgi++) {
@@ -1206,12 +1895,9 @@ try {
         }
     }
 
-    // front texts
-    for (var j = 0; j < DATA.telops.length; j++) if (!DATA.telops[j].behind) addTelop(comp, DATA.telops[j]);
-    // insert cards
-    for (var c = 0; c < DATA.cards.length; c++) addCard(comp, DATA.cards[c], c);
+    for (i = 0; i < DATA.telops.length; i++) if (!DATA.telops[i].behind) addPhrase(comp, DATA.telops[i], true);
+    for (i = 0; i < DATA.cards.length; i++) addCard(comp, DATA.cards[i], i + 1);
 
-    // SFX
     var sfx = importFile(root.fsName + "/sfx/sfx_mix.wav");
     if (sfx) { sfx.parentFolder = folder; var sl = comp.layers.add(sfx); sl.name = "SFX mix"; }
 

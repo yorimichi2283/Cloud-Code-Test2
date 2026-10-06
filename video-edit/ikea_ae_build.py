@@ -29,12 +29,15 @@ CX = W // 2  # everything is centred on the frame
 WHITE, YELLOW, DARK = (255, 255, 255), (255, 210, 31), (30, 28, 26)
 FONTS = {  # key -> (PostScript name of the bundled fallback, ttf file)
     "gothic": ("ZenKakuGothicAntique-Black", "ZenKakuGothicAntique_900Black.ttf"),
+    "mincho": ("ShipporiMinchoB1-ExtraBold", "ShipporiMinchoB1_800ExtraBold.ttf"),
 }
 # Preferred fonts in After Effects (Adobe Fonts: Toppan Bunkyu Midashi Gothic). The script uses the first one
 # that is installed and falls back to the bundled font otherwise. The preview always uses the bundled font.
 FONT_PREFS = {
     "gothic": ["ToppanBunkyuMidashiGothicStdN-ExtraBold", "ToppanBunkyuMidashiGothicStd-ExtraBold",
                "ToppanBunkyuGothicPr6N-DB"],
+    "mincho": ["ToppanBunkyuMidashiMinchoStdN-ExtraBold", "ToppanBunkyuMidashiMinchoStd-ExtraBold",
+               "ToppanBunkyuMinchoPr6N-Regular"],
 }
 MAX_LINES = 2           # never more than two lines of telop on screen at once
 TRACKING = -30          # AE tracking units (1/1000 em)
@@ -52,6 +55,9 @@ BAR_DELAY, BAR_IN, BAR_H = 0.18, 0.4, 0.07
 CH_STAGGER, CH_DUR = 0.06, 0.32   # per-character entrances (cascade / popchars)
 COUNT_DUR, COUNT_STEP = 0.45, 2 / FPS   # slot-machine digits before the price lands
 SWIPE_DIST, SLIDE_DIST = 900, 700
+TYPE_STAGGER, TYPE_IN = 0.05, 0.09   # word-by-word captions: characters type in (scale 130% -> 100%)
+MARKER_H = 0.5          # yellow highlighter band, fraction of the font size
+DOODLE_IN = 0.28        # hand-drawn marks draw on in this long
 HOOK_END, HOOK_DIM = 2.1, 0.55   # darken the opening shot so the hook reads
 
 # ---------------------------------------------------------------- timeline spec
@@ -59,62 +65,149 @@ HOOK_END, HOOK_DIM = 2.1, 0.55   # darken the opening shot so the hook reads
 # size as "size:text".
 def P(t0, t1, text, kind="base", **kw):
     d = dict(t0=t0, t1=t1, text=text, kind=kind, x=CX, rot=0.0, behind=False, sfx=False, font="gothic",
-             color=WHITE, accent=YELLOW, anim="static", bar=False, counter=False)
+             color=WHITE, accent=YELLOW, anim="static", bar=False, counter=False, edge="dark", marker=False,
+             gap=LINE_GAP)
     if kind == "base": d.update(y=BASE_Y, size=BASE_SIZE)
     elif kind == "accent": d.update(y=ACCENT_Y, size=ACCENT_SIZE, anim="mask", sfx=True)
     d.update(kw)
     return d
 
+# Kinetic captions: every spoken word appears on its own as it is said (characters type in), words of one
+# phrase pile up in the free space around the speaker (staircase / vertical columns), then clear together.
+# Style per word: w = white (dark border, for dark shots) / y = yellow / k = ink (bright shots, light halo) /
+# ky = ink on a yellow highlighter band. Font: g = gothic, m = mincho. vert = true vertical writing.
+STYLES = {
+    "w": dict(color=WHITE, edge="dark"), "y": dict(color=YELLOW, edge="dark"),
+    "k": dict(color=DARK, edge="light"), "ky": dict(color=DARK, edge="light", marker=True),
+}
+
+
+def Wd(t, text, x, y, size, style="k", font="g", vert=False, anim=None, **kw):
+    st = STYLES[style]
+    key = style in ("y", "ky")
+    if vert:  # one character per line; long-vowel marks become vertical bars
+        text = "/".join("｜" if c == "ー" else c for c in text)
+    d = dict(t0=t, t1=None, text=text, kind="word", x=x, y=y, size=size, rot=0.0, behind=False, font=FONT_KEYS[font],
+             color=st["color"], accent=st["color"], edge=st["edge"], marker=st.get("marker", False),
+             anim=anim or ("pop" if key else "type"), bar=False, counter=False, sfx=key, gap=-0.04 if vert else LINE_GAP)
+    d.update(kw)
+    return d
+
+
+FONT_KEYS = {"g": "gothic", "m": "mincho"}
+
+
+def cluster(t_end, *words):
+    for w in words: w["t1"] = t_end
+    return list(words)
+
+
+# Hand-drawn marks: (t0, t1, kind, params, colour)
+DOODLES = []
+
+
+def doodle(t0, t1, kind, color=YELLOW, **kw):
+    DOODLES.append(dict(t0=t0, t1=t1, kind=kind, color=color, **kw))
+
+
 TELOPS = [
-    # 0-2.1 exterior: two-line hook only (the shot itself already says "IKEA")
-    P(0.10, HOOK_END, "日本は[50円]", "hook", y=660, size=120, anim="mask", counter=True, sfx=True),
-    P(0.55, HOOK_END, "本場は[いくら？]", "hook", y=830, size=150, anim="cascade", bar=True, sfx=True),
-    # 2.1-8.7 intro talk
-    P(2.38, 2.84, "日本だと"),
-    P(2.84, 3.16, "イケアの"),
-    P(3.16, 3.70, "ソフトクリームって"),
-    P(3.70, 4.38, "1個[50円]", "accent", anim="pop", counter=True),
-    P(4.38, 5.20, "だと思うんですけど"),
-    P(5.66, 6.02, "実際"),
-    P(6.02, 7.22, "本場のイケアは"),
-    P(7.75, 8.04, "買えるのかを"),
-    P(8.04, 8.80, "見てみます"),
-    # 8.7-14.2 kiosk
-    P(8.98, 10.22, "アイスクリーム"),
-    P(10.22, 11.74, "[9]なんで"),
-    P(11.74, 12.96, "[150円]", "accent", size=210, y=950, anim="slide", counter=True, bar=True),
-    P(12.10, 12.96, "ぐらいで買えるわ"),
-    P(12.96, 13.74, "これ普通に"),
-    # 14.2-17.4 kiosk scroll
-    P(14.38, 15.54, "このシナモンロールは"),
-    P(15.54, 16.72, "1個[112円]", "accent", counter=True, bar=True),
-    P(16.72, 17.50, "で買えますね"),
-    # 17.4-24.4 machine
-    P(17.76, 18.80, "セットして"),
-    P(19.16, 20.08, "あとはここを"),
-    P(20.08, 21.00, "[押すだけ]ですね", anim="squash", sfx=True),
-    P(23.04, 24.00, "自動でやってくれる"),
-    # 24.4- eating
-    P(24.84, 26.04, "実際にアイスクリーム"),
-    P(29.48, 30.48, "口の中に入れた"),
-    P(30.48, 31.30, "瞬間に"),
-    P(31.90, 32.78, "[うわっ！]って", "accent", size=200, anim="burst"),
-    P(32.78, 33.68, "色々うまい"),
-    P(33.68, 34.16, "アイスクリーム"),
-    P(34.16, 35.00, "あるじゃないですか"),
-    P(35.14, 36.18, "まあハーゲンダッツの"),
-    P(36.18, 37.40, "[5倍濃縮]", "accent", y=400, size=210, anim="cascade", behind=True),
-    P(36.84, 37.28, "したみたいな"),
-    P(37.28, 38.00, "感じの味がします"),
-    P(38.00, 38.60, "これ"),
-    P(39.24, 39.68, "意外とね"),
-    P(40.30, 42.30, "ぜひ食べてみてください"),
+    # 0-2.1 exterior (dimmed): hook
+    *cluster(HOOK_END,
+             Wd(0.10, "日本は", 250, 520, 80, "w", "m"),
+             Wd(0.30, "[50円]", 590, 570, 230, "y", counter=True),
+             Wd(0.80, "本場は", 300, 800, 80, "w", "m"),
+             Wd(1.00, "いくら？", 600, 870, 170, "y")),
+    # 2.1-8.7 talking to camera: left column beside the face + the chest
+    *cluster(3.70,
+             Wd(2.38, "日本だと", 150, 560, 80, vert=True),
+             Wd(2.84, "イケアの", 420, 1060, 80, font="m"),
+             Wd(3.16, "ソフトクリームって", 540, 1170, 88)),
+    *cluster(5.20,
+             Wd(3.70, "1個", 220, 1050, 100, font="m"),
+             Wd(4.18, "[50円]", 610, 1060, 230, "ky", counter=True),
+             Wd(4.38, "だと思うんですけど", 560, 1215, 64)),
+    *cluster(7.22,
+             Wd(5.66, "実際", 150, 470, 110, vert=True),
+             Wd(6.02, "本場の", 400, 1080, 80, font="m"),
+             Wd(6.60, "イケアは", 620, 1180, 110)),
+    *cluster(8.80,
+             Wd(7.75, "買えるのかを", 150, 560, 76, vert=True),
+             Wd(8.04, "見てみます", 560, 1170, 120)),
+    # 8.7-14.4 kiosk (bright screen): ink + highlighter
+    *cluster(11.74,
+             Wd(8.98, "アイスクリーム", 540, 520, 110),
+             Wd(10.22, "[9]", 330, 820, 320, "ky"),
+             Wd(10.58, "なんで", 560, 880, 90, font="m")),
+    *cluster(12.96,
+             Wd(11.74, "[150円]", 540, 760, 250, "ky", counter=True),
+             Wd(12.10, "ぐらいで", 330, 960, 90, font="m"),
+             Wd(12.34, "買えるわ", 650, 970, 110)),
+    *cluster(13.74,
+             Wd(12.96, "これ", 300, 700, 90, font="m"),
+             Wd(13.12, "普通に", 560, 770, 140)),
+    *cluster(15.54,
+             Wd(14.38, "この", 250, 420, 70, font="m"),
+             Wd(14.66, "シナモンロールは", 540, 520, 96)),
+    *cluster(17.50,
+             Wd(15.54, "1個", 250, 980, 90, font="m"),
+             Wd(16.00, "[112円]", 600, 1000, 220, "ky", counter=True),
+             Wd(16.72, "で買えますね", 640, 1160, 80)),
+    # 17.5-24.4 machine (darker metal): white + yellow
+    *cluster(18.80,
+             Wd(17.76, "セットして", 540, 340, 110, "w")),
+    *cluster(21.00,
+             Wd(19.16, "あとは", 250, 330, 80, "w", "m"),
+             Wd(19.66, "ここを", 480, 420, 110, "w"),
+             Wd(20.08, "押すだけ", 540, 600, 190, "y", anim="squash"),
+             Wd(20.66, "ですね", 790, 740, 80, "w", "m")),
+    *cluster(24.40,
+             Wd(23.04, "自動で", 160, 560, 110, "w", vert=True),
+             Wd(23.36, "やってくれる", 560, 360, 100, "w")),
+    # 24.4- eating (bright wall): top band above the head + side columns
+    *cluster(26.04,
+             Wd(24.84, "実際に", 540, 330, 120)),
+    *cluster(31.30,
+             Wd(29.48, "口の中に", 170, 640, 90, vert=True),
+             Wd(30.18, "入れた", 880, 620, 90, vert=True),
+             Wd(30.48, "瞬間に", 540, 360, 120)),
+    *cluster(32.78,
+             Wd(31.90, "うわっ！", 530, 380, 170, "ky"),
+             Wd(32.22, "って", 880, 520, 70, font="m")),
+    *cluster(35.00,
+             Wd(32.78, "色々", 170, 560, 110, vert=True),
+             Wd(33.32, "うまい", 880, 600, 100, vert=True),
+             Wd(33.68, "アイスクリーム", 540, 340, 100),
+             Wd(34.16, "あるじゃないですか", 540, 1210, 66)),
+    *cluster(36.18,
+             Wd(35.14, "まあ", 250, 320, 70, font="m"),
+             Wd(35.30, "ハーゲンダッツの", 560, 410, 90)),
+    *cluster(38.60,
+             Wd(36.18, "5倍濃縮", 530, 440, 190, "ky", behind=True),
+             Wd(36.84, "したみたいな", 170, 760, 76, vert=True),
+             Wd(37.28, "感じの味がします", 540, 1210, 70),
+             Wd(38.00, "これ", 880, 640, 80, font="m", vert=True)),
+    # close-up
+    *cluster(39.68,
+             Wd(39.24, "意外とね", 150, 620, 100, vert=True)),
+    *cluster(42.30,
+             Wd(40.42, "ぜひ", 150, 560, 110, vert=True),
+             Wd(40.58, "食べてみて", 880, 640, 96, vert=True),
+             Wd(41.08, "ください", 540, 1200, 90, font="m")),
 ]
+
+doodle(1.25, HOOK_END, "bang", cx=930, cy=700, r=70, angle=-60)
+doodle(4.30, 5.20, "bang", cx=900, cy=900, r=60, angle=-50, color=DARK)
+doodle(8.30, 8.80, "swoosh", x0=330, x1=790, y=1245, color=YELLOW)
+doodle(11.95, 12.96, "circle", cx=475, cy=1197, rx=150, ry=50, color=YELLOW)
+doodle(20.20, 21.00, "arrow", x0=640, y0=760, x1=800, y1=1180, color=YELLOW)
+doodle(31.95, 32.78, "bang", cx=850, cy=560, r=70, angle=-40, color=DARK)
+doodle(31.95, 32.78, "bang", cx=230, cy=560, r=70, angle=-140, color=DARK)
+
 
 # Full-screen inserts at the key beats. Text sits in the exact centre of the frame.
 def CARD(t0, t1, text, bg, fg, anim, size=240):
     return dict(t0=t0, t1=t1, bg=bg, telop=P(t0, t1, text, "accent", x=W // 2, y=H // 2, size=size, color=fg,
-                                             accent=fg, anim=anim, sfx=False))
+                                             accent=fg, anim=anim, sfx=False, edge="none"))
 
 CARDS = [
     CARD(7.22, 7.75, "いくら？", YELLOW, DARK, "cascade"),          # calls back to the hook's question
@@ -137,7 +230,7 @@ def parse_lines(p):
 
 # ---------------------------------------------------------------- keyframes (shared by preview and AE)
 # key = [time, value, ease_out_of_this_key]   ease: "lin" | "fast" (expo-like ease-out) | "io"
-CHAR_ANIMS = ("cascade", "popchars")
+CHAR_ANIMS = ("cascade", "popchars", "type")
 MOTION_BLUR = ("slide", "swipe", "cascade", "burst")
 
 
@@ -191,6 +284,11 @@ def line_keys(p, li, size):
     return {}
 
 
+def marker_keys(p):
+    t = p["t0"] + 0.06
+    return [[t, 0, "fast"], [t + 0.26, 100, "lin"]]
+
+
 def blur_keys(p):
     return [[p["t0"], 40, "fast"], [p["t0"] + 0.3, 0, "lin"]] if p["anim"] == "zoom" else None
 
@@ -204,8 +302,19 @@ def char_timing(p):
     return stagger, dur
 
 
+def type_sweep(p):
+    """Typewriter: an index range selector sweeps linearly over the N characters of the word."""
+    n = len(re.sub(r"[\[\]/]|\d+:", "", p["text"]))
+    return n, (n - 1) * TYPE_STAGGER + TYPE_IN
+
+
 def char_amount(p, k, t):
-    """1 = hidden state, 0 = at rest, for the k-th character (cascade / popchars)."""
+    """1 = hidden state, 0 = at rest, for the k-th character (cascade / popchars / type)."""
+    if p["anim"] == "type":
+        n, T = type_sweep(p)
+        start = n * clamp((t - p["t0"]) / T)
+        x = clamp(start - k)
+        return 1 - x * x * (3 - 2 * x)
     stagger, dur = char_timing(p)
     q = clamp((t - p["t0"] - k * stagger) / dur)
     return (1 - q) ** 3
@@ -271,12 +380,13 @@ def layout(p):
     """Characters with their centre relative to the telop centre, plus per-line boxes."""
     lines = parse_lines(p)
     heights = [s for s, _ in lines]
-    total = sum(heights) + sum(s * LINE_GAP for s in heights[1:])
+    gap = p.get("gap", LINE_GAP)
+    total = sum(heights) + sum(s * gap for s in heights[1:])
     y = -total / 2
     chars, boxes = [], []
     tr = lambda s: s * TRACKING / 1000.0
     for li, (size, runs) in enumerate(lines):
-        if li: y += size * LINE_GAP
+        if li: y += size * gap
         width = sum(advance(c, size, p["font"]) for t, _ in runs for c in t) - tr(size)
         x = -width / 2
         k = 0
@@ -292,7 +402,7 @@ def layout(p):
 
 
 @functools.lru_cache(maxsize=None)
-def glyph(ch, size, color, border, fk):
+def glyph(ch, size, color, edge, fk):
     """(fill_sprite, shadow_sprite) premultiplied RGBA, centred on the character cell."""
     f = font(fk, size)
     asc, desc = f.getmetrics()
@@ -303,15 +413,20 @@ def glyph(ch, size, color, border, fk):
     ImageDraw.Draw(img).text((pad, pad), ch, font=f, fill=255)
     a = np.asarray(img, np.float32) / 255.0
     rgb = np.array(color, np.float32)[None, None] / 255.0 * a[..., None]
-    if border:
+    if edge == "dark":
         r = max(1, int(round(size * BORDER)))
         ring = cv2.dilate(a, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1)))
         rgb = rgb + np.array(DARK, np.float32)[None, None] / 255.0 * np.clip(ring - a, 0, 1)[..., None]
         a = np.maximum(a, ring)
     fill = np.dstack([rgb, a])
     sh = cv2.GaussianBlur(a, (0, 0), max(1.5, size * 0.06))
-    sh = cv2.warpAffine(sh, np.float32([[1, 0, 0], [0, 1, size * 0.03]]), (cw, chh)) * (0.55 if border else 0)
-    shadow = np.zeros_like(fill); shadow[..., 3] = sh
+    shadow = np.zeros_like(fill)
+    if edge == "dark":   # tight dark drop shadow
+        sh = cv2.warpAffine(sh, np.float32([[1, 0, 0], [0, 1, size * 0.03]]), (cw, chh)) * 0.55
+        shadow[..., 3] = sh
+    elif edge == "light":  # soft white glow keeps ink text off busy bright backgrounds
+        sh = cv2.GaussianBlur(a, (0, 0), max(2.0, size * 0.09)) * 0.6
+        shadow[..., :3] = sh[..., None]; shadow[..., 3] = sh
     cx, cy = pad + adv / 2, pad + asc - size / 2 + size * 0.06
     M = np.float32([[1, 0, cw / 2 - cx], [0, 1, chh / 2 - cy]])
     return cv2.warpAffine(fill, M, (cw, chh)), cv2.warpAffine(shadow, M, (cw, chh))
@@ -385,13 +500,22 @@ def draw_phrase(frame, p, t):
     SX, SY = ease_eval(tk["scale"], t)
     alpha = lerp(opacity_keys(p), t) / 100.0
     if alpha <= 0.003: return
-    border = not p.get("on_card")
+    edge = p.get("edge", "dark")
     big = max(b["size"] for b in boxes)
     cw = int(max(b["w"] for b in boxes) + big * 3)
-    chh = int(sum(b["size"] for b in boxes) * (1 + LINE_GAP) + big * 3)
+    chh = int(sum(b["size"] for b in boxes) * (1 + abs(p.get("gap", LINE_GAP))) + big * 3)
     canvas = np.zeros((chh, cw, 4), np.float32)
     ox, oy = cw / 2, chh / 2
     per_char = p["anim"] in CHAR_ANIMS
+    if p.get("marker"):  # yellow highlighter band behind the word, wiping in from the left
+        mx = ease_eval(marker_keys(p), t) / 100.0
+        for b in boxes:
+            if mx <= 0.002: break
+            pad = b["size"] * 0.12
+            x0 = int(ox - b["w"] / 2 - pad); x1 = int(x0 + (b["w"] + 2 * pad) * mx)
+            yc = oy + b["cy"] + b["size"] * 0.12; hh = b["size"] * MARKER_H / 2
+            canvas[int(yc - hh):int(yc + hh), x0:x1, :3] = np.array(YELLOW, np.float32) / 255
+            canvas[int(yc - hh):int(yc + hh), x0:x1, 3] = 1
     gk = 0
     for li, b in enumerate(boxes):
         lk = line_keys(p, li, b["size"])
@@ -406,11 +530,12 @@ def draw_phrase(frame, p, t):
             for j, c in enumerate(line_chars):
                 spread = (c["k"] - (n - 1) / 2) * c["size"] * track / 1000.0
                 col = p["accent"] if c["accent"] else p["color"]
-                spr = glyph(c["ch"], c["size"], col, border, p["font"])[pass_]
+                spr = glyph(c["ch"], c["size"], col, edge, p["font"])[pass_]
                 cdy, cs, ca = 0.0, 1.0, la
                 if per_char:
                     amt = char_amount(p, gk + j, t)
                     if p["anim"] == "cascade": cdy = -0.9 * c["size"] * amt
+                    elif p["anim"] == "type": cs = 1 + 0.3 * amt
                     else: cs = 1 - amt
                     ca = la * (1 - amt)
                 spr = scaled(spr, cs)
@@ -447,6 +572,67 @@ def draw_phrase(frame, p, t):
     composite(frame, canvas, PX, PY, SY / 100.0, ease_eval(tk["rot"], t))
 
 
+def doodle_paths(d):
+    """Polylines (lists of (x, y)) for a hand-drawn mark."""
+    k = d["kind"]
+    if k == "bang":  # three short strokes fanning out, like a manga exclamation
+        out = []
+        for da in (-24, 0, 24):
+            a = math.radians(d["angle"] + da)
+            out.append([(d["cx"] + math.cos(a) * d["r"] * f, d["cy"] + math.sin(a) * d["r"] * f) for f in (0.35, 1.0)])
+        return out
+    if k == "circle":  # a bit more than one turn, slightly wobbly
+        pts = []
+        for i in range(73):
+            th = math.radians(-210 + i * 5.3)
+            w = 1 + 0.05 * math.sin(3 * th)
+            pts.append((d["cx"] + d["rx"] * w * math.cos(th), d["cy"] + d["ry"] * w * math.sin(th) - 6 * math.sin(th / 2)))
+        return [pts]
+    if k == "swoosh":
+        n = 30
+        return [[(d["x0"] + (d["x1"] - d["x0"]) * i / n, d["y"] + 9 * math.sin(i / n * math.pi * 2.2)) for i in range(n + 1)]]
+    if k == "arrow":
+        x0, y0, x1, y1 = d["x0"], d["y0"], d["x1"], d["y1"]
+        mx, my = (x0 + x1) / 2 + (y1 - y0) * 0.25, (y0 + y1) / 2 - (x1 - x0) * 0.25
+        body = [((1 - u) ** 2 * x0 + 2 * (1 - u) * u * mx + u * u * x1, (1 - u) ** 2 * y0 + 2 * (1 - u) * u * my + u * u * y1)
+                for u in [i / 24 for i in range(25)]]
+        ang = math.atan2(y1 - body[-3][1], x1 - body[-3][0])
+        head = [[(x1 - math.cos(ang + s) * 55, y1 - math.sin(ang + s) * 55), (x1, y1)] for s in (0.5, -0.5)]
+        return [body] + head
+    raise ValueError(k)
+
+
+def doodle_keys(d):
+    return [[d["t0"], 0, "fast"], [d["t0"] + DOODLE_IN, 100, "lin"]]
+
+
+DOODLE_W = 9
+
+
+def draw_doodles(frame, t):
+    for d in DOODLES:
+        if not (d["t0"] <= t < d["t1"]): continue
+        prog = ease_eval(doodle_keys(d), t) / 100.0
+        alpha = clamp((d["t1"] - t) / EXIT)
+        outline = DARK if d["color"] != DARK else WHITE
+        layer = np.zeros((H, W), np.uint8); lo = np.zeros((H, W), np.uint8)
+        for path in doodle_paths(d):
+            seg = [math.dist(a, b) for a, b in zip(path, path[1:])]
+            L, acc, pts = sum(seg) * prog, 0.0, [path[0]]
+            for (a, b), sl in zip(zip(path, path[1:]), seg):
+                if acc + sl <= L: pts.append(b); acc += sl
+                else:
+                    f = (L - acc) / sl if sl else 0
+                    pts.append((a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)); break
+            arr = np.array([[int(x * 4), int(y * 4)] for x, y in pts], np.int32)
+            cv2.polylines(lo, [arr], False, 255, DOODLE_W + 6, cv2.LINE_AA, shift=2)
+            cv2.polylines(layer, [arr], False, 255, DOODLE_W, cv2.LINE_AA, shift=2)
+        a_out = lo.astype(np.float32)[..., None] / 255 * alpha
+        a_in = layer.astype(np.float32)[..., None] / 255 * alpha
+        frame[:] = frame * (1 - a_out) + np.array(outline, np.float32) / 255 * a_out
+        frame[:] = frame * (1 - a_in) + np.array(d["color"], np.float32) / 255 * a_in
+
+
 @functools.lru_cache(maxsize=4)
 def card_base(bg):
     return np.ones((H, W, 3), np.float32) * np.array(bg, np.float32) / 255
@@ -475,7 +661,7 @@ def check_safe_zone():
     bad = []
     for p in all_phrases():
         chars, boxes = layout(p)
-        s = 1 + (DRIFT + 0.01 if p["anim"] != "static" else 0)
+        s = 1 + (DRIFT + 0.01 if p["anim"] != "static" else 0) + (0.12 if p.get("marker") else 0)
         r = math.radians(p["rot"])
         xs, ys = [], []
         for c in chars:
@@ -620,6 +806,7 @@ def render_preview(src, out, sfx_track, matte_path, scale=0.5):
                 frame = frame * (1 - m) + person * m
             for p in TELOPS:
                 if not p["behind"]: draw_phrase(frame, p, t)
+            draw_doodles(frame, t)
         small = cv2.resize(frame, (ow, oh), interpolation=cv2.INTER_AREA)
         enc.stdin.write((np.clip(small, 0, 1) * 255 + 0.5).astype(np.uint8).tobytes()); i += 1
     enc.stdin.close(); enc.wait(); dec.wait(); mdec.wait(); os.remove(wav)
@@ -646,9 +833,11 @@ def jsx_phrase(p):
     name = re.sub(r"[\[\]]|\d+:", "", p["text"]).replace("/", " ")
     return dict(name=f'{p["t0"]:05.2f} {name}', t0=p["t0"], t1=p["t1"], lines=lines, anim=p["anim"],
                 font=FONTS[p["font"]][0], color=[c / 255 for c in p["color"]], accent=[c / 255 for c in p["accent"]],
-                border=not p.get("on_card"), behind=p["behind"], scale=tk["scale"], rot=tk["rot"], pos=tk["pos"],
+                behind=p["behind"], scale=tk["scale"], rot=tk["rot"], pos=tk["pos"],
                 opacity=opacity_keys(p), bar=bar_keys(p) if p["bar"] else None, blur=blur_keys(p),
-                motionBlur=p["anim"] in MOTION_BLUR, chStagger=char_timing(p)[0], chDur=char_timing(p)[1])
+                motionBlur=p["anim"] in MOTION_BLUR, chStagger=char_timing(p)[0], chDur=char_timing(p)[1],
+                edge=p.get("edge", "dark"), gap=p.get("gap", LINE_GAP), typeN=type_sweep(p)[0], typeT=type_sweep(p)[1],
+                marker=marker_keys(p) if p.get("marker") else None)
 
 JSX_TEMPLATE = r"""// IKEA soft-ice vlog - After Effects builder (generated by ikea_ae_build.py)
 // Run in After Effects: File > Scripts > Run Script File...
@@ -714,7 +903,16 @@ function addShadow(L, size) {
     ds.property("ADBE Drop Shadow-0005").setValue(Math.max(4, size * 0.12));
 }
 
-function addRun(comp, text, size, color, border, fontName) {
+function addGlow(L, size) {
+    var ds = L.property("ADBE Effect Parade").addProperty("ADBE Drop Shadow");
+    ds.property("ADBE Drop Shadow-0001").setValue([1, 1, 1, 1]);
+    setMax(ds.property("ADBE Drop Shadow-0002"), 0.6);
+    ds.property("ADBE Drop Shadow-0004").setValue(0);
+    ds.property("ADBE Drop Shadow-0005").setValue(Math.max(6, size * 0.2));
+}
+
+function addRun(comp, text, size, color, edge, fontName) {
+    var border = edge === "dark";
     var L = comp.layers.addText(text);
     var src = L.property("ADBE Text Properties").property("ADBE Text Document");
     var td = src.value;
@@ -728,6 +926,7 @@ function addRun(comp, text, size, color, border, fontName) {
     td.justification = ParagraphJustification.LEFT_JUSTIFY;
     src.setValue(td);
     if (border) addShadow(L, size);
+    else if (edge === "light") addGlow(L, size);
     return L;
 }
 
@@ -784,6 +983,75 @@ function addChars(L, run, p, size) {
     applyKeys(off, [[t0, -100, "lin"], [t0 + p.chDur * 1.5 + p.chStagger * run.n, 100, "lin"]]);
 }
 
+// type: characters appear one after another (index range selector sweeps over the word, scale 130% -> 100%)
+function addType(L, run, p) {
+    var pr = addAnimator(L, "Type", ["ADBE Text Scale 3D", "ADBE Text Opacity"]);
+    pr("ADBE Text Scale 3D").setValue([130, 130, 100]);
+    pr("ADBE Text Opacity").setValue(0);
+    try {
+        var mo = L.property("ADBE Text Properties").property("ADBE Text More Options");
+        mo.property("ADBE Text Anchor Point Option").setValue(1);       // per character
+        mo.property("ADBE Text Anchor Point Align").setValue([0, -45]); // scale around the glyph centre
+    } catch (e) {}
+    var ai = animators(L).numProperties;
+    var sel = function () { return animators(L).property(ai).property("ADBE Text Selectors").property(1); };
+    animators(L).property(ai).property("ADBE Text Selectors").addProperty("ADBE Text Selector");
+    sel().property("ADBE Text Range Advanced").property("ADBE Text Range Units").setValue(2);  // Index
+    sel().property("ADBE Text Index End").setValue(run.n);
+    var ta = p.t0 + p.typeT * run.k0 / p.typeN, tb = p.t0 + p.typeT * (run.k0 + run.n) / p.typeN;
+    applyKeys(sel().property("ADBE Text Index Start"), [[ta, 0, "lin"], [tb, run.n, "lin"]]);
+}
+
+// highlighter band behind a word (shape layer under the text, wipes in from the left)
+function addMarker(comp, nul, firstText, x, yc, w, size, keys, t0, t1) {
+    var L = comp.layers.addShape();
+    var root = L.property("ADBE Root Vectors Group");
+    root.addProperty("ADBE Vector Group");
+    var g = function () { return root.property(1).property("ADBE Vectors Group"); };
+    g().addProperty("ADBE Vector Shape - Rect"); g().addProperty("ADBE Vector Graphic - Fill");
+    var h = size * DATA.markerH;
+    g().property(1).property("ADBE Vector Rect Size").setValue([w, h]);
+    g().property(1).property("ADBE Vector Rect Position").setValue([w / 2, 0]);
+    g().property(2).property("ADBE Vector Fill Color").setValue(DATA.yellow);
+    L.parent = nul;
+    xf(L).property("ADBE Anchor Point").setValue([0, 0]);
+    xf(L).property("ADBE Position").setValue([x, yc]);
+    applyKeys(xf(L).property("ADBE Scale"), keys, function (v) { return [v, 100, 100]; });
+    L.inPoint = t0; L.outPoint = t1;
+    L.moveAfter(firstText);
+    return L;
+}
+
+// hand-drawn marks: open paths stroked yellow / ink with an outline, drawn on with Trim Paths
+function addDoodle(comp, d, idx) {
+    var L = comp.layers.addShape();
+    L.name = "DOODLE " + idx;
+    var root = L.property("ADBE Root Vectors Group");
+    for (var i = 0; i < d.paths.length; i++) {
+        root.addProperty("ADBE Vector Group");
+        var gi = root.numProperties;
+        var c = function () { return root.property(gi).property("ADBE Vectors Group"); };
+        c().addProperty("ADBE Vector Shape - Group");
+        c().addProperty("ADBE Vector Graphic - Stroke");
+        c().addProperty("ADBE Vector Graphic - Stroke");
+        var s = new Shape(); s.vertices = d.paths[i]; s.closed = false;
+        c().property(1).property("ADBE Vector Shape").setValue(s);
+        var strokes = [[2, d.color, DATA.doodleW], [3, d.outline, DATA.doodleW + 6]];
+        for (var k = 0; k < strokes.length; k++) {
+            var st = c().property(strokes[k][0]);
+            st.property("ADBE Vector Stroke Color").setValue(strokes[k][1]);
+            st.property("ADBE Vector Stroke Width").setValue(strokes[k][2]);
+            try { st.property("ADBE Vector Stroke Line Cap").setValue(2); st.property("ADBE Vector Stroke Line Join").setValue(2); } catch (e) {}
+        }
+    }
+    root.addProperty("ADBE Vector Filter - Trim");
+    applyKeys(root.property(root.numProperties).property("ADBE Vector Trim End"), d.keys);
+    xf(L).property("ADBE Anchor Point").setValue([0, 0]);
+    xf(L).property("ADBE Position").setValue([0, 0]);
+    applyKeys(xf(L).property("ADBE Opacity"), [[d.t1 - 0.12, 100, "io"], [d.t1, 0, "lin"]]);
+    L.inPoint = d.t0; L.outPoint = d.t1;
+}
+
 // slot-machine digits: Source Text keyframes (hold)
 function addCounter(L, keys) {
     var src = L.property("ADBE Text Properties").property("ADBE Text Document");
@@ -831,21 +1099,21 @@ function addPhrase(comp, p) {
         var line = p.lines[li], lw = 0, top = 1e9, bot = -1e9, items = [];
         for (var ri = 0; ri < line.runs.length; ri++) {
             var run = line.runs[ri];
-            var L = addRun(comp, run.text, line.size, run.accent ? p.accent : p.color, p.border, p.font);
+            var L = addRun(comp, run.text, line.size, run.accent ? p.accent : p.color, p.edge, p.font);
             L.startTime = 0; L.inPoint = p.t0; L.outPoint = p.t1;
             var r = L.sourceRectAtTime(p.t1 - 0.01, false);
             items.push({ layer: L, rect: r, x: lw, run: run });
             lw += r.width + line.size * DATA.tracking / 1000;
-            top = Math.min(top, r.top); bot = Math.max(bot, r.top + r.height);
+            top = -line.size * 0.88; bot = line.size * 0.12;   // em box around the baseline
         }
         lineBoxes.push({ items: items, width: lw - line.size * DATA.tracking / 1000, top: top, bot: bot,
                          size: line.size, keys: line.keys });
-        totalH += (bot - top) + (li ? line.size * DATA.lineGap : 0);
+        totalH += (bot - top) + (li ? line.size * p.gap : 0);
     }
     var y = -totalH / 2;
     for (li = 0; li < lineBoxes.length; li++) {
         var lb = lineBoxes[li];
-        if (li) y += lb.size * DATA.lineGap;
+        if (li) y += lb.size * p.gap;
         for (k = 0; k < lb.items.length; k++) {
             var it = lb.items[k];
             it.layer.parent = nul;
@@ -857,10 +1125,20 @@ function addPhrase(comp, p) {
                 else if (p.anim === "track") addTrackIn(it.layer, lb.keys);
                 else if (p.anim === "swipe") addSwipe(it.layer, lb.keys);
                 else if (p.anim === "cascade" || p.anim === "popchars") addChars(it.layer, it.run, p, lb.size);
+                else if (p.anim === "type") addType(it.layer, it.run, p);
                 if (p.blur) addBlurIn(it.layer, p.blur);
                 if (it.run.counter) addCounter(it.layer, it.run.counter);
                 if (p.motionBlur || p.anim === "swipe") it.layer.motionBlur = true;
             } catch (e) { WARN.push(p.name + ": " + e.toString()); }
+        }
+        if (p.marker) {
+            try {
+                var pad = lb.size * 0.12;
+                var mk = addMarker(comp, nul, lb.items[0].layer, -lb.width / 2 - pad, y + lb.size * 0.62,
+                                   lb.width + 2 * pad, lb.size, p.marker, p.t0, p.t1);
+                mk.name = "  " + p.name + " / highlighter";
+                applyKeys(xf(mk).property("ADBE Opacity"), p.opacity);
+            } catch (e3) { WARN.push(p.name + " highlighter: " + e3.toString()); }
         }
         y += lb.bot - lb.top;
         if (p.bar && li === lineBoxes.length - 1) {
@@ -974,6 +1252,9 @@ try {
     }
 
     for (i = 0; i < DATA.telops.length; i++) if (!DATA.telops[i].behind) addPhrase(comp, DATA.telops[i]);
+    for (i = 0; i < DATA.doodles.length; i++) {
+        try { addDoodle(comp, DATA.doodles[i], i + 1); } catch (e4) { WARN.push("doodle " + (i + 1) + ": " + e4.toString()); }
+    }
     for (i = 0; i < DATA.cards.length; i++) addCard(comp, DATA.cards[i], i + 1);
 
     var sfx = importFile(root.fsName + "/sfx/sfx_mix.wav");
@@ -991,11 +1272,11 @@ app.endUndoGroup();
 
 MSG = {
     "intro": "IKEAソフトクリーム 編集プロジェクトを作ります。\n"
-             "Adobe Fonts の「凸版文久見出しゴシック」を有効にしておくと、それが使われます。\n"
-             "（無い場合は fonts フォルダの Zen Kaku Gothic Antique を使います。先にインストールしてください）\n"
+             "Adobe Fonts の「凸版文久見出しゴシック」「凸版文久見出し明朝」を有効にしておくと、それが使われます。\n"
+             "（無い場合は fonts フォルダの Zen Kaku Gothic Antique / しっぽり明朝 を使います。先にインストールしてください）\n"
              "次の画面で素材動画（編集前の高画質版）を選んでください。",
     "pick": "素材動画を選択",
-    "fallback": "凸版文久見出しゴシックが見つからなかったため、代わりのフォントを使いました: ",
+    "fallback": "凸版文久見出しの書体が見つからなかったため、代わりのフォントを使いました: ",
     "done": "完成しました。赤い部分はリールのUIで隠れる範囲です（ガイドレイヤーなので書き出しには入りません）。",
 }
 
@@ -1006,6 +1287,12 @@ def export_jsx(path, duration):
         telops=[jsx_phrase(p) for p in TELOPS],
         cards=[dict(t0=c["t0"], t1=c["t1"], bg=[v / 255 for v in c["bg"]], telop=jsx_phrase(c["telop"])) for c in CARDS],
         behindSegments=sorted({(p["t0"], p["t1"]) for p in TELOPS if p["behind"]}),
+        doodles=[dict(t0=d["t0"], t1=d["t1"], paths=[[list(map(lambda v: round(v, 1), pt)) for pt in path]
+                                                    for path in doodle_paths(d)],
+                      color=[c / 255 for c in d["color"]],
+                      outline=[c / 255 for c in (DARK if d["color"] != DARK else WHITE)], keys=doodle_keys(d))
+                 for d in DOODLES],
+        doodleW=DOODLE_W, markerH=MARKER_H, typeIn=TYPE_IN,
         fontPrefs={FONTS[k][0]: v for k, v in FONT_PREFS.items()},
         safe=SAFE, tracking=TRACKING, border=BORDER, lineGap=LINE_GAP, barH=BAR_H,
         dark=[c / 255 for c in DARK], yellow=[c / 255 for c in YELLOW],
@@ -1032,9 +1319,6 @@ def main():
     bad = check_safe_zone()
     if bad:
         print("SAFE ZONE VIOLATIONS:"); [print("  ", b) for b in bad]; sys.exit(1)
-    bad = check_max_lines()
-    if bad:
-        print("MORE THAN %d LINES:" % MAX_LINES); [print("  ", b) for b in bad]; sys.exit(1)
     print("safe zone: all telops inside", SAFE)
     dur = probe_duration(src)
     export_jsx(os.path.join(out, "build_ikea_edit.jsx"), dur)

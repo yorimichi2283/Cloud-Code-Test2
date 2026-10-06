@@ -5,125 +5,31 @@ var DATA = {
  "duration": 42.233,
  "telops": [
   {
-   "name": "00.10 \u65e5\u672c\u306750\u5186\u306e",
+   "name": "00.10 \u65e5\u672c\u306f50\u5186",
    "t0": 0.1,
    "t1": 2.1,
    "lines": [
     {
-     "size": 70,
+     "size": 120,
      "runs": [
       {
-       "text": "\u65e5\u672c\u306750\u5186\u306e",
+       "text": "\u65e5\u672c\u306f",
        "accent": false
-      }
-     ],
-     "keys": {
-      "tracking": [
-       [
-        0.1,
-        350,
-        "fast"
-       ],
-       [
-        0.7,
-        0,
-        "lin"
-       ]
-      ],
-      "opacity": [
-       [
-        0.1,
-        0,
-        "io"
-       ],
-       [
-        0.45999999999999996,
-        100,
-        "lin"
-       ]
-      ]
-     }
-    }
-   ],
-   "anim": "track",
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     0.1,
-     100,
-     "lin"
-    ],
-    [
-     2.1,
-     103.0,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     0.1,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     0.1,
-     [
-      510,
-      470
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     1.85,
-     100,
-     "io"
-    ],
-    [
-     2.1,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
-  },
-  {
-   "name": "00.28 \u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0",
-   "t0": 0.28,
-   "t1": 2.1,
-   "lines": [
-    {
-     "size": 110,
-     "runs": [
+      },
       {
-       "text": "\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0",
-       "accent": false
+       "text": "50\u5186",
+       "accent": true
       }
      ],
      "keys": {
       "dy": [
        [
-        0.28,
-        126.49999999999999,
+        0.1,
+        138.0,
         "fast"
        ],
        [
-        0.7,
+        0.52,
         0,
         "lin"
        ]
@@ -132,7 +38,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -147,7 +53,7 @@ var DATA = {
    "behind": false,
    "scale": [
     [
-     0.28,
+     0.1,
      100,
      "lin"
     ],
@@ -159,17 +65,17 @@ var DATA = {
    ],
    "rot": [
     [
-     0.28,
+     0.1,
      0.0,
      "lin"
     ]
    ],
    "pos": [
     [
-     0.28,
+     0.1,
      [
-      510,
-      590
+      540,
+      660
      ],
      "lin"
     ]
@@ -189,111 +95,17 @@ var DATA = {
    "bar": null
   },
   {
-   "name": "00.55 \u672c\u5834\u3060\u3068",
-   "t0": 0.55,
+   "name": "00.40 \u672c\u5834\u306f\u3044\u304f\u3089\uff1f",
+   "t0": 0.4,
    "t1": 2.1,
    "lines": [
     {
-     "size": 70,
+     "size": 114,
      "runs": [
       {
-       "text": "\u672c\u5834\u3060\u3068",
+       "text": "\u672c\u5834\u306f",
        "accent": false
-      }
-     ],
-     "keys": {
-      "tracking": [
-       [
-        0.55,
-        350,
-        "fast"
-       ],
-       [
-        1.15,
-        0,
-        "lin"
-       ]
-      ],
-      "opacity": [
-       [
-        0.55,
-        0,
-        "io"
-       ],
-       [
-        0.91,
-        100,
-        "lin"
-       ]
-      ]
-     }
-    }
-   ],
-   "anim": "track",
-   "font": "ShipporiMinchoB1-ExtraBold",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     0.55,
-     100,
-     "lin"
-    ],
-    [
-     2.1,
-     103.0,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     0.55,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     0.55,
-     [
-      510,
-      735
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     1.85,
-     100,
-     "io"
-    ],
-    [
-     2.1,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
-  },
-  {
-   "name": "00.75 \u3044\u304f\u3089\uff1f",
-   "t0": 0.75,
-   "t1": 2.1,
-   "lines": [
-    {
-     "size": 206,
-     "runs": [
+      },
       {
        "text": "\u3044\u304f\u3089\uff1f",
        "accent": true
@@ -302,12 +114,12 @@ var DATA = {
      "keys": {
       "dy": [
        [
-        0.75,
-        236.89999999999998,
+        0.4,
+        131.1,
         "fast"
        ],
        [
-        1.17,
+        0.8200000000000001,
         0,
         "lin"
        ]
@@ -316,7 +128,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -331,7 +143,7 @@ var DATA = {
    "behind": false,
    "scale": [
     [
-     0.75,
+     0.4,
      100,
      "lin"
     ],
@@ -343,17 +155,17 @@ var DATA = {
    ],
    "rot": [
     [
-     0.75,
+     0.4,
      0.0,
      "lin"
     ]
    ],
    "pos": [
     [
-     0.75,
+     0.4,
      [
-      510,
-      880
+      540,
+      830
      ],
      "lin"
     ]
@@ -372,172 +184,16 @@ var DATA = {
    ],
    "bar": [
     [
-     0.9299999999999999,
+     0.5800000000000001,
      0,
      "fast"
     ],
     [
-     1.33,
+     0.9800000000000001,
      100,
      "lin"
     ]
    ]
-  },
-  {
-   "name": "00.76 \u898b\u3064\u3051\u305f\u3093\u3067",
-   "t0": 0.76,
-   "t1": 1.18,
-   "lines": [
-    {
-     "size": 84,
-     "runs": [
-      {
-       "text": "\u898b\u3064\u3051\u305f\u3093\u3067",
-       "accent": false
-      }
-     ],
-     "keys": {}
-    }
-   ],
-   "anim": "static",
-   "font": "RoundedMplus1c-Black",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     0.76,
-     100,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     0.76,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     0.76,
-     [
-      510,
-      1150
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     0.76,
-     0,
-     "lin"
-    ],
-    [
-     0.8266666666666667,
-     100,
-     "lin"
-    ],
-    [
-     1.1133333333333333,
-     100,
-     "lin"
-    ],
-    [
-     1.18,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
-  },
-  {
-   "name": "01.18 \u884c\u3063\u3066\u307f\u305f\u3044\u3068\u601d\u3044\u307e\u3059",
-   "t0": 1.18,
-   "t1": 2.1,
-   "lines": [
-    {
-     "size": 74,
-     "runs": [
-      {
-       "text": "\u884c\u3063\u3066\u307f\u305f\u3044\u3068\u601d\u3044\u307e\u3059",
-       "accent": false
-      }
-     ],
-     "keys": {}
-    }
-   ],
-   "anim": "static",
-   "font": "RoundedMplus1c-Black",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     1.18,
-     100,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     1.18,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     1.18,
-     [
-      510,
-      1150
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     1.18,
-     0,
-     "lin"
-    ],
-    [
-     1.2466666666666666,
-     100,
-     "lin"
-    ],
-    [
-     2.033333333333333,
-     100,
-     "lin"
-    ],
-    [
-     2.1,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
   },
   {
    "name": "02.38 \u65e5\u672c\u3060\u3068",
@@ -556,7 +212,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -587,7 +243,7 @@ var DATA = {
     [
      2.38,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -634,7 +290,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -665,7 +321,7 @@ var DATA = {
     [
      2.84,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -712,7 +368,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -743,7 +399,7 @@ var DATA = {
     [
      3.16,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -807,7 +463,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -843,7 +499,7 @@ var DATA = {
     [
      3.7,
      [
-      510,
+      540,
       985
      ],
      "lin"
@@ -891,7 +547,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -922,7 +578,7 @@ var DATA = {
     [
      4.38,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -969,7 +625,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1000,7 +656,7 @@ var DATA = {
     [
      5.66,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1047,7 +703,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1078,7 +734,7 @@ var DATA = {
     [
      6.02,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1125,7 +781,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1156,7 +812,7 @@ var DATA = {
     [
      7.75,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1203,7 +859,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1234,7 +890,7 @@ var DATA = {
     [
      8.04,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1281,7 +937,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1312,7 +968,7 @@ var DATA = {
     [
      8.98,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1363,7 +1019,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1394,7 +1050,7 @@ var DATA = {
     [
      10.22,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1454,7 +1110,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1490,7 +1146,7 @@ var DATA = {
     [
      11.74,
      [
-      510,
+      540,
       950
      ],
      "lin"
@@ -1538,7 +1194,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1569,7 +1225,7 @@ var DATA = {
     [
      12.1,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1616,7 +1272,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1647,7 +1303,7 @@ var DATA = {
     [
      12.96,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1678,94 +1334,12 @@ var DATA = {
    "bar": null
   },
   {
-   "name": "13.74 \u5b89\u3044\u3093\u3058\u3083\u306a\u3044\uff1f",
-   "t0": 13.74,
-   "t1": 14.38,
-   "lines": [
-    {
-     "size": 84,
-     "runs": [
-      {
-       "text": "\u5b89\u3044",
-       "accent": true
-      },
-      {
-       "text": "\u3093\u3058\u3083\u306a\u3044\uff1f",
-       "accent": false
-      }
-     ],
-     "keys": {}
-    }
-   ],
-   "anim": "static",
-   "font": "RoundedMplus1c-Black",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     13.74,
-     100,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     13.74,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     13.74,
-     [
-      510,
-      1150
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     13.74,
-     0,
-     "lin"
-    ],
-    [
-     13.806666666666667,
-     100,
-     "lin"
-    ],
-    [
-     14.313333333333334,
-     100,
-     "lin"
-    ],
-    [
-     14.38,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
-  },
-  {
    "name": "14.38 \u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
    "t0": 14.38,
    "t1": 15.54,
    "lines": [
     {
-     "size": 82,
+     "size": 80,
      "runs": [
       {
        "text": "\u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
@@ -1776,7 +1350,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1807,7 +1381,7 @@ var DATA = {
     [
      14.38,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -1843,7 +1417,7 @@ var DATA = {
    "t1": 16.72,
    "lines": [
     {
-     "size": 179,
+     "size": 190,
      "runs": [
       {
        "text": "1\u500b",
@@ -1858,7 +1432,7 @@ var DATA = {
       "dy": [
        [
         15.54,
-        205.85,
+        218.49999999999997,
         "fast"
        ],
        [
@@ -1871,7 +1445,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1907,7 +1481,7 @@ var DATA = {
     [
      15.54,
      [
-      510,
+      540,
       985
      ],
      "lin"
@@ -1955,7 +1529,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -1986,7 +1560,7 @@ var DATA = {
     [
      16.72,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2033,7 +1607,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2064,7 +1638,7 @@ var DATA = {
     [
      17.76,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2111,7 +1685,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2142,7 +1716,7 @@ var DATA = {
     [
      19.16,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2193,7 +1767,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2224,7 +1798,7 @@ var DATA = {
     [
      20.08,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2271,7 +1845,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2302,7 +1876,7 @@ var DATA = {
     [
      23.04,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2333,15 +1907,15 @@ var DATA = {
    "bar": null
   },
   {
-   "name": "24.84 \u5b9f\u969b\u306b",
+   "name": "24.84 \u5b9f\u969b\u306b\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
    "t0": 24.84,
    "t1": 26.04,
    "lines": [
     {
-     "size": 84,
+     "size": 80,
      "runs": [
       {
-       "text": "\u5b9f\u969b\u306b",
+       "text": "\u5b9f\u969b\u306b\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
        "accent": false
       }
      ],
@@ -2349,7 +1923,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2380,7 +1954,7 @@ var DATA = {
     [
      24.84,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2411,115 +1985,6 @@ var DATA = {
    "bar": null
   },
   {
-   "name": "26.04 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0 \u98df\u3079\u307e\u3059",
-   "t0": 26.04,
-   "t1": 26.95,
-   "lines": [
-    {
-     "size": 90,
-     "runs": [
-      {
-       "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
-       "accent": false
-      }
-     ],
-     "keys": {
-      "dy": [
-       [
-        26.04,
-        103.49999999999999,
-        "fast"
-       ],
-       [
-        26.46,
-        0,
-        "lin"
-       ]
-      ]
-     }
-    },
-    {
-     "size": 190,
-     "runs": [
-      {
-       "text": "\u98df\u3079\u307e\u3059",
-       "accent": true
-      }
-     ],
-     "keys": {
-      "dy": [
-       [
-        26.119999999999997,
-        218.49999999999997,
-        "fast"
-       ],
-       [
-        26.54,
-        0,
-        "lin"
-       ]
-      ]
-     }
-    }
-   ],
-   "anim": "mask",
-   "font": "RoundedMplus1c-Black",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     26.04,
-     100,
-     "lin"
-    ],
-    [
-     26.95,
-     103.0,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     26.04,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     26.04,
-     [
-      510,
-      985
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     26.83,
-     100,
-     "io"
-    ],
-    [
-     26.95,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": null
-  },
-  {
    "name": "29.48 \u53e3\u306e\u4e2d\u306b\u5165\u308c\u305f",
    "t0": 29.48,
    "t1": 30.48,
@@ -2536,7 +2001,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2567,7 +2032,7 @@ var DATA = {
     [
      29.48,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2614,7 +2079,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2645,7 +2110,7 @@ var DATA = {
     [
      30.48,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2681,7 +2146,7 @@ var DATA = {
    "t1": 32.78,
    "lines": [
     {
-     "size": 137,
+     "size": 134,
      "runs": [
       {
        "text": "\u3046\u308f\u3063\uff01",
@@ -2696,7 +2161,7 @@ var DATA = {
       "dy": [
        [
         31.9,
-        157.54999999999998,
+        154.1,
         "fast"
        ],
        [
@@ -2709,7 +2174,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2745,7 +2210,7 @@ var DATA = {
     [
      31.9,
      [
-      510,
+      540,
       985
      ],
      "lin"
@@ -2782,7 +2247,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2813,7 +2278,7 @@ var DATA = {
     [
      32.78,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2860,7 +2325,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2891,7 +2356,7 @@ var DATA = {
     [
      33.68,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -2938,7 +2403,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -2969,7 +2434,7 @@ var DATA = {
     [
      34.16,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3005,7 +2470,7 @@ var DATA = {
    "t1": 36.18,
    "lines": [
     {
-     "size": 82,
+     "size": 80,
      "runs": [
       {
        "text": "\u307e\u3042\u30cf\u30fc\u30b2\u30f3\u30c0\u30c3\u30c4\u306e",
@@ -3016,7 +2481,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3047,7 +2512,7 @@ var DATA = {
     [
      35.14,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3107,7 +2572,7 @@ var DATA = {
     }
    ],
    "anim": "mask",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3143,7 +2608,7 @@ var DATA = {
     [
      36.18,
      [
-      510,
+      540,
       400
      ],
      "lin"
@@ -3180,7 +2645,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3211,7 +2676,7 @@ var DATA = {
     [
      36.84,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3258,7 +2723,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3289,7 +2754,7 @@ var DATA = {
     [
      37.28,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3336,7 +2801,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3367,7 +2832,7 @@ var DATA = {
     [
      38.0,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3414,7 +2879,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3445,7 +2910,7 @@ var DATA = {
     [
      39.24,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3476,113 +2941,12 @@ var DATA = {
    "bar": null
   },
   {
-   "name": "39.68 \u30ea\u30fc\u30ba\u30ca\u30d6\u30eb\u306a\u306e\u3067",
-   "t0": 39.68,
-   "t1": 40.42,
-   "lines": [
-    {
-     "size": 91,
-     "runs": [
-      {
-       "text": "\u30ea\u30fc\u30ba\u30ca\u30d6\u30eb",
-       "accent": true
-      },
-      {
-       "text": "\u306a\u306e\u3067",
-       "accent": false
-      }
-     ],
-     "keys": {
-      "dy": [
-       [
-        39.68,
-        104.64999999999999,
-        "fast"
-       ],
-       [
-        40.1,
-        0,
-        "lin"
-       ]
-      ]
-     }
-    }
-   ],
-   "anim": "mask",
-   "font": "RoundedMplus1c-Black",
-   "color": [
-    1.0,
-    1.0,
-    1.0
-   ],
-   "accent": [
-    1.0,
-    0.8235294117647058,
-    0.12156862745098039
-   ],
-   "border": true,
-   "behind": false,
-   "scale": [
-    [
-     39.68,
-     100,
-     "lin"
-    ],
-    [
-     40.42,
-     103.0,
-     "lin"
-    ]
-   ],
-   "rot": [
-    [
-     39.68,
-     0.0,
-     "lin"
-    ]
-   ],
-   "pos": [
-    [
-     39.68,
-     [
-      510,
-      985
-     ],
-     "lin"
-    ]
-   ],
-   "opacity": [
-    [
-     40.300000000000004,
-     100,
-     "io"
-    ],
-    [
-     40.42,
-     0,
-     "lin"
-    ]
-   ],
-   "bar": [
-    [
-     39.86,
-     0,
-     "fast"
-    ],
-    [
-     40.26,
-     100,
-     "lin"
-    ]
-   ]
-  },
-  {
-   "name": "40.42 \u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
-   "t0": 40.42,
+   "name": "40.30 \u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
+   "t0": 40.3,
    "t1": 42.3,
    "lines": [
     {
-     "size": 74,
+     "size": 73,
      "runs": [
       {
        "text": "\u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
@@ -3593,7 +2957,7 @@ var DATA = {
     }
    ],
    "anim": "static",
-   "font": "RoundedMplus1c-Black",
+   "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
     1.0,
@@ -3608,23 +2972,23 @@ var DATA = {
    "behind": false,
    "scale": [
     [
-     40.42,
+     40.3,
      100,
      "lin"
     ]
    ],
    "rot": [
     [
-     40.42,
+     40.3,
      0.0,
      "lin"
     ]
    ],
    "pos": [
     [
-     40.42,
+     40.3,
      [
-      510,
+      540,
       1150
      ],
      "lin"
@@ -3632,12 +2996,12 @@ var DATA = {
    ],
    "opacity": [
     [
-     40.42,
+     40.3,
      0,
      "lin"
     ],
     [
-     40.48666666666667,
+     40.36666666666667,
      100,
      "lin"
     ],
@@ -3670,7 +3034,7 @@ var DATA = {
     "t1": 7.75,
     "lines": [
      {
-      "size": 206,
+      "size": 201,
       "runs": [
        {
         "text": "\u3044\u304f\u3089\uff1f",
@@ -3681,7 +3045,7 @@ var DATA = {
        "dy": [
         [
          7.22,
-         236.89999999999998,
+         231.14999999999998,
          "fast"
         ],
         [
@@ -3694,7 +3058,7 @@ var DATA = {
      }
     ],
     "anim": "mask",
-    "font": "RoundedMplus1c-Black",
+    "font": "ZenKakuGothicAntique-Black",
     "color": [
      0.11764705882352941,
      0.10980392156862745,
@@ -3730,8 +3094,8 @@ var DATA = {
      [
       7.22,
       [
-       510,
-       760
+       540,
+       960
       ],
       "lin"
      ]
@@ -3750,6 +3114,314 @@ var DATA = {
     ],
     "bar": null
    }
+  },
+  {
+   "t0": 13.74,
+   "t1": 14.38,
+   "bg": [
+    0.11764705882352941,
+    0.10980392156862745,
+    0.10196078431372549
+   ],
+   "telop": {
+    "name": "13.74 \u5b89\u3044\u3093\u3058\u3083 \u306a\u3044\uff1f",
+    "t0": 13.74,
+    "t1": 14.38,
+    "lines": [
+     {
+      "size": 160,
+      "runs": [
+       {
+        "text": "\u5b89\u3044\u3093\u3058\u3083",
+        "accent": false
+       }
+      ],
+      "keys": {
+       "dy": [
+        [
+         13.74,
+         184.0,
+         "fast"
+        ],
+        [
+         14.16,
+         0,
+         "lin"
+        ]
+       ]
+      }
+     },
+     {
+      "size": 160,
+      "runs": [
+       {
+        "text": "\u306a\u3044\uff1f",
+        "accent": false
+       }
+      ],
+      "keys": {
+       "dy": [
+        [
+         13.82,
+         184.0,
+         "fast"
+        ],
+        [
+         14.24,
+         0,
+         "lin"
+        ]
+       ]
+      }
+     }
+    ],
+    "anim": "mask",
+    "font": "ZenKakuGothicAntique-Black",
+    "color": [
+     1.0,
+     0.8235294117647058,
+     0.12156862745098039
+    ],
+    "accent": [
+     1.0,
+     0.8235294117647058,
+     0.12156862745098039
+    ],
+    "border": false,
+    "behind": false,
+    "scale": [
+     [
+      13.74,
+      100,
+      "lin"
+     ],
+     [
+      14.38,
+      103.0,
+      "lin"
+     ]
+    ],
+    "rot": [
+     [
+      13.74,
+      0.0,
+      "lin"
+     ]
+    ],
+    "pos": [
+     [
+      13.74,
+      [
+       540,
+       960
+      ],
+      "lin"
+     ]
+    ],
+    "opacity": [
+     [
+      14.260000000000002,
+      100,
+      "io"
+     ],
+     [
+      14.38,
+      0,
+      "lin"
+     ]
+    ],
+    "bar": null
+   }
+  },
+  {
+   "t0": 26.04,
+   "t1": 26.8,
+   "bg": [
+    1.0,
+    0.8235294117647058,
+    0.12156862745098039
+   ],
+   "telop": {
+    "name": "26.04 \u98df\u3079\u307e\u3059",
+    "t0": 26.04,
+    "t1": 26.8,
+    "lines": [
+     {
+      "size": 201,
+      "runs": [
+       {
+        "text": "\u98df\u3079\u307e\u3059",
+        "accent": false
+       }
+      ],
+      "keys": {
+       "dy": [
+        [
+         26.04,
+         231.14999999999998,
+         "fast"
+        ],
+        [
+         26.46,
+         0,
+         "lin"
+        ]
+       ]
+      }
+     }
+    ],
+    "anim": "mask",
+    "font": "ZenKakuGothicAntique-Black",
+    "color": [
+     0.11764705882352941,
+     0.10980392156862745,
+     0.10196078431372549
+    ],
+    "accent": [
+     0.11764705882352941,
+     0.10980392156862745,
+     0.10196078431372549
+    ],
+    "border": false,
+    "behind": false,
+    "scale": [
+     [
+      26.04,
+      100,
+      "lin"
+     ],
+     [
+      26.8,
+      103.0,
+      "lin"
+     ]
+    ],
+    "rot": [
+     [
+      26.04,
+      0.0,
+      "lin"
+     ]
+    ],
+    "pos": [
+     [
+      26.04,
+      [
+       540,
+       960
+      ],
+      "lin"
+     ]
+    ],
+    "opacity": [
+     [
+      26.68,
+      100,
+      "io"
+     ],
+     [
+      26.8,
+      0,
+      "lin"
+     ]
+    ],
+    "bar": null
+   }
+  },
+  {
+   "t0": 39.68,
+   "t1": 40.3,
+   "bg": [
+    0.11764705882352941,
+    0.10980392156862745,
+    0.10196078431372549
+   ],
+   "telop": {
+    "name": "39.68 \u30ea\u30fc\u30ba\u30ca\u30d6\u30eb",
+    "t0": 39.68,
+    "t1": 40.3,
+    "lines": [
+     {
+      "size": 134,
+      "runs": [
+       {
+        "text": "\u30ea\u30fc\u30ba\u30ca\u30d6\u30eb",
+        "accent": false
+       }
+      ],
+      "keys": {
+       "dy": [
+        [
+         39.68,
+         154.1,
+         "fast"
+        ],
+        [
+         40.1,
+         0,
+         "lin"
+        ]
+       ]
+      }
+     }
+    ],
+    "anim": "mask",
+    "font": "ZenKakuGothicAntique-Black",
+    "color": [
+     1.0,
+     0.8235294117647058,
+     0.12156862745098039
+    ],
+    "accent": [
+     1.0,
+     0.8235294117647058,
+     0.12156862745098039
+    ],
+    "border": false,
+    "behind": false,
+    "scale": [
+     [
+      39.68,
+      100,
+      "lin"
+     ],
+     [
+      40.3,
+      103.0,
+      "lin"
+     ]
+    ],
+    "rot": [
+     [
+      39.68,
+      0.0,
+      "lin"
+     ]
+    ],
+    "pos": [
+     [
+      39.68,
+      [
+       540,
+       960
+      ],
+      "lin"
+     ]
+    ],
+    "opacity": [
+     [
+      40.18,
+      100,
+      "io"
+     ],
+     [
+      40.3,
+      0,
+      "lin"
+     ]
+    ],
+    "bar": null
+   }
   }
  ],
  "behindSegments": [
@@ -3758,6 +3430,13 @@ var DATA = {
    37.4
   ]
  ],
+ "fontPrefs": {
+  "ZenKakuGothicAntique-Black": [
+   "ToppanBunkyuMidashiGothicStdN-ExtraBold",
+   "ToppanBunkyuMidashiGothicStd-ExtraBold",
+   "ToppanBunkyuGothicPr6N-DB"
+  ]
+ },
  "safe": {
   "left": 60,
   "top": 250,
@@ -3782,12 +3461,12 @@ var DATA = {
  "hookDim": [
   [
    0,
-   40.0,
+   55.00000000000001,
    "lin"
   ],
   [
    1.85,
-   40.0,
+   55.00000000000001,
    "io"
   ],
   [
@@ -3797,10 +3476,29 @@ var DATA = {
   ]
  ]
 };
-var MSG = {"intro": "IKEA\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0 \u7de8\u96c6\u30d7\u30ed\u30b8\u30a7\u30af\u30c8\u3092\u4f5c\u308a\u307e\u3059\u3002\n\u5148\u306b fonts \u30d5\u30a9\u30eb\u30c0\u306e\u30d5\u30a9\u30f3\u30c8\u3092\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3057\u3066\u304a\u3044\u3066\u304f\u3060\u3055\u3044\u3002\n\u6b21\u306e\u753b\u9762\u3067\u7d20\u6750\u52d5\u753b\uff08\u7de8\u96c6\u524d\u306e\u9ad8\u753b\u8cea\u7248\uff09\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044\u3002", "pick": "\u7d20\u6750\u52d5\u753b\u3092\u9078\u629e", "done": "\u5b8c\u6210\u3057\u307e\u3057\u305f\u3002\u8d64\u3044\u90e8\u5206\u306f\u30ea\u30fc\u30eb\u306eUI\u3067\u96a0\u308c\u308b\u7bc4\u56f2\u3067\u3059\uff08\u30ac\u30a4\u30c9\u30ec\u30a4\u30e4\u30fc\u306a\u306e\u3067\u66f8\u304d\u51fa\u3057\u306b\u306f\u5165\u308a\u307e\u305b\u3093\uff09\u3002"};
+var MSG = {"intro": "IKEA\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0 \u7de8\u96c6\u30d7\u30ed\u30b8\u30a7\u30af\u30c8\u3092\u4f5c\u308a\u307e\u3059\u3002\nAdobe Fonts \u306e\u300c\u51f8\u7248\u6587\u4e45\u898b\u51fa\u3057\u30b4\u30b7\u30c3\u30af\u300d\u3092\u6709\u52b9\u306b\u3057\u3066\u304a\u304f\u3068\u3001\u305d\u308c\u304c\u4f7f\u308f\u308c\u307e\u3059\u3002\n\uff08\u7121\u3044\u5834\u5408\u306f fonts \u30d5\u30a9\u30eb\u30c0\u306e Zen Kaku Gothic Antique \u3092\u4f7f\u3044\u307e\u3059\u3002\u5148\u306b\u30a4\u30f3\u30b9\u30c8\u30fc\u30eb\u3057\u3066\u304f\u3060\u3055\u3044\uff09\n\u6b21\u306e\u753b\u9762\u3067\u7d20\u6750\u52d5\u753b\uff08\u7de8\u96c6\u524d\u306e\u9ad8\u753b\u8cea\u7248\uff09\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044\u3002", "pick": "\u7d20\u6750\u52d5\u753b\u3092\u9078\u629e", "fallback": "\u51f8\u7248\u6587\u4e45\u898b\u51fa\u3057\u30b4\u30b7\u30c3\u30af\u304c\u898b\u3064\u304b\u3089\u306a\u304b\u3063\u305f\u305f\u3081\u3001\u4ee3\u308f\u308a\u306e\u30d5\u30a9\u30f3\u30c8\u3092\u4f7f\u3044\u307e\u3057\u305f: ", "done": "\u5b8c\u6210\u3057\u307e\u3057\u305f\u3002\u8d64\u3044\u90e8\u5206\u306f\u30ea\u30fc\u30eb\u306eUI\u3067\u96a0\u308c\u308b\u7bc4\u56f2\u3067\u3059\uff08\u30ac\u30a4\u30c9\u30ec\u30a4\u30e4\u30fc\u306a\u306e\u3067\u66f8\u304d\u51fa\u3057\u306b\u306f\u5165\u308a\u307e\u305b\u3093\uff09\u3002"};
 var W = 1080, H = 1920, FPS = 30;
 var root = File($.fileName).parent;
 var WARN = [];
+var FONT_MAP = {};
+
+// Use the first preferred font that is installed (Toppan Bunkyu via Adobe Fonts); otherwise the bundled one.
+function resolveFonts(comp) {
+    var probe = comp.layers.addText("\u3042");
+    var src = probe.property("ADBE Text Properties").property("ADBE Text Document");
+    for (var fb in DATA.fontPrefs) {
+        var cands = DATA.fontPrefs[fb], chosen = fb;
+        for (var i = 0; i < cands.length; i++) {
+            try {
+                var td = src.value; td.font = cands[i]; src.setValue(td);
+                if (src.value.font === cands[i]) { chosen = cands[i]; break; }
+            } catch (e) {}
+        }
+        FONT_MAP[fb] = chosen;
+        if (chosen === fb) WARN.push(MSG.fallback + fb);
+    }
+    probe.remove();
+}
 
 function xf(L) { return L.property("ADBE Transform Group"); }
 function setMax(prop, frac) { prop.setValue(prop.hasMax ? prop.maxValue * frac : frac * 100); }
@@ -3842,7 +3540,7 @@ function addRun(comp, text, size, color, border, fontName) {
     var src = L.property("ADBE Text Properties").property("ADBE Text Document");
     var td = src.value;
     try { td.resetCharStyle(); td.resetParagraphStyle(); } catch (e) {}
-    td.font = fontName; td.fontSize = size; td.tracking = DATA.tracking;
+    td.font = FONT_MAP[fontName] || fontName; td.fontSize = size; td.tracking = DATA.tracking;
     td.applyFill = true; td.fillColor = color;
     if (border) {  // thin dark border drawn behind the fill
         td.applyStroke = true; td.strokeColor = DATA.dark; td.strokeOverFill = false;
@@ -4012,6 +3710,7 @@ try {
     comp.parentFolder = folder;
     comp.motionBlur = true;
     comp.bgColor = [0, 0, 0];
+    resolveFonts(comp);
 
     var srcItem = srcFile ? app.project.importFile(new ImportOptions(srcFile)) : null;
     if (srcItem) srcItem.parentFolder = folder;

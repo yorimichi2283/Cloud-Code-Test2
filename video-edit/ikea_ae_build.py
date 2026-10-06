@@ -24,17 +24,23 @@ W, H, FPS = 1080, 1920, 30
 # Meta guidance for Reels: keep text out of top 14% (~250px), bottom 35% (~670px), sides 6% (~60px).
 # The right edge also hosts the like/comment buttons, so keep a wider margin there.
 SAFE = dict(left=60, top=250, right=W - 120, bottom=H - 670)
-CX = (SAFE["left"] + SAFE["right"]) // 2  # horizontal center of the safe area (510)
+CX = W // 2  # everything is centred on the frame
 
 WHITE, YELLOW, DARK = (255, 255, 255), (255, 210, 31), (30, 28, 26)
-FONTS = {  # key -> (PostScript name for AE, ttf file)
-    "gothic": ("RoundedMplus1c-Black", "MPLUSRounded1c_900Black.ttf"),
-    "mincho": ("ShipporiMinchoB1-ExtraBold", "ShipporiMinchoB1_800ExtraBold.ttf"),
+FONTS = {  # key -> (PostScript name of the bundled fallback, ttf file)
+    "gothic": ("ZenKakuGothicAntique-Black", "ZenKakuGothicAntique_900Black.ttf"),
 }
+# Preferred fonts in After Effects (Adobe Fonts: Toppan Bunkyu Midashi Gothic). The script uses the first one
+# that is installed and falls back to the bundled font otherwise. The preview always uses the bundled font.
+FONT_PREFS = {
+    "gothic": ["ToppanBunkyuMidashiGothicStdN-ExtraBold", "ToppanBunkyuMidashiGothicStd-ExtraBold",
+               "ToppanBunkyuGothicPr6N-DB"],
+}
+MAX_LINES = 2           # never more than two lines of telop on screen at once
 TRACKING = -30          # AE tracking units (1/1000 em)
 BASE_Y, ACCENT_Y = 1150, 985
 BASE_SIZE, ACCENT_SIZE = 84, 190
-MAX_LINE_W = 800
+MAX_LINE_W = 780
 BORDER = 0.022          # thin dark border, fraction of the font size
 LINE_GAP = 0.12         # extra space between stacked lines, fraction of the size
 DRIFT = 0.03            # slow push-in on animated telops only (100% -> 103%)
@@ -43,7 +49,7 @@ EXIT = 0.12             # fade-out of animated telops
 MASK_IN, MASK_STAGGER = 0.42, 0.08
 TRACK_IN, TRACK_FROM = 0.6, 350
 BAR_DELAY, BAR_IN, BAR_H = 0.18, 0.4, 0.07
-HOOK_END, HOOK_DIM = 2.1, 0.40   # darken the opening shot so the hook reads
+HOOK_END, HOOK_DIM = 2.1, 0.55   # darken the opening shot so the hook reads
 
 # ---------------------------------------------------------------- timeline spec
 # Markup: text in [brackets] is the accent colour. "/" starts a new line; a line may carry its own
@@ -57,13 +63,9 @@ def P(t0, t1, text, kind="base", **kw):
     return d
 
 TELOPS = [
-    # 0-2.1 exterior: hook (small / big / small / BIG), the shot itself already says "IKEA"
-    P(0.10, HOOK_END, "日本で50円の", "hook", y=470, size=70, font="mincho", anim="track"),
-    P(0.28, HOOK_END, "ソフトクリーム", "hook", y=590, size=110, anim="mask", sfx=True),
-    P(0.55, HOOK_END, "本場だと", "hook", y=735, size=70, font="mincho", anim="track"),
-    P(0.75, HOOK_END, "[いくら？]", "hook", y=880, size=210, anim="mask", bar=True, sfx=True),
-    P(0.76, 1.18, "見つけたんで"),
-    P(1.18, 2.10, "行ってみたいと思います"),
+    # 0-2.1 exterior: two-line hook only (the shot itself already says "IKEA")
+    P(0.10, HOOK_END, "日本は[50円]", "hook", y=660, size=120, anim="mask", sfx=True),
+    P(0.40, HOOK_END, "本場は[いくら？]", "hook", y=830, size=150, anim="mask", bar=True, sfx=True),
     # 2.1-8.7 intro talk
     P(2.38, 2.84, "日本だと"),
     P(2.84, 3.16, "イケアの"),
@@ -80,7 +82,6 @@ TELOPS = [
     P(11.74, 12.96, "[150円]", "accent", size=210, y=950, bar=True),
     P(12.10, 12.96, "ぐらいで買えるわ"),
     P(12.96, 13.74, "これ普通に"),
-    P(13.74, 14.38, "[安い]んじゃない？"),
     # 14.2-17.4 kiosk scroll
     P(14.38, 15.54, "このシナモンロールは"),
     P(15.54, 16.72, "1個[112円]", "accent", bar=True),
@@ -91,8 +92,7 @@ TELOPS = [
     P(20.08, 21.00, "[押すだけ]ですね"),
     P(23.04, 24.00, "自動でやってくれる"),
     # 24.4- eating
-    P(24.84, 26.04, "実際に"),
-    P(26.04, 26.95, "90:アイスクリーム/190:[食べます]", "accent"),
+    P(24.84, 26.04, "実際にアイスクリーム"),
     P(29.48, 30.48, "口の中に入れた"),
     P(30.48, 31.30, "瞬間に"),
     P(31.90, 32.78, "[うわっ！]って", "accent", size=200),
@@ -105,14 +105,19 @@ TELOPS = [
     P(37.28, 38.00, "感じの味がします"),
     P(38.00, 38.60, "これ"),
     P(39.24, 39.68, "意外とね"),
-    P(39.68, 40.42, "[リーズナブル]なので", "accent", size=120, bar=True),
-    P(40.42, 42.30, "ぜひ食べてみてください"),
+    P(40.30, 42.30, "ぜひ食べてみてください"),
 ]
 
+# Full-screen inserts at the key beats. Text sits in the exact centre of the frame.
+def CARD(t0, t1, text, bg, fg, size=240):
+    return dict(t0=t0, t1=t1, bg=bg,
+                telop=P(t0, t1, text, "accent", x=W // 2, y=H // 2, size=size, color=fg, accent=fg, sfx=False))
+
 CARDS = [
-    # covers "いくらぐらいで" - calls back to the hook's question
-    dict(t0=7.22, t1=7.75, bg=YELLOW,
-         telop=P(7.22, 7.75, "いくら？", "accent", x=CX, y=760, size=240, color=DARK, accent=DARK, sfx=False)),
+    CARD(7.22, 7.75, "いくら？", YELLOW, DARK),                    # calls back to the hook's question
+    CARD(13.74, 14.38, "安いんじゃ/ない？", DARK, YELLOW, size=160),
+    CARD(26.04, 26.80, "食べます", YELLOW, DARK),
+    CARD(39.68, 40.30, "リーズナブル", DARK, YELLOW, size=200),
 ]
 
 
@@ -291,7 +296,7 @@ def draw_phrase(frame, p, t):
     S = ease_eval(tk["scale"], t) / 100.0
     alpha = lerp(opacity_keys(p), t) / 100.0
     if alpha <= 0.003: return
-    border = p["color"] != DARK
+    border = not p.get("on_card")
     big = max(b["size"] for b in boxes)
     cw = int(max(b["w"] for b in boxes) + big * 3)
     chh = int(sum(b["size"] for b in boxes) * (1 + LINE_GAP) + big * 2)
@@ -370,6 +375,20 @@ def check_safe_zone():
         if box[0] < SAFE["left"] or box[1] < SAFE["top"] or box[2] > SAFE["right"] or box[3] > SAFE["bottom"]:
             bad.append((p["text"], p["t0"], [round(v) for v in box]))
     return bad
+
+def check_max_lines():
+    """At any moment, at most MAX_LINES lines of telop (cards count on their own)."""
+    bad = []
+    edges = sorted({p["t0"] for p in TELOPS} | {c["t0"] for c in CARDS})
+    for t in edges:
+        t += 0.5 / FPS
+        if any(c["t0"] <= t < c["t1"] for c in CARDS): continue
+        n = sum(len(parse_lines(p)) for p in TELOPS if p["t0"] <= t < p["t1"])
+        if n > MAX_LINES: bad.append((round(t, 2), n, [p["text"] for p in TELOPS if p["t0"] <= t < p["t1"]]))
+    for c in CARDS:
+        if len(parse_lines(c["telop"])) > MAX_LINES: bad.append((c["t0"], "card", c["telop"]["text"]))
+    return bad
+
 
 # ---------------------------------------------------------------- person matte
 def export_matte(src, out_path, model):
@@ -496,7 +515,7 @@ def jsx_phrase(p):
     name = re.sub(r"[\[\]]|\d+:", "", p["text"]).replace("/", " ")
     return dict(name=f'{p["t0"]:05.2f} {name}', t0=p["t0"], t1=p["t1"], lines=lines, anim=p["anim"],
                 font=FONTS[p["font"]][0], color=[c / 255 for c in p["color"]], accent=[c / 255 for c in p["accent"]],
-                border=p["color"] != DARK, behind=p["behind"], scale=tk["scale"], rot=tk["rot"], pos=tk["pos"],
+                border=not p.get("on_card"), behind=p["behind"], scale=tk["scale"], rot=tk["rot"], pos=tk["pos"],
                 opacity=opacity_keys(p), bar=bar_keys(p) if p["bar"] else None)
 
 JSX_TEMPLATE = r"""// IKEA soft-ice vlog - After Effects builder (generated by ikea_ae_build.py)
@@ -507,6 +526,25 @@ var MSG = %(msg)s;
 var W = 1080, H = 1920, FPS = 30;
 var root = File($.fileName).parent;
 var WARN = [];
+var FONT_MAP = {};
+
+// Use the first preferred font that is installed (Toppan Bunkyu via Adobe Fonts); otherwise the bundled one.
+function resolveFonts(comp) {
+    var probe = comp.layers.addText("\u3042");
+    var src = probe.property("ADBE Text Properties").property("ADBE Text Document");
+    for (var fb in DATA.fontPrefs) {
+        var cands = DATA.fontPrefs[fb], chosen = fb;
+        for (var i = 0; i < cands.length; i++) {
+            try {
+                var td = src.value; td.font = cands[i]; src.setValue(td);
+                if (src.value.font === cands[i]) { chosen = cands[i]; break; }
+            } catch (e) {}
+        }
+        FONT_MAP[fb] = chosen;
+        if (chosen === fb) WARN.push(MSG.fallback + fb);
+    }
+    probe.remove();
+}
 
 function xf(L) { return L.property("ADBE Transform Group"); }
 function setMax(prop, frac) { prop.setValue(prop.hasMax ? prop.maxValue * frac : frac * 100); }
@@ -548,7 +586,7 @@ function addRun(comp, text, size, color, border, fontName) {
     var src = L.property("ADBE Text Properties").property("ADBE Text Document");
     var td = src.value;
     try { td.resetCharStyle(); td.resetParagraphStyle(); } catch (e) {}
-    td.font = fontName; td.fontSize = size; td.tracking = DATA.tracking;
+    td.font = FONT_MAP[fontName] || fontName; td.fontSize = size; td.tracking = DATA.tracking;
     td.applyFill = true; td.fillColor = color;
     if (border) {  // thin dark border drawn behind the fill
         td.applyStroke = true; td.strokeColor = DATA.dark; td.strokeOverFill = false;
@@ -718,6 +756,7 @@ try {
     comp.parentFolder = folder;
     comp.motionBlur = true;
     comp.bgColor = [0, 0, 0];
+    resolveFonts(comp);
 
     var srcItem = srcFile ? app.project.importFile(new ImportOptions(srcFile)) : null;
     if (srcItem) srcItem.parentFolder = folder;
@@ -775,9 +814,11 @@ app.endUndoGroup();
 
 MSG = {
     "intro": "IKEAソフトクリーム 編集プロジェクトを作ります。\n"
-             "先に fonts フォルダのフォントをインストールしておいてください。\n"
+             "Adobe Fonts の「凸版文久見出しゴシック」を有効にしておくと、それが使われます。\n"
+             "（無い場合は fonts フォルダの Zen Kaku Gothic Antique を使います。先にインストールしてください）\n"
              "次の画面で素材動画（編集前の高画質版）を選んでください。",
     "pick": "素材動画を選択",
+    "fallback": "凸版文久見出しゴシックが見つからなかったため、代わりのフォントを使いました: ",
     "done": "完成しました。赤い部分はリールのUIで隠れる範囲です（ガイドレイヤーなので書き出しには入りません）。",
 }
 
@@ -788,6 +829,7 @@ def export_jsx(path, duration):
         telops=[jsx_phrase(p) for p in TELOPS],
         cards=[dict(t0=c["t0"], t1=c["t1"], bg=[v / 255 for v in c["bg"]], telop=jsx_phrase(c["telop"])) for c in CARDS],
         behindSegments=sorted({(p["t0"], p["t1"]) for p in TELOPS if p["behind"]}),
+        fontPrefs={FONTS[k][0]: v for k, v in FONT_PREFS.items()},
         safe=SAFE, tracking=TRACKING, border=BORDER, lineGap=LINE_GAP, barH=BAR_H,
         dark=[c / 255 for c in DARK], yellow=[c / 255 for c in YELLOW],
         hookEnd=HOOK_END, hookDim=[[0, HOOK_DIM * 100, "lin"], [HOOK_END - 0.25, HOOK_DIM * 100, "io"], [HOOK_END, 0, "lin"]],
@@ -801,6 +843,7 @@ def export_jsx(path, duration):
 def prepare(font_dir):
     global FONT_DIR
     FONT_DIR = font_dir
+    for c in CARDS: c["telop"]["on_card"] = True
     for p in all_phrases(): fit_sizes(p)
 
 
@@ -812,6 +855,9 @@ def main():
     bad = check_safe_zone()
     if bad:
         print("SAFE ZONE VIOLATIONS:"); [print("  ", b) for b in bad]; sys.exit(1)
+    bad = check_max_lines()
+    if bad:
+        print("MORE THAN %d LINES:" % MAX_LINES); [print("  ", b) for b in bad]; sys.exit(1)
     print("safe zone: all telops inside", SAFE)
     dur = probe_duration(src)
     export_jsx(os.path.join(out, "build_ikea_edit.jsx"), dur)

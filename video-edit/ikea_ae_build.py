@@ -16,7 +16,7 @@ The preview and the AE build share the same keyframe data.
 
 usage: python3 ikea_ae_build.py SRC.mp4 FONT_DIR OUT_DIR [--skip-matte] [--skip-preview]
 """
-import os, sys, re, json, math, shutil, subprocess, functools
+import os, sys, re, json, math, random, shutil, subprocess, functools
 import numpy as np, cv2
 from PIL import Image, ImageDraw, ImageFont
 
@@ -49,6 +49,9 @@ EXIT = 0.12             # fade-out of animated telops
 MASK_IN, MASK_STAGGER = 0.42, 0.08
 TRACK_IN, TRACK_FROM = 0.6, 350
 BAR_DELAY, BAR_IN, BAR_H = 0.18, 0.4, 0.07
+CH_STAGGER, CH_DUR = 0.06, 0.32   # per-character entrances (cascade / popchars)
+COUNT_DUR, COUNT_STEP = 0.45, 2 / FPS   # slot-machine digits before the price lands
+SWIPE_DIST, SLIDE_DIST = 900, 700
 HOOK_END, HOOK_DIM = 2.1, 0.55   # darken the opening shot so the hook reads
 
 # ---------------------------------------------------------------- timeline spec
@@ -56,7 +59,7 @@ HOOK_END, HOOK_DIM = 2.1, 0.55   # darken the opening shot so the hook reads
 # size as "size:text".
 def P(t0, t1, text, kind="base", **kw):
     d = dict(t0=t0, t1=t1, text=text, kind=kind, x=CX, rot=0.0, behind=False, sfx=False, font="gothic",
-             color=WHITE, accent=YELLOW, anim="static", bar=False)
+             color=WHITE, accent=YELLOW, anim="static", bar=False, counter=False)
     if kind == "base": d.update(y=BASE_Y, size=BASE_SIZE)
     elif kind == "accent": d.update(y=ACCENT_Y, size=ACCENT_SIZE, anim="mask", sfx=True)
     d.update(kw)
@@ -64,13 +67,13 @@ def P(t0, t1, text, kind="base", **kw):
 
 TELOPS = [
     # 0-2.1 exterior: two-line hook only (the shot itself already says "IKEA")
-    P(0.10, HOOK_END, "日本は[50円]", "hook", y=660, size=120, anim="mask", sfx=True),
-    P(0.40, HOOK_END, "本場は[いくら？]", "hook", y=830, size=150, anim="mask", bar=True, sfx=True),
+    P(0.10, HOOK_END, "日本は[50円]", "hook", y=660, size=120, anim="mask", counter=True, sfx=True),
+    P(0.55, HOOK_END, "本場は[いくら？]", "hook", y=830, size=150, anim="cascade", bar=True, sfx=True),
     # 2.1-8.7 intro talk
     P(2.38, 2.84, "日本だと"),
     P(2.84, 3.16, "イケアの"),
     P(3.16, 3.70, "ソフトクリームって"),
-    P(3.70, 4.38, "1個[50円]", "accent", bar=True),
+    P(3.70, 4.38, "1個[50円]", "accent", anim="pop", counter=True),
     P(4.38, 5.20, "だと思うんですけど"),
     P(5.66, 6.02, "実際"),
     P(6.02, 7.22, "本場のイケアは"),
@@ -79,28 +82,28 @@ TELOPS = [
     # 8.7-14.2 kiosk
     P(8.98, 10.22, "アイスクリーム"),
     P(10.22, 11.74, "[9]なんで"),
-    P(11.74, 12.96, "[150円]", "accent", size=210, y=950, bar=True),
+    P(11.74, 12.96, "[150円]", "accent", size=210, y=950, anim="slide", counter=True, bar=True),
     P(12.10, 12.96, "ぐらいで買えるわ"),
     P(12.96, 13.74, "これ普通に"),
     # 14.2-17.4 kiosk scroll
     P(14.38, 15.54, "このシナモンロールは"),
-    P(15.54, 16.72, "1個[112円]", "accent", bar=True),
+    P(15.54, 16.72, "1個[112円]", "accent", counter=True, bar=True),
     P(16.72, 17.50, "で買えますね"),
     # 17.4-24.4 machine
     P(17.76, 18.80, "セットして"),
     P(19.16, 20.08, "あとはここを"),
-    P(20.08, 21.00, "[押すだけ]ですね"),
+    P(20.08, 21.00, "[押すだけ]ですね", anim="squash", sfx=True),
     P(23.04, 24.00, "自動でやってくれる"),
     # 24.4- eating
     P(24.84, 26.04, "実際にアイスクリーム"),
     P(29.48, 30.48, "口の中に入れた"),
     P(30.48, 31.30, "瞬間に"),
-    P(31.90, 32.78, "[うわっ！]って", "accent", size=200),
+    P(31.90, 32.78, "[うわっ！]って", "accent", size=200, anim="burst"),
     P(32.78, 33.68, "色々うまい"),
     P(33.68, 34.16, "アイスクリーム"),
     P(34.16, 35.00, "あるじゃないですか"),
     P(35.14, 36.18, "まあハーゲンダッツの"),
-    P(36.18, 37.40, "[5倍濃縮]", "accent", y=400, size=210, behind=True),
+    P(36.18, 37.40, "[5倍濃縮]", "accent", y=400, size=210, anim="cascade", behind=True),
     P(36.84, 37.28, "したみたいな"),
     P(37.28, 38.00, "感じの味がします"),
     P(38.00, 38.60, "これ"),
@@ -109,15 +112,15 @@ TELOPS = [
 ]
 
 # Full-screen inserts at the key beats. Text sits in the exact centre of the frame.
-def CARD(t0, t1, text, bg, fg, size=240):
-    return dict(t0=t0, t1=t1, bg=bg,
-                telop=P(t0, t1, text, "accent", x=W // 2, y=H // 2, size=size, color=fg, accent=fg, sfx=False))
+def CARD(t0, t1, text, bg, fg, anim, size=240):
+    return dict(t0=t0, t1=t1, bg=bg, telop=P(t0, t1, text, "accent", x=W // 2, y=H // 2, size=size, color=fg,
+                                             accent=fg, anim=anim, sfx=False))
 
 CARDS = [
-    CARD(7.22, 7.75, "いくら？", YELLOW, DARK),                    # calls back to the hook's question
-    CARD(13.74, 14.38, "安いんじゃ/ない？", DARK, YELLOW, size=160),
-    CARD(26.04, 26.80, "食べます", YELLOW, DARK),
-    CARD(39.68, 40.30, "リーズナブル", DARK, YELLOW, size=200),
+    CARD(7.22, 7.75, "いくら？", YELLOW, DARK, "cascade"),          # calls back to the hook's question
+    CARD(13.74, 14.38, "安いんじゃ/ない？", DARK, YELLOW, "swipe", size=160),
+    CARD(26.04, 26.80, "食べます", YELLOW, DARK, "zoom"),
+    CARD(39.68, 40.30, "リーズナブル", DARK, YELLOW, "popchars", size=200),
 ]
 
 
@@ -134,10 +137,32 @@ def parse_lines(p):
 
 # ---------------------------------------------------------------- keyframes (shared by preview and AE)
 # key = [time, value, ease_out_of_this_key]   ease: "lin" | "fast" (expo-like ease-out) | "io"
+CHAR_ANIMS = ("cascade", "popchars")
+MOTION_BLUR = ("slide", "swipe", "cascade", "burst")
+
+
 def telop_keys(p):
-    t0, t1 = p["t0"], p["t1"]
-    k = dict(scale=[[t0, 100, "lin"]], rot=[[t0, p["rot"], "lin"]], pos=[[t0, [p["x"], p["y"]], "lin"]])
-    if p["anim"] != "static": k["scale"] = [[t0, 100, "lin"], [t1, 100 * (1 + DRIFT), "lin"]]
+    """Null layer: position / scale ([sx, sy]) / rotation."""
+    t0, t1, x, y, r = p["t0"], p["t1"], p["x"], p["y"], p["rot"]
+    d = 100 * (1 + DRIFT)
+    k = dict(scale=[[t0, [100, 100], "lin"]], rot=[[t0, r, "lin"]], pos=[[t0, [x, y], "lin"]])
+    a = p["anim"]
+    if a == "static": return k
+    k["scale"] = [[t0, [100, 100], "lin"], [t1, [d, d], "lin"]]
+    if a == "pop":
+        k["scale"] = [[t0, [55, 55], "fast"], [t0 + 0.12, [110, 110], "io"], [t0 + 0.22, [100, 100], "lin"], [t1, [d, d], "lin"]]
+    elif a == "slide":
+        k["pos"] = [[t0, [x + SLIDE_DIST, y], "fast"], [t0 + 0.32, [x, y], "lin"]]
+    elif a == "burst":
+        s = t0 + 0.14
+        k["scale"] = [[t0, [175, 175], "fast"], [s, [94, 94], "io"], [t0 + 0.24, [100, 100], "lin"], [t1, [d, d], "lin"]]
+        k["rot"] = [[s, r, "io"], [s + 0.04, r - 7, "io"], [s + 0.08, r + 6, "io"], [s + 0.12, r - 4, "io"],
+                    [s + 0.16, r + 2, "io"], [s + 0.20, r, "lin"]]
+    elif a == "zoom":
+        k["scale"] = [[t0, [330, 330], "fast"], [t0 + 0.3, [100, 100], "lin"], [t1, [d + 1, d + 1], "lin"]]
+    elif a == "squash":  # pressed like a button
+        k["scale"] = [[t0, [100, 100], "io"], [t0 + 0.08, [118, 76], "io"], [t0 + 0.18, [94, 108], "io"],
+                      [t0 + 0.28, [100, 100], "lin"]]
     return k
 
 
@@ -146,20 +171,62 @@ def opacity_keys(p):
     t0, t1 = p["t0"], p["t1"]
     if p["anim"] == "static":
         return [[t0, 0, "lin"], [t0 + FADE, 100, "lin"], [t1 - FADE, 100, "lin"], [t1, 0, "lin"]]
+    k = [[t0, 0, "lin"], [t0 + FADE, 100, "lin"]] if p["anim"] in ("pop", "slide", "burst", "zoom") else []
     if p["kind"] == "hook" and t1 == HOOK_END:
-        return [[t1 - 0.25, 100, "io"], [t1, 0, "lin"]]
-    return [[t1 - EXIT, 100, "io"], [t1, 0, "lin"]]
+        return k + [[t1 - 0.25, 100, "io"], [t1, 0, "lin"]]
+    return k + [[t1 - EXIT, 100, "io"], [t1, 0, "lin"]]
 
 
 def line_keys(p, li, size):
-    """Animator keys for line `li`: mask -> y offset; track -> tracking + opacity."""
+    """Animator keys for line `li`: mask -> y offset; track -> tracking + opacity; swipe -> x offset."""
     t = p["t0"] + li * MASK_STAGGER
     if p["anim"] == "mask":
         return dict(dy=[[t, size * 1.15, "fast"], [t + MASK_IN, 0, "lin"]])
     if p["anim"] == "track":
         return dict(tracking=[[t, TRACK_FROM, "fast"], [t + TRACK_IN, 0, "lin"]],
                     opacity=[[t, 0, "io"], [t + TRACK_IN * 0.6, 100, "lin"]])
+    if p["anim"] == "swipe":
+        side = -1 if li % 2 == 0 else 1
+        return dict(dx=[[t, side * SWIPE_DIST, "fast"], [t + 0.34, 0, "lin"]])
     return {}
+
+
+def blur_keys(p):
+    return [[p["t0"], 40, "fast"], [p["t0"] + 0.3, 0, "lin"]] if p["anim"] == "zoom" else None
+
+
+def char_timing(p):
+    """(stagger, duration): every character must be in place by half of the telop's time on screen."""
+    n = len(re.sub(r"[\[\]/]|\d+:", "", p["text"]))
+    budget = 0.5 * (p["t1"] - p["t0"])
+    dur = min(CH_DUR, budget * 0.5)
+    stagger = min(CH_STAGGER, (budget - dur) / max(n - 1, 1))
+    return stagger, dur
+
+
+def char_amount(p, k, t):
+    """1 = hidden state, 0 = at rest, for the k-th character (cascade / popchars)."""
+    stagger, dur = char_timing(p)
+    q = clamp((t - p["t0"] - k * stagger) / dur)
+    return (1 - q) ** 3
+
+
+def counter_text(p, t):
+    """Slot-machine digits in the accent run until the price lands."""
+    if not p["counter"] or t >= p["t0"] + COUNT_DUR: return p["text"]
+    step = int((t - p["t0"]) / COUNT_STEP)
+    rng = random.Random(f'{p["t0"]}-{step}')
+    def spin(m):
+        body = re.sub(r"\d", lambda _: str(rng.randint(0, 9)), m.group(0))
+        return body
+    return re.sub(r"\[[^\]]*\]", spin, p["text"])
+
+
+def counter_keys(p):
+    """[time, text] for every digit change (the last one is the real price)."""
+    if not p["counter"]: return []
+    ts = [p["t0"] + i * COUNT_STEP for i in range(int(COUNT_DUR / COUNT_STEP))] + [p["t0"] + COUNT_DUR]
+    return [[round(t, 4), counter_text(p, t + 1e-4)] for t in ts]
 
 
 def bar_keys(p):
@@ -289,37 +356,74 @@ def lerp(keys, t):
     return keys[-1][1]
 
 
+def motion_blur(spr, dx, dy):
+    L = int(math.hypot(dx, dy))
+    if L < 2: return spr
+    L = min(L, 160)
+    k = np.zeros((L * 2 + 1, L * 2 + 1), np.float32)
+    ux, uy = dx / math.hypot(dx, dy), dy / math.hypot(dx, dy)
+    for i in range(L + 1):
+        u = i - L / 2
+        k[int(round(L + uy * u)), int(round(L + ux * u))] = 1
+    k /= k.sum()
+    out = cv2.filter2D(cv2.copyMakeBorder(spr, L, L, L, L, cv2.BORDER_CONSTANT, value=0), -1, k)
+    return out[L:-L, L:-L]
+
+
+def scaled(spr, s):
+    if abs(s - 1) < 1e-3: return spr
+    if s < 0.02: return None
+    h, w = spr.shape[:2]
+    return cv2.resize(spr, (max(1, int(w * s)), max(1, int(h * s))), interpolation=cv2.INTER_LINEAR)
+
+
 def draw_phrase(frame, p, t):
     if not (p["t0"] <= t < p["t1"]): return
-    chars, boxes = layout(p)
+    q = dict(p, text=counter_text(p, t))
+    chars, boxes = layout(q)
     tk = telop_keys(p)
-    S = ease_eval(tk["scale"], t) / 100.0
+    SX, SY = ease_eval(tk["scale"], t)
     alpha = lerp(opacity_keys(p), t) / 100.0
     if alpha <= 0.003: return
     border = not p.get("on_card")
     big = max(b["size"] for b in boxes)
     cw = int(max(b["w"] for b in boxes) + big * 3)
-    chh = int(sum(b["size"] for b in boxes) * (1 + LINE_GAP) + big * 2)
+    chh = int(sum(b["size"] for b in boxes) * (1 + LINE_GAP) + big * 3)
     canvas = np.zeros((chh, cw, 4), np.float32)
     ox, oy = cw / 2, chh / 2
+    per_char = p["anim"] in CHAR_ANIMS
+    gk = 0
     for li, b in enumerate(boxes):
         lk = line_keys(p, li, b["size"])
         layer = np.zeros_like(canvas)
         dy = ease_eval(lk["dy"], t) if "dy" in lk else 0.0
+        dx = ease_eval(lk["dx"], t) if "dx" in lk else 0.0
         track = ease_eval(lk["tracking"], t) if "tracking" in lk else 0.0
         la = ease_eval(lk["opacity"], t) / 100.0 if "opacity" in lk else 1.0
         line_chars = [c for c in chars if c["line"] == li]
         n = len(line_chars)
         for pass_ in (1, 0):  # shadows first, then fills
-            for c in line_chars:
+            for j, c in enumerate(line_chars):
                 spread = (c["k"] - (n - 1) / 2) * c["size"] * track / 1000.0
                 col = p["accent"] if c["accent"] else p["color"]
                 spr = glyph(c["ch"], c["size"], col, border, p["font"])[pass_]
-                paste(layer, spr, ox + c["x"] + spread, oy + c["y"] + dy, la)
+                cdy, cs, ca = 0.0, 1.0, la
+                if per_char:
+                    amt = char_amount(p, gk + j, t)
+                    if p["anim"] == "cascade": cdy = -0.9 * c["size"] * amt
+                    else: cs = 1 - amt
+                    ca = la * (1 - amt)
+                spr = scaled(spr, cs)
+                if spr is None or ca <= 0.003: continue
+                paste(layer, spr, ox + c["x"] + spread + dx, oy + c["y"] + dy + cdy, ca)
+        if "dx" in lk:
+            v = ease_eval(lk["dx"], t + 1 / FPS) - dx
+            layer = motion_blur(layer, -v * 0.8, 0)
         if p["anim"] == "mask":  # clip to the line's band: text rises from behind its lower edge
             top = int(oy + b["cy"] - b["size"] * 0.75); bot = int(oy + b["cy"] + b["size"] * 0.6)
             layer[:max(0, top)] = 0; layer[max(0, bot):] = 0
         paste(canvas, layer, cw / 2, chh / 2)
+        gk += n
     if p["bar"]:
         b = boxes[-1]
         sx = ease_eval(bar_keys(p), t) / 100.0
@@ -328,9 +432,19 @@ def draw_phrase(frame, p, t):
             x0 = int(ox - b["w"] / 2); x1 = int(x0 + b["w"] * sx)
             canvas[y:y + bh, x0:x1, :3] = np.array(YELLOW, np.float32) / 255
             canvas[y:y + bh, x0:x1, 3] = 1
+    bk = blur_keys(p)
+    if bk:
+        bl = ease_eval(bk, t)
+        if bl > 0.5: canvas = cv2.GaussianBlur(canvas, (0, 0), bl / 2)
     canvas *= alpha
+    if abs(SX - SY) > 1e-3:  # non-uniform scale (squash): pre-stretch, then composite uniformly
+        h, w = canvas.shape[:2]
+        canvas = cv2.resize(canvas, (max(1, int(w * SX / SY)), h), interpolation=cv2.INTER_LINEAR)
     PX, PY = ease_eval(tk["pos"], t)
-    composite(frame, canvas, PX, PY, S, ease_eval(tk["rot"], t))
+    if p["anim"] == "slide":
+        PX2, _ = ease_eval(tk["pos"], t + 1 / FPS)
+        canvas = motion_blur(canvas, (PX - PX2) * 0.8, 0)
+    composite(frame, canvas, PX, PY, SY / 100.0, ease_eval(tk["rot"], t))
 
 
 @functools.lru_cache(maxsize=4)
@@ -361,7 +475,7 @@ def check_safe_zone():
     bad = []
     for p in all_phrases():
         chars, boxes = layout(p)
-        s = 1 + (DRIFT if p["anim"] != "static" else 0)
+        s = 1 + (DRIFT + 0.01 if p["anim"] != "static" else 0)
         r = math.radians(p["rot"])
         xs, ys = [], []
         for c in chars:
@@ -430,14 +544,24 @@ def sfx_whoosh(d=0.32):
         out[i * seg:(i + 1) * seg] = sosfilt(sos, noise)[SR // 10 + i * seg: SR // 10 + (i + 1) * seg]
     t = np.linspace(0, 1, n); env = np.sin(np.pi * np.clip(t / 0.75, 0, 1)) ** 2 * np.clip((1 - t) / 0.25, 0, 1)
     return out * env / (np.abs(out).max() + 1e-9)
+def sfx_pop(d=0.09):
+    t = np.arange(int(SR * d)) / SR; f = 480 * np.exp(-t * 20) + 260
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 45)
+def sfx_tick(d=0.012):
+    n = int(SR * d); return np.random.default_rng(2).standard_normal(n) * np.exp(-np.arange(n) / (n / 4))
 def sfx_thump(d=0.22):
     t = np.arange(int(SR * d)) / SR; f = 110 * np.exp(-t * 14) + 45
     return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 20)
 
-SFX_GAIN = dict(whoosh=0.09, thump=0.30)
+SFX_GAIN = dict(whoosh=0.09, pop=0.12, tick=0.035, thump=0.30)
 
 def sfx_events():
-    ev = [("whoosh", p["t0"] - 0.05) for p in TELOPS if p["sfx"]]
+    ev = []
+    for p in all_phrases():
+        if p["sfx"]:
+            ev.append(("pop", p["t0"]) if p["anim"] in ("pop", "burst", "popchars", "squash")
+                      else ("whoosh", p["t0"] - 0.05))
+        ev += [("tick", t) for t, _ in counter_keys(p)[:-1]]
     ev += [("thump", c["t0"]) for c in CARDS]
     return ev
 
@@ -452,7 +576,7 @@ def write_wav(path, x):
 def export_sfx(out_dir, dur):
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
     os.makedirs(out_dir)
-    snd = dict(whoosh=sfx_whoosh(), thump=sfx_thump())
+    snd = dict(whoosh=sfx_whoosh(), pop=sfx_pop(), tick=sfx_tick(), thump=sfx_thump())
     for k, v in snd.items(): write_wav(os.path.join(out_dir, f"{k}.wav"), v * 0.8)
     track = np.zeros(int(SR * (dur + 1)))
     for k, t in sfx_events():
@@ -507,16 +631,24 @@ def probe_duration(src):
 
 # ---------------------------------------------------------------- After Effects ExtendScript
 def jsx_phrase(p):
-    _, boxes = layout(p)
-    lines = []
+    lines, k0 = [], 0
+    ckeys = counter_keys(p)
     for li, (size, runs) in enumerate(parse_lines(p)):
-        lines.append(dict(size=size, runs=[dict(text=t, accent=a) for t, a in runs], keys=line_keys(p, li, size)))
+        jr = []
+        for t, a in runs:
+            run = dict(text=t, accent=a, k0=k0, n=len(t))
+            if ckeys and a:  # slot digits live in the accent run
+                run["counter"] = [[tt, "".join(r for r, acc in parse_lines(dict(p, text=txt))[li][1] if acc)]
+                                  for tt, txt in ckeys]
+            jr.append(run); k0 += len(t)
+        lines.append(dict(size=size, runs=jr, keys=line_keys(p, li, size)))
     tk = telop_keys(p)
     name = re.sub(r"[\[\]]|\d+:", "", p["text"]).replace("/", " ")
     return dict(name=f'{p["t0"]:05.2f} {name}', t0=p["t0"], t1=p["t1"], lines=lines, anim=p["anim"],
                 font=FONTS[p["font"]][0], color=[c / 255 for c in p["color"]], accent=[c / 255 for c in p["accent"]],
                 border=not p.get("on_card"), behind=p["behind"], scale=tk["scale"], rot=tk["rot"], pos=tk["pos"],
-                opacity=opacity_keys(p), bar=bar_keys(p) if p["bar"] else None)
+                opacity=opacity_keys(p), bar=bar_keys(p) if p["bar"] else None, blur=blur_keys(p),
+                motionBlur=p["anim"] in MOTION_BLUR, chStagger=char_timing(p)[0], chDur=char_timing(p)[1])
 
 JSX_TEMPLATE = r"""// IKEA soft-ice vlog - After Effects builder (generated by ikea_ae_build.py)
 // Run in After Effects: File > Scripts > Run Script File...
@@ -569,7 +701,8 @@ function applyKeys(prop, keys, conv) {
     }
     if (prop.isSpatial) for (i = 1; i <= prop.numKeys; i++) { try { prop.setSpatialAutoBezierAtKey(i, false); } catch (e) {} }
 }
-function sc3(v) { return [v, v, 100]; }
+function sc3(v) { return (v instanceof Array) ? [v[0], v[1], 100] : [v, v, 100]; }
+function dx3(v) { return [v, 0, 0]; }
 function dy3(v) { return [0, v, 0]; }
 
 function addShadow(L, size) {
@@ -627,6 +760,45 @@ function addTrackIn(L, keys) {
     applyKeys(pr("ADBE Text Opacity"), keys.opacity);
 }
 
+// swipe: the whole line slides in sideways (layer motion blur on)
+function addSwipe(L, keys) {
+    var pr = addAnimator(L, "Swipe", ["ADBE Text Position 3D"]);
+    applyKeys(pr("ADBE Text Position 3D"), keys.dx, dx3);
+}
+
+// cascade / popchars: characters enter one after another (range selector offset sweeps left -> right)
+function addChars(L, run, p, size) {
+    var props = p.anim === "cascade" ? ["ADBE Text Position 3D", "ADBE Text Opacity"] : ["ADBE Text Scale 3D", "ADBE Text Opacity"];
+    var pr = addAnimator(L, p.anim === "cascade" ? "Cascade" : "Pop chars", props);
+    if (p.anim === "cascade") pr("ADBE Text Position 3D").setValue([0, -0.9 * size, 0]);
+    else pr("ADBE Text Scale 3D").setValue([0, 0, 100]);
+    pr("ADBE Text Opacity").setValue(0);
+    var anims = animators(L), ai = anims.numProperties;
+    var A = function () { return animators(L).property(ai); };
+    A().property("ADBE Text Selectors").addProperty("ADBE Text Selector");
+    var adv = A().property("ADBE Text Selectors").property(1).property("ADBE Text Range Advanced");
+    adv.property("ADBE Text Range Shape").setValue(2);        // Ramp Up
+    adv.property("ADBE Text Levels Max Ease").setValue(100);  // Ease High
+    var off = A().property("ADBE Text Selectors").property(1).property("ADBE Text Percent Offset");
+    var t0 = p.t0 + run.k0 * p.chStagger;
+    applyKeys(off, [[t0, -100, "lin"], [t0 + p.chDur * 1.5 + p.chStagger * run.n, 100, "lin"]]);
+}
+
+// slot-machine digits: Source Text keyframes (hold)
+function addCounter(L, keys) {
+    var src = L.property("ADBE Text Properties").property("ADBE Text Document");
+    for (var i = 0; i < keys.length; i++) {
+        var td = src.value; td.text = keys[i][1];
+        src.setValueAtTime(keys[i][0], td);
+    }
+}
+
+function addBlurIn(L, keys) {
+    var gb = L.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
+    applyKeys(gb.property("ADBE Gaussian Blur 2-0001"), keys);
+    try { gb.property("ADBE Gaussian Blur 2-0003").setValue(1); } catch (e) {}  // repeat edge pixels
+}
+
 function addBar(comp, nul, x, y, w, size, keys, t0, t1) {
     var L = comp.layers.addShape();
     var root = L.property("ADBE Root Vectors Group");
@@ -662,7 +834,7 @@ function addPhrase(comp, p) {
             var L = addRun(comp, run.text, line.size, run.accent ? p.accent : p.color, p.border, p.font);
             L.startTime = 0; L.inPoint = p.t0; L.outPoint = p.t1;
             var r = L.sourceRectAtTime(p.t1 - 0.01, false);
-            items.push({ layer: L, rect: r, x: lw });
+            items.push({ layer: L, rect: r, x: lw, run: run });
             lw += r.width + line.size * DATA.tracking / 1000;
             top = Math.min(top, r.top); bot = Math.max(bot, r.top + r.height);
         }
@@ -683,6 +855,11 @@ function addPhrase(comp, p) {
             try {
                 if (p.anim === "mask") addMaskRise(it.layer, it.rect, lb.size, lb.keys);
                 else if (p.anim === "track") addTrackIn(it.layer, lb.keys);
+                else if (p.anim === "swipe") addSwipe(it.layer, lb.keys);
+                else if (p.anim === "cascade" || p.anim === "popchars") addChars(it.layer, it.run, p, lb.size);
+                if (p.blur) addBlurIn(it.layer, p.blur);
+                if (it.run.counter) addCounter(it.layer, it.run.counter);
+                if (p.motionBlur || p.anim === "swipe") it.layer.motionBlur = true;
             } catch (e) { WARN.push(p.name + ": " + e.toString()); }
         }
         y += lb.bot - lb.top;

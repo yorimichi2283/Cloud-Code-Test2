@@ -14,11 +14,45 @@ var DATA = {
      "runs": [
       {
        "text": "\u65e5\u672c\u306f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 3
       },
       {
        "text": "50\u5186",
-       "accent": true
+       "accent": true,
+       "k0": 3,
+       "n": 3,
+       "counter": [
+        [
+         0.1,
+         "07\u5186"
+        ],
+        [
+         0.1667,
+         "27\u5186"
+        ],
+        [
+         0.2333,
+         "86\u5186"
+        ],
+        [
+         0.3,
+         "89\u5186"
+        ],
+        [
+         0.3667,
+         "73\u5186"
+        ],
+        [
+         0.4333,
+         "00\u5186"
+        ],
+        [
+         0.55,
+         "50\u5186"
+        ]
+       ]
       }
      ],
      "keys": {
@@ -54,12 +88,18 @@ var DATA = {
    "scale": [
     [
      0.1,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      2.1,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
@@ -92,11 +132,15 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.32
   },
   {
-   "name": "00.40 \u672c\u5834\u306f\u3044\u304f\u3089\uff1f",
-   "t0": 0.4,
+   "name": "00.55 \u672c\u5834\u306f\u3044\u304f\u3089\uff1f",
+   "t0": 0.55,
    "t1": 2.1,
    "lines": [
     {
@@ -104,30 +148,21 @@ var DATA = {
      "runs": [
       {
        "text": "\u672c\u5834\u306f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 3
       },
       {
        "text": "\u3044\u304f\u3089\uff1f",
-       "accent": true
+       "accent": true,
+       "k0": 3,
+       "n": 4
       }
      ],
-     "keys": {
-      "dy": [
-       [
-        0.4,
-        131.1,
-        "fast"
-       ],
-       [
-        0.8200000000000001,
-        0,
-        "lin"
-       ]
-      ]
-     }
+     "keys": {}
     }
    ],
-   "anim": "mask",
+   "anim": "cascade",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -143,26 +178,32 @@ var DATA = {
    "behind": false,
    "scale": [
     [
-     0.4,
-     100,
+     0.55,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      2.1,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
    "rot": [
     [
-     0.4,
+     0.55,
      0.0,
      "lin"
     ]
    ],
    "pos": [
     [
-     0.4,
+     0.55,
      [
       540,
       830
@@ -184,16 +225,20 @@ var DATA = {
    ],
    "bar": [
     [
-     0.5800000000000001,
+     0.73,
      0,
      "fast"
     ],
     [
-     0.9800000000000001,
+     1.13,
      100,
      "lin"
     ]
-   ]
+   ],
+   "blur": null,
+   "motionBlur": true,
+   "chStagger": 0.06,
+   "chDur": 0.32
   },
   {
    "name": "02.38 \u65e5\u672c\u3060\u3068",
@@ -205,7 +250,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u65e5\u672c\u3060\u3068",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 4
       }
      ],
      "keys": {}
@@ -228,7 +275,10 @@ var DATA = {
    "scale": [
     [
      2.38,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -271,7 +321,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.03833333333333333,
+   "chDur": 0.11499999999999999
   },
   {
    "name": "02.84 \u30a4\u30b1\u30a2\u306e",
@@ -283,7 +337,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u30a4\u30b1\u30a2\u306e",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 4
       }
      ],
      "keys": {}
@@ -306,7 +362,10 @@ var DATA = {
    "scale": [
     [
      2.84,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -349,7 +408,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.02666666666666669,
+   "chDur": 0.08000000000000007
   },
   {
    "name": "03.16 \u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0\u3063\u3066",
@@ -361,7 +424,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u30bd\u30d5\u30c8\u30af\u30ea\u30fc\u30e0\u3063\u3066",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 9
       }
      ],
      "keys": {}
@@ -384,7 +449,10 @@ var DATA = {
    "scale": [
     [
      3.16,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -427,7 +495,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.016875,
+   "chDur": 0.135
   },
   {
    "name": "03.70 1\u500b50\u5186",
@@ -439,30 +511,51 @@ var DATA = {
      "runs": [
       {
        "text": "1\u500b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 2
       },
       {
        "text": "50\u5186",
-       "accent": true
+       "accent": true,
+       "k0": 2,
+       "n": 3,
+       "counter": [
+        [
+         3.7,
+         "00\u5186"
+        ],
+        [
+         3.7667,
+         "80\u5186"
+        ],
+        [
+         3.8333,
+         "58\u5186"
+        ],
+        [
+         3.9,
+         "62\u5186"
+        ],
+        [
+         3.9667,
+         "06\u5186"
+        ],
+        [
+         4.0333,
+         "19\u5186"
+        ],
+        [
+         4.15,
+         "50\u5186"
+        ]
+       ]
       }
      ],
-     "keys": {
-      "dy": [
-       [
-        3.7,
-        218.49999999999997,
-        "fast"
-       ],
-       [
-        4.12,
-        0,
-        "lin"
-       ]
-      ]
-     }
+     "keys": {}
     }
    ],
-   "anim": "mask",
+   "anim": "pop",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -479,12 +572,34 @@ var DATA = {
    "scale": [
     [
      3.7,
-     100,
+     [
+      55,
+      55
+     ],
+     "fast"
+    ],
+    [
+     3.8200000000000003,
+     [
+      110,
+      110
+     ],
+     "io"
+    ],
+    [
+     3.9200000000000004,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      4.38,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
@@ -507,6 +622,16 @@ var DATA = {
    ],
    "opacity": [
     [
+     3.7,
+     0,
+     "lin"
+    ],
+    [
+     3.766666666666667,
+     100,
+     "lin"
+    ],
+    [
      4.26,
      100,
      "io"
@@ -517,18 +642,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": [
-    [
-     3.8800000000000003,
-     0,
-     "fast"
-    ],
-    [
-     4.28,
-     100,
-     "lin"
-    ]
-   ]
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.04249999999999998,
+   "chDur": 0.16999999999999993
   },
   {
    "name": "04.38 \u3060\u3068\u601d\u3046\u3093\u3067\u3059\u3051\u3069",
@@ -540,7 +658,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3060\u3068\u601d\u3046\u3093\u3067\u3059\u3051\u3069",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 9
       }
      ],
      "keys": {}
@@ -563,7 +683,10 @@ var DATA = {
    "scale": [
     [
      4.38,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -606,7 +729,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.02562500000000001,
+   "chDur": 0.20500000000000007
   },
   {
    "name": "05.66 \u5b9f\u969b",
@@ -618,7 +745,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u5b9f\u969b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 2
       }
      ],
      "keys": {}
@@ -641,7 +770,10 @@ var DATA = {
    "scale": [
     [
      5.66,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -684,7 +816,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.08999999999999986
   },
   {
    "name": "06.02 \u672c\u5834\u306e\u30a4\u30b1\u30a2\u306f",
@@ -696,7 +832,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u672c\u5834\u306e\u30a4\u30b1\u30a2\u306f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 7
       }
      ],
      "keys": {}
@@ -719,7 +857,10 @@ var DATA = {
    "scale": [
     [
      6.02,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -762,7 +903,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.05000000000000001,
+   "chDur": 0.30000000000000004
   },
   {
    "name": "07.75 \u8cb7\u3048\u308b\u306e\u304b\u3092",
@@ -774,7 +919,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u8cb7\u3048\u308b\u306e\u304b\u3092",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 6
       }
      ],
      "keys": {}
@@ -797,7 +944,10 @@ var DATA = {
    "scale": [
     [
      7.75,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -840,7 +990,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.014499999999999957,
+   "chDur": 0.07249999999999979
   },
   {
    "name": "08.04 \u898b\u3066\u307f\u307e\u3059",
@@ -852,7 +1006,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u898b\u3066\u307f\u307e\u3059",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 5
       }
      ],
      "keys": {}
@@ -875,7 +1031,10 @@ var DATA = {
    "scale": [
     [
      8.04,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -918,7 +1077,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.0475000000000001,
+   "chDur": 0.1900000000000004
   },
   {
    "name": "08.98 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
@@ -930,7 +1093,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 7
       }
      ],
      "keys": {}
@@ -953,7 +1118,10 @@ var DATA = {
    "scale": [
     [
      8.98,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -996,7 +1164,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.05166666666666667,
+   "chDur": 0.31000000000000005
   },
   {
    "name": "10.22 9\u306a\u3093\u3067",
@@ -1008,11 +1180,15 @@ var DATA = {
      "runs": [
       {
        "text": "9",
-       "accent": true
+       "accent": true,
+       "k0": 0,
+       "n": 1
       },
       {
        "text": "\u306a\u3093\u3067",
-       "accent": false
+       "accent": false,
+       "k0": 1,
+       "n": 3
       }
      ],
      "keys": {}
@@ -1035,7 +1211,10 @@ var DATA = {
    "scale": [
     [
      10.22,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1078,7 +1257,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.32
   },
   {
    "name": "11.74 150\u5186",
@@ -1090,26 +1273,45 @@ var DATA = {
      "runs": [
       {
        "text": "150\u5186",
-       "accent": true
+       "accent": true,
+       "k0": 0,
+       "n": 4,
+       "counter": [
+        [
+         11.74,
+         "425\u5186"
+        ],
+        [
+         11.8067,
+         "088\u5186"
+        ],
+        [
+         11.8733,
+         "959\u5186"
+        ],
+        [
+         11.94,
+         "940\u5186"
+        ],
+        [
+         12.0067,
+         "528\u5186"
+        ],
+        [
+         12.0733,
+         "616\u5186"
+        ],
+        [
+         12.19,
+         "150\u5186"
+        ]
+       ]
       }
      ],
-     "keys": {
-      "dy": [
-       [
-        11.74,
-        241.49999999999997,
-        "fast"
-       ],
-       [
-        12.16,
-        0,
-        "lin"
-       ]
-      ]
-     }
+     "keys": {}
     }
    ],
-   "anim": "mask",
+   "anim": "slide",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -1126,12 +1328,18 @@ var DATA = {
    "scale": [
     [
      11.74,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      12.96,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
@@ -1146,6 +1354,14 @@ var DATA = {
     [
      11.74,
      [
+      1240,
+      950
+     ],
+     "fast"
+    ],
+    [
+     12.06,
+     [
       540,
       950
      ],
@@ -1153,6 +1369,16 @@ var DATA = {
     ]
    ],
    "opacity": [
+    [
+     11.74,
+     0,
+     "lin"
+    ],
+    [
+     11.806666666666667,
+     100,
+     "lin"
+    ],
     [
      12.840000000000002,
      100,
@@ -1175,7 +1401,11 @@ var DATA = {
      100,
      "lin"
     ]
-   ]
+   ],
+   "blur": null,
+   "motionBlur": true,
+   "chStagger": 0.06,
+   "chDur": 0.30500000000000016
   },
   {
    "name": "12.10 \u3050\u3089\u3044\u3067\u8cb7\u3048\u308b\u308f",
@@ -1187,7 +1417,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3050\u3089\u3044\u3067\u8cb7\u3048\u308b\u308f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 8
       }
      ],
      "keys": {}
@@ -1210,7 +1442,10 @@ var DATA = {
    "scale": [
     [
      12.1,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1253,7 +1488,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.030714285714285756,
+   "chDur": 0.2150000000000003
   },
   {
    "name": "12.96 \u3053\u308c\u666e\u901a\u306b",
@@ -1265,7 +1504,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3053\u308c\u666e\u901a\u306b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 5
       }
      ],
      "keys": {}
@@ -1288,7 +1529,10 @@ var DATA = {
    "scale": [
     [
      12.96,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1331,7 +1575,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.04874999999999996,
+   "chDur": 0.19499999999999984
   },
   {
    "name": "14.38 \u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
@@ -1343,7 +1591,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3053\u306e\u30b7\u30ca\u30e2\u30f3\u30ed\u30fc\u30eb\u306f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 10
       }
      ],
      "keys": {}
@@ -1366,7 +1616,10 @@ var DATA = {
    "scale": [
     [
      14.38,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1409,7 +1662,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.03222222222222218,
+   "chDur": 0.2899999999999996
   },
   {
    "name": "15.54 1\u500b112\u5186",
@@ -1421,11 +1678,45 @@ var DATA = {
      "runs": [
       {
        "text": "1\u500b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 2
       },
       {
        "text": "112\u5186",
-       "accent": true
+       "accent": true,
+       "k0": 2,
+       "n": 4,
+       "counter": [
+        [
+         15.54,
+         "167\u5186"
+        ],
+        [
+         15.6067,
+         "381\u5186"
+        ],
+        [
+         15.6733,
+         "770\u5186"
+        ],
+        [
+         15.74,
+         "673\u5186"
+        ],
+        [
+         15.8067,
+         "510\u5186"
+        ],
+        [
+         15.8733,
+         "846\u5186"
+        ],
+        [
+         15.99,
+         "112\u5186"
+        ]
+       ]
       }
      ],
      "keys": {
@@ -1461,12 +1752,18 @@ var DATA = {
    "scale": [
     [
      15.54,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      16.72,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
@@ -1510,7 +1807,11 @@ var DATA = {
      100,
      "lin"
     ]
-   ]
+   ],
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.05899999999999998,
+   "chDur": 0.29499999999999993
   },
   {
    "name": "16.72 \u3067\u8cb7\u3048\u307e\u3059\u306d",
@@ -1522,7 +1823,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3067\u8cb7\u3048\u307e\u3059\u306d",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 6
       }
      ],
      "keys": {}
@@ -1545,7 +1848,10 @@ var DATA = {
    "scale": [
     [
      16.72,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1588,7 +1894,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.039000000000000055,
+   "chDur": 0.19500000000000028
   },
   {
    "name": "17.76 \u30bb\u30c3\u30c8\u3057\u3066",
@@ -1600,7 +1910,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u30bb\u30c3\u30c8\u3057\u3066",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 5
       }
      ],
      "keys": {}
@@ -1623,7 +1935,10 @@ var DATA = {
    "scale": [
     [
      17.76,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1666,7 +1981,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.2599999999999998
   },
   {
    "name": "19.16 \u3042\u3068\u306f\u3053\u3053\u3092",
@@ -1678,7 +1997,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3042\u3068\u306f\u3053\u3053\u3092",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 6
       }
      ],
      "keys": {}
@@ -1701,7 +2022,10 @@ var DATA = {
    "scale": [
     [
      19.16,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1744,7 +2068,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.04599999999999991,
+   "chDur": 0.22999999999999954
   },
   {
    "name": "20.08 \u62bc\u3059\u3060\u3051\u3067\u3059\u306d",
@@ -1756,17 +2084,21 @@ var DATA = {
      "runs": [
       {
        "text": "\u62bc\u3059\u3060\u3051",
-       "accent": true
+       "accent": true,
+       "k0": 0,
+       "n": 4
       },
       {
        "text": "\u3067\u3059\u306d",
-       "accent": false
+       "accent": false,
+       "k0": 4,
+       "n": 3
       }
      ],
      "keys": {}
     }
    ],
-   "anim": "static",
+   "anim": "squash",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -1783,7 +2115,34 @@ var DATA = {
    "scale": [
     [
      20.08,
-     100,
+     [
+      100,
+      100
+     ],
+     "io"
+    ],
+    [
+     20.159999999999997,
+     [
+      118,
+      76
+     ],
+     "io"
+    ],
+    [
+     20.259999999999998,
+     [
+      94,
+      108
+     ],
+     "io"
+    ],
+    [
+     20.36,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1806,19 +2165,9 @@ var DATA = {
    ],
    "opacity": [
     [
-     20.08,
-     0,
-     "lin"
-    ],
-    [
-     20.146666666666665,
+     20.88,
      100,
-     "lin"
-    ],
-    [
-     20.933333333333334,
-     100,
-     "lin"
+     "io"
     ],
     [
      21.0,
@@ -1826,7 +2175,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.03833333333333341,
+   "chDur": 0.23000000000000043
   },
   {
    "name": "23.04 \u81ea\u52d5\u3067\u3084\u3063\u3066\u304f\u308c\u308b",
@@ -1838,7 +2191,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u81ea\u52d5\u3067\u3084\u3063\u3066\u304f\u308c\u308b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 9
       }
      ],
      "keys": {}
@@ -1861,7 +2216,10 @@ var DATA = {
    "scale": [
     [
      23.04,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1904,7 +2262,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.030000000000000027,
+   "chDur": 0.2400000000000002
   },
   {
    "name": "24.84 \u5b9f\u969b\u306b\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
@@ -1916,7 +2278,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u5b9f\u969b\u306b\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 10
       }
      ],
      "keys": {}
@@ -1939,7 +2303,10 @@ var DATA = {
    "scale": [
     [
      24.84,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -1982,7 +2349,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.03333333333333331,
+   "chDur": 0.2999999999999998
   },
   {
    "name": "29.48 \u53e3\u306e\u4e2d\u306b\u5165\u308c\u305f",
@@ -1994,7 +2365,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u53e3\u306e\u4e2d\u306b\u5165\u308c\u305f",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 7
       }
      ],
      "keys": {}
@@ -2017,7 +2390,10 @@ var DATA = {
    "scale": [
     [
      29.48,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2060,7 +2436,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.041666666666666664,
+   "chDur": 0.25
   },
   {
    "name": "30.48 \u77ac\u9593\u306b",
@@ -2072,7 +2452,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u77ac\u9593\u306b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 3
       }
      ],
      "keys": {}
@@ -2095,7 +2477,10 @@ var DATA = {
    "scale": [
     [
      30.48,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2138,7 +2523,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.20500000000000007
   },
   {
    "name": "31.90 \u3046\u308f\u3063\uff01\u3063\u3066",
@@ -2150,30 +2539,21 @@ var DATA = {
      "runs": [
       {
        "text": "\u3046\u308f\u3063\uff01",
-       "accent": true
+       "accent": true,
+       "k0": 0,
+       "n": 4
       },
       {
        "text": "\u3063\u3066",
-       "accent": false
+       "accent": false,
+       "k0": 4,
+       "n": 2
       }
      ],
-     "keys": {
-      "dy": [
-       [
-        31.9,
-        154.1,
-        "fast"
-       ],
-       [
-        32.32,
-        0,
-        "lin"
-       ]
-      ]
-     }
+     "keys": {}
     }
    ],
-   "anim": "mask",
+   "anim": "burst",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -2190,18 +2570,65 @@ var DATA = {
    "scale": [
     [
      31.9,
-     100,
+     [
+      175,
+      175
+     ],
+     "fast"
+    ],
+    [
+     32.04,
+     [
+      94,
+      94
+     ],
+     "io"
+    ],
+    [
+     32.14,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      32.78,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
    "rot": [
     [
-     31.9,
+     32.04,
+     0.0,
+     "io"
+    ],
+    [
+     32.08,
+     -7.0,
+     "io"
+    ],
+    [
+     32.12,
+     6.0,
+     "io"
+    ],
+    [
+     32.16,
+     -4.0,
+     "io"
+    ],
+    [
+     32.199999999999996,
+     2.0,
+     "io"
+    ],
+    [
+     32.24,
      0.0,
      "lin"
     ]
@@ -2218,6 +2645,16 @@ var DATA = {
    ],
    "opacity": [
     [
+     31.9,
+     0,
+     "lin"
+    ],
+    [
+     31.966666666666665,
+     100,
+     "lin"
+    ],
+    [
      32.660000000000004,
      100,
      "io"
@@ -2228,7 +2665,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": true,
+   "chStagger": 0.04400000000000013,
+   "chDur": 0.22000000000000064
   },
   {
    "name": "32.78 \u8272\u3005\u3046\u307e\u3044",
@@ -2240,7 +2681,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u8272\u3005\u3046\u307e\u3044",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 5
       }
      ],
      "keys": {}
@@ -2263,7 +2706,10 @@ var DATA = {
    "scale": [
     [
      32.78,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2306,7 +2752,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.05624999999999991,
+   "chDur": 0.22499999999999964
   },
   {
    "name": "33.68 \u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
@@ -2318,7 +2768,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u30a2\u30a4\u30b9\u30af\u30ea\u30fc\u30e0",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 7
       }
      ],
      "keys": {}
@@ -2341,7 +2793,10 @@ var DATA = {
    "scale": [
     [
      33.68,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2384,7 +2839,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.01999999999999987,
+   "chDur": 0.11999999999999922
   },
   {
    "name": "34.16 \u3042\u308b\u3058\u3083\u306a\u3044\u3067\u3059\u304b",
@@ -2396,7 +2855,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3042\u308b\u3058\u3083\u306a\u3044\u3067\u3059\u304b",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 9
       }
      ],
      "keys": {}
@@ -2419,7 +2880,10 @@ var DATA = {
    "scale": [
     [
      34.16,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2462,7 +2926,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.026250000000000107,
+   "chDur": 0.21000000000000085
   },
   {
    "name": "35.14 \u307e\u3042\u30cf\u30fc\u30b2\u30f3\u30c0\u30c3\u30c4\u306e",
@@ -2474,7 +2942,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u307e\u3042\u30cf\u30fc\u30b2\u30f3\u30c0\u30c3\u30c4\u306e",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 10
       }
      ],
      "keys": {}
@@ -2497,7 +2967,10 @@ var DATA = {
    "scale": [
     [
      35.14,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2540,7 +3013,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.028888888888888867,
+   "chDur": 0.2599999999999998
   },
   {
    "name": "36.18 5\u500d\u6fc3\u7e2e",
@@ -2552,26 +3029,15 @@ var DATA = {
      "runs": [
       {
        "text": "5\u500d\u6fc3\u7e2e",
-       "accent": true
+       "accent": true,
+       "k0": 0,
+       "n": 4
       }
      ],
-     "keys": {
-      "dy": [
-       [
-        36.18,
-        241.49999999999997,
-        "fast"
-       ],
-       [
-        36.6,
-        0,
-        "lin"
-       ]
-      ]
-     }
+     "keys": {}
     }
    ],
-   "anim": "mask",
+   "anim": "cascade",
    "font": "ZenKakuGothicAntique-Black",
    "color": [
     1.0,
@@ -2588,12 +3054,18 @@ var DATA = {
    "scale": [
     [
      36.18,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ],
     [
      37.4,
-     103.0,
+     [
+      103.0,
+      103.0
+     ],
      "lin"
     ]
    ],
@@ -2626,7 +3098,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": true,
+   "chStagger": 0.06,
+   "chDur": 0.3049999999999997
   },
   {
    "name": "36.84 \u3057\u305f\u307f\u305f\u3044\u306a",
@@ -2638,7 +3114,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3057\u305f\u307f\u305f\u3044\u306a",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 6
       }
      ],
      "keys": {}
@@ -2661,7 +3139,10 @@ var DATA = {
    "scale": [
     [
      36.84,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2704,7 +3185,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.021999999999999888,
+   "chDur": 0.10999999999999943
   },
   {
    "name": "37.28 \u611f\u3058\u306e\u5473\u304c\u3057\u307e\u3059",
@@ -2716,7 +3201,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u611f\u3058\u306e\u5473\u304c\u3057\u307e\u3059",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 8
       }
      ],
      "keys": {}
@@ -2739,7 +3226,10 @@ var DATA = {
    "scale": [
     [
      37.28,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2782,7 +3272,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.025714285714285672,
+   "chDur": 0.17999999999999972
   },
   {
    "name": "38.00 \u3053\u308c",
@@ -2794,7 +3288,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u3053\u308c",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 2
       }
      ],
      "keys": {}
@@ -2817,7 +3313,10 @@ var DATA = {
    "scale": [
     [
      38.0,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2860,7 +3359,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.15000000000000036
   },
   {
    "name": "39.24 \u610f\u5916\u3068\u306d",
@@ -2872,7 +3375,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u610f\u5916\u3068\u306d",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 4
       }
      ],
      "keys": {}
@@ -2895,7 +3400,10 @@ var DATA = {
    "scale": [
     [
      39.24,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -2938,7 +3446,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.03666666666666648,
+   "chDur": 0.10999999999999943
   },
   {
    "name": "40.30 \u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
@@ -2950,7 +3462,9 @@ var DATA = {
      "runs": [
       {
        "text": "\u305c\u3072\u98df\u3079\u3066\u307f\u3066\u304f\u3060\u3055\u3044",
-       "accent": false
+       "accent": false,
+       "k0": 0,
+       "n": 11
       }
      ],
      "keys": {}
@@ -2973,7 +3487,10 @@ var DATA = {
    "scale": [
     [
      40.3,
-     100,
+     [
+      100,
+      100
+     ],
      "lin"
     ]
    ],
@@ -3016,7 +3533,11 @@ var DATA = {
      "lin"
     ]
    ],
-   "bar": null
+   "bar": null,
+   "blur": null,
+   "motionBlur": false,
+   "chStagger": 0.06,
+   "chDur": 0.32
   }
  ],
  "cards": [
@@ -3038,26 +3559,15 @@ var DATA = {
       "runs": [
        {
         "text": "\u3044\u304f\u3089\uff1f",
-        "accent": false
+        "accent": false,
+        "k0": 0,
+        "n": 4
        }
       ],
-      "keys": {
-       "dy": [
-        [
-         7.22,
-         231.14999999999998,
-         "fast"
-        ],
-        [
-         7.64,
-         0,
-         "lin"
-        ]
-       ]
-      }
+      "keys": {}
      }
     ],
-    "anim": "mask",
+    "anim": "cascade",
     "font": "ZenKakuGothicAntique-Black",
     "color": [
      0.11764705882352941,
@@ -3074,12 +3584,18 @@ var DATA = {
     "scale": [
      [
       7.22,
-      100,
+      [
+       100,
+       100
+      ],
       "lin"
      ],
      [
       7.75,
-      103.0,
+      [
+       103.0,
+       103.0
+      ],
       "lin"
      ]
     ],
@@ -3112,7 +3628,11 @@ var DATA = {
       "lin"
      ]
     ],
-    "bar": null
+    "bar": null,
+    "blur": null,
+    "motionBlur": true,
+    "chStagger": 0.04416666666666669,
+    "chDur": 0.13250000000000006
    }
   },
   {
@@ -3133,18 +3653,20 @@ var DATA = {
       "runs": [
        {
         "text": "\u5b89\u3044\u3093\u3058\u3083",
-        "accent": false
+        "accent": false,
+        "k0": 0,
+        "n": 5
        }
       ],
       "keys": {
-       "dy": [
+       "dx": [
         [
          13.74,
-         184.0,
+         -900,
          "fast"
         ],
         [
-         14.16,
+         14.08,
          0,
          "lin"
         ]
@@ -3156,18 +3678,20 @@ var DATA = {
       "runs": [
        {
         "text": "\u306a\u3044\uff1f",
-        "accent": false
+        "accent": false,
+        "k0": 5,
+        "n": 3
        }
       ],
       "keys": {
-       "dy": [
+       "dx": [
         [
          13.82,
-         184.0,
+         900,
          "fast"
         ],
         [
-         14.24,
+         14.16,
          0,
          "lin"
         ]
@@ -3175,7 +3699,7 @@ var DATA = {
       }
      }
     ],
-    "anim": "mask",
+    "anim": "swipe",
     "font": "ZenKakuGothicAntique-Black",
     "color": [
      1.0,
@@ -3192,12 +3716,18 @@ var DATA = {
     "scale": [
      [
       13.74,
-      100,
+      [
+       100,
+       100
+      ],
       "lin"
      ],
      [
       14.38,
-      103.0,
+      [
+       103.0,
+       103.0
+      ],
       "lin"
      ]
     ],
@@ -3230,7 +3760,11 @@ var DATA = {
       "lin"
      ]
     ],
-    "bar": null
+    "bar": null,
+    "blur": null,
+    "motionBlur": true,
+    "chStagger": 0.022857142857142878,
+    "chDur": 0.16000000000000014
    }
   },
   {
@@ -3251,26 +3785,15 @@ var DATA = {
       "runs": [
        {
         "text": "\u98df\u3079\u307e\u3059",
-        "accent": false
+        "accent": false,
+        "k0": 0,
+        "n": 4
        }
       ],
-      "keys": {
-       "dy": [
-        [
-         26.04,
-         231.14999999999998,
-         "fast"
-        ],
-        [
-         26.46,
-         0,
-         "lin"
-        ]
-       ]
-      }
+      "keys": {}
      }
     ],
-    "anim": "mask",
+    "anim": "zoom",
     "font": "ZenKakuGothicAntique-Black",
     "color": [
      0.11764705882352941,
@@ -3287,12 +3810,26 @@ var DATA = {
     "scale": [
      [
       26.04,
-      100,
+      [
+       330,
+       330
+      ],
+      "fast"
+     ],
+     [
+      26.34,
+      [
+       100,
+       100
+      ],
       "lin"
      ],
      [
       26.8,
-      103.0,
+      [
+       104.0,
+       104.0
+      ],
       "lin"
      ]
     ],
@@ -3315,6 +3852,16 @@ var DATA = {
     ],
     "opacity": [
      [
+      26.04,
+      0,
+      "lin"
+     ],
+     [
+      26.106666666666666,
+      100,
+      "lin"
+     ],
+     [
       26.68,
       100,
       "io"
@@ -3325,7 +3872,22 @@ var DATA = {
       "lin"
      ]
     ],
-    "bar": null
+    "bar": null,
+    "blur": [
+     [
+      26.04,
+      40,
+      "fast"
+     ],
+     [
+      26.34,
+      0,
+      "lin"
+     ]
+    ],
+    "motionBlur": false,
+    "chStagger": 0.06,
+    "chDur": 0.1900000000000004
    }
   },
   {
@@ -3346,26 +3908,15 @@ var DATA = {
       "runs": [
        {
         "text": "\u30ea\u30fc\u30ba\u30ca\u30d6\u30eb",
-        "accent": false
+        "accent": false,
+        "k0": 0,
+        "n": 6
        }
       ],
-      "keys": {
-       "dy": [
-        [
-         39.68,
-         154.1,
-         "fast"
-        ],
-        [
-         40.1,
-         0,
-         "lin"
-        ]
-       ]
-      }
+      "keys": {}
      }
     ],
-    "anim": "mask",
+    "anim": "popchars",
     "font": "ZenKakuGothicAntique-Black",
     "color": [
      1.0,
@@ -3382,12 +3933,18 @@ var DATA = {
     "scale": [
      [
       39.68,
-      100,
+      [
+       100,
+       100
+      ],
       "lin"
      ],
      [
       40.3,
-      103.0,
+      [
+       103.0,
+       103.0
+      ],
       "lin"
      ]
     ],
@@ -3420,7 +3977,11 @@ var DATA = {
       "lin"
      ]
     ],
-    "bar": null
+    "bar": null,
+    "blur": null,
+    "motionBlur": false,
+    "chStagger": 0.03099999999999987,
+    "chDur": 0.15499999999999936
    }
   }
  ],
@@ -3523,7 +4084,8 @@ function applyKeys(prop, keys, conv) {
     }
     if (prop.isSpatial) for (i = 1; i <= prop.numKeys; i++) { try { prop.setSpatialAutoBezierAtKey(i, false); } catch (e) {} }
 }
-function sc3(v) { return [v, v, 100]; }
+function sc3(v) { return (v instanceof Array) ? [v[0], v[1], 100] : [v, v, 100]; }
+function dx3(v) { return [v, 0, 0]; }
 function dy3(v) { return [0, v, 0]; }
 
 function addShadow(L, size) {
@@ -3581,6 +4143,45 @@ function addTrackIn(L, keys) {
     applyKeys(pr("ADBE Text Opacity"), keys.opacity);
 }
 
+// swipe: the whole line slides in sideways (layer motion blur on)
+function addSwipe(L, keys) {
+    var pr = addAnimator(L, "Swipe", ["ADBE Text Position 3D"]);
+    applyKeys(pr("ADBE Text Position 3D"), keys.dx, dx3);
+}
+
+// cascade / popchars: characters enter one after another (range selector offset sweeps left -> right)
+function addChars(L, run, p, size) {
+    var props = p.anim === "cascade" ? ["ADBE Text Position 3D", "ADBE Text Opacity"] : ["ADBE Text Scale 3D", "ADBE Text Opacity"];
+    var pr = addAnimator(L, p.anim === "cascade" ? "Cascade" : "Pop chars", props);
+    if (p.anim === "cascade") pr("ADBE Text Position 3D").setValue([0, -0.9 * size, 0]);
+    else pr("ADBE Text Scale 3D").setValue([0, 0, 100]);
+    pr("ADBE Text Opacity").setValue(0);
+    var anims = animators(L), ai = anims.numProperties;
+    var A = function () { return animators(L).property(ai); };
+    A().property("ADBE Text Selectors").addProperty("ADBE Text Selector");
+    var adv = A().property("ADBE Text Selectors").property(1).property("ADBE Text Range Advanced");
+    adv.property("ADBE Text Range Shape").setValue(2);        // Ramp Up
+    adv.property("ADBE Text Levels Max Ease").setValue(100);  // Ease High
+    var off = A().property("ADBE Text Selectors").property(1).property("ADBE Text Percent Offset");
+    var t0 = p.t0 + run.k0 * p.chStagger;
+    applyKeys(off, [[t0, -100, "lin"], [t0 + p.chDur * 1.5 + p.chStagger * run.n, 100, "lin"]]);
+}
+
+// slot-machine digits: Source Text keyframes (hold)
+function addCounter(L, keys) {
+    var src = L.property("ADBE Text Properties").property("ADBE Text Document");
+    for (var i = 0; i < keys.length; i++) {
+        var td = src.value; td.text = keys[i][1];
+        src.setValueAtTime(keys[i][0], td);
+    }
+}
+
+function addBlurIn(L, keys) {
+    var gb = L.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
+    applyKeys(gb.property("ADBE Gaussian Blur 2-0001"), keys);
+    try { gb.property("ADBE Gaussian Blur 2-0003").setValue(1); } catch (e) {}  // repeat edge pixels
+}
+
 function addBar(comp, nul, x, y, w, size, keys, t0, t1) {
     var L = comp.layers.addShape();
     var root = L.property("ADBE Root Vectors Group");
@@ -3616,7 +4217,7 @@ function addPhrase(comp, p) {
             var L = addRun(comp, run.text, line.size, run.accent ? p.accent : p.color, p.border, p.font);
             L.startTime = 0; L.inPoint = p.t0; L.outPoint = p.t1;
             var r = L.sourceRectAtTime(p.t1 - 0.01, false);
-            items.push({ layer: L, rect: r, x: lw });
+            items.push({ layer: L, rect: r, x: lw, run: run });
             lw += r.width + line.size * DATA.tracking / 1000;
             top = Math.min(top, r.top); bot = Math.max(bot, r.top + r.height);
         }
@@ -3637,6 +4238,11 @@ function addPhrase(comp, p) {
             try {
                 if (p.anim === "mask") addMaskRise(it.layer, it.rect, lb.size, lb.keys);
                 else if (p.anim === "track") addTrackIn(it.layer, lb.keys);
+                else if (p.anim === "swipe") addSwipe(it.layer, lb.keys);
+                else if (p.anim === "cascade" || p.anim === "popchars") addChars(it.layer, it.run, p, lb.size);
+                if (p.blur) addBlurIn(it.layer, p.blur);
+                if (it.run.counter) addCounter(it.layer, it.run.counter);
+                if (p.motionBlur || p.anim === "swipe") it.layer.motionBlur = true;
             } catch (e) { WARN.push(p.name + ": " + e.toString()); }
         }
         y += lb.bot - lb.top;

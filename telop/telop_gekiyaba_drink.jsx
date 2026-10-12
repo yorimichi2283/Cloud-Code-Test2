@@ -24,7 +24,8 @@
         fps: 30,
         duration: 4, // 秒
 
-        // 上から順に試して、最初に見つかったフォントを使う（PostScript 名）
+        // 作成時の初期フォント。上から順に試して最初に見つかったものを使う（PostScript 名）
+        // ※ 作成後は「TEXT_文字を編集」のフォントを変えるだけで、どのフォントにも対応
         fonts: [
             "NotoSerifJP-Black",      // Noto Serif JP Black (Google Fonts)
             "SourceHanSerif-Heavy",   // 源ノ明朝 Heavy
@@ -141,6 +142,38 @@
         }
     }
 
+    // フチ用レイヤーを TEXT_ に完全追従させる。
+    //  - 文字・フォント・サイズ・字間・太字などは TEXT_ のスタイルをそのままコピー
+    //  - フチの太さは「文字サイズ × %」なので、どんなフォント・サイズでも比率が保たれる
+    //  - 太さと色はレイヤーに付けたエフェクト（スライダー/カラー制御）で調整
+    //  ※ スタイル追従は AE 2020 (17.0) 以降のテキストスタイル式を使用。
+    //    それより古い AE では文字だけ追従（フォントは 3 レイヤー同時選択で変更）
+    function linkStrokeLayer(layer, masterName, widthPct, color) {
+        var fx = layer.property("ADBE Effect Parade");
+        var w = fx.addProperty("ADBE Slider Control");
+        w.name = "フチの太さ(文字サイズ比%)";
+        w.property("ADBE Slider Control-0001").setValue(widthPct);
+        var col = fx.addProperty("ADBE Color Control");
+        col.name = "フチの色";
+        col.property("ADBE Color Control-0001").setValue(rgb(color));
+
+        layer.property("ADBE Text Properties").property("ADBE Text Document").expression =
+            '// TEXT_文字を編集 の文字・フォント・サイズ等をコピーしてフチだけ付ける\n' +
+            'var src = thisComp.layer("' + masterName + '").text.sourceText;\n' +
+            'var pct = effect("フチの太さ(文字サイズ比%)")("ADBE Slider Control-0001").value;\n' +
+            'var c = effect("フチの色")("ADBE Color Control-0001").value;\n' +
+            'var col = [c[0], c[1], c[2]];\n' +
+            'var r;\n' +
+            'try {\n' +
+            '  var st = src.style;\n' +
+            '  r = st.setText("" + src).setApplyFill(true).setFillColor(col)\n' +
+            '        .setApplyStroke(true).setStrokeColor(col).setStrokeWidth(st.fontSize * pct / 100);\n' +
+            '} catch (e) {\n' +
+            '  r = "" + src; // 古い AE: 文字だけ追従\n' +
+            '}\n' +
+            'r;';
+    }
+
     function setMatte(layer, matteLayer) {
         if (layer.setTrackMatte) {
             layer.setTrackMatte(matteLayer, TrackMatteType.ALPHA); // AE 2023+
@@ -154,8 +187,6 @@
         var c = app.project.items.addComp(line.name + "_" + line.text, CONFIG.width, CONFIG.height, 1,
             CONFIG.duration, CONFIG.fps);
         var masterName = "TEXT_文字を編集";
-        // 文字列だけをリンク（書式は各レイヤーのものを維持）
-        var linkExpr = '"" + thisComp.layer("' + masterName + '").text.sourceText;';
 
         // 下から順に作る（addText は最前面に追加される）
         var outer = makeText(c, line, "STROKE_外フチ", CONFIG.outerStroke, CONFIG.outerStroke,
@@ -182,8 +213,8 @@
         centerOn(white, masterName, c);
         centerOn(outer, masterName, c);
 
-        white.property("ADBE Text Properties").property("ADBE Text Document").expression = linkExpr;
-        outer.property("ADBE Text Properties").property("ADBE Text Document").expression = linkExpr;
+        linkStrokeLayer(white, masterName, CONFIG.whiteStrokeRatio * 100, CONFIG.whiteStroke);
+        linkStrokeLayer(outer, masterName, CONFIG.outerStrokeRatio * 100, CONFIG.outerStroke);
 
         setMatte(fill, master);
         return c;
@@ -266,7 +297,7 @@
         main.openInViewer();
         alert("テロップを作成しました。\n\n" + usedFonts.join("\n") +
             "\n\n文字の変更: 各プリコンポ内の「TEXT_文字を編集」レイヤーを打ち替え\n" +
-            "フォントの変更: TEXT_ / STROKE_ の3レイヤーを選んで文字パネルで変更");
+            "フォント・サイズの変更も「TEXT_文字を編集」だけでOK（フチが自動で追従）");
     } catch (err) {
         alert("エラー: " + err.toString() + (err.line ? " (line " + err.line + ")" : ""));
     } finally {

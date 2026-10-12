@@ -35,28 +35,29 @@
             "YuGothic-Bold"           // 游ゴシック Bold (Win)
         ],
 
-        fillTop: [255, 70, 40],      // グラデ上
-        fillBottom: [170, 0, 12],    // グラデ下
-        whiteStroke: [255, 255, 255],
-        outerStroke: [45, 8, 4],     // 外フチ（こげ茶）
-        whiteStrokeRatio: 0.16,      // 白フチ線幅 = 文字サイズ × これ
-        outerStrokeRatio: 0.34,      // 外フチ線幅 = 文字サイズ × これ
-        tracking: -20,
+        // 色は参考画像から計測（レンガ寄りの赤・ほぼ単色、少し温かみのある白フチ、黒フチ）
+        fillTop: [162, 66, 40],      // 文字色（上）
+        fillBottom: [146, 58, 36],   // 文字色（下）※同じ値にすれば完全な単色
+        whiteStroke: [246, 236, 230],
+        outerStroke: [22, 14, 12],   // 外フチ（ほぼ黒）
+        whiteStrokeRatio: 0.08,      // 白フチ線幅 = 文字サイズ × これ
+        outerStrokeRatio: 0.18,      // 外フチ線幅 = 文字サイズ × これ
+        tracking: -40,
 
-        shadow: { opacity: 70, direction: 135, distance: 14, softness: 12 },
+        // フチの外側にふわっと広がる黒い影
+        shadow: { opacity: 80, direction: 135, distance: 3, softness: 24 },
 
         // 行ごとの設定（frame はメインコンポのフレーム番号）
         lines: [
-            { name: "L1", text: "激ヤバドリンクを", size: 120, pos: [960, 760], inFrame: 0, outFrame: 102 },
-            { name: "L2", text: "飲んでみる",       size: 160, pos: [960, 915], inFrame: 9, outFrame: 104 }
+            { name: "L1", text: "激ヤバドリンクを", size: 120, pos: [960, 770], inFrame: 0, outFrame: 110 },
+            { name: "L2", text: "飲んでみる",       size: 160, pos: [960, 920], inFrame: 6, outFrame: 110 }
         ],
 
         // アニメーション（行の開始からのフレーム数）
-        popScale: [[0, 380], [5, 92], [8, 106], [11, 100]], // ドンッと拡大→着地→ちょい跳ね
-        popRotation: [[0, -10], [5, 0]],
-        holdScaleEnd: 103,        // 表示中にゆっくりズーム（退場直前の値）
-        outFrames: 6,             // 退場（縮小して消える）にかけるフレーム数
-        shake: { startFrame: 5, frames: 9, amount: 22 }
+        popScale: [[0, 120], [5, 100]],    // 少し大きい所からスッと収まる
+        fadeInFrames: 4,                   // フェードイン
+        outFrames: 5,                      // 退場（フェードアウト）にかけるフレーム数
+        shake: { startFrame: 5, frames: 6, amount: 0 } // 揺らしたい時だけ amount を 6〜10 程度に
     };
 
     // ------------------------------------------------------------------
@@ -201,32 +202,21 @@
         tr.property("ADBE Anchor Point").setValue([CONFIG.width / 2, CONFIG.height / 2]);
         tr.property("ADBE Position").setValue(line.pos);
 
-        // スケール: ポップ → ホールド中ゆっくりズーム → 退場
+        // スケール: 少し大きめ → 100%（イーズアウトで静かに着地）
         var scale = tr.property("ADBE Scale");
-        var sKeys = CONFIG.popScale.slice(0);
-        var outRel = line.outFrame - s0;
-        sKeys.push([outRel, CONFIG.holdScaleEnd]);
-        sKeys.push([outRel + CONFIG.outFrames, 0]);
-        setKeys(scale, sKeys, s0, fps, function (v) { return [v, v, 100]; });
-        var n = scale.numKeys;
-        // 1→2: 勢いよく入って着地でブレーキ
+        setKeys(scale, CONFIG.popScale, s0, fps, function (v) { return [v, v, 100]; });
         easeKeys(scale, 1, 1, 33, 10);
-        easeKeys(scale, 2, 4, 60, 60);
-        scale.setInterpolationTypeAtKey(4, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.LINEAR);
-        easeKeys(scale, n - 1, n - 1, 33, 70); // 退場は加速して消える
-        scale.setInterpolationTypeAtKey(n - 1, KeyframeInterpolationType.LINEAR, KeyframeInterpolationType.BEZIER);
-        scale.setInterpolationTypeAtKey(n, KeyframeInterpolationType.LINEAR, KeyframeInterpolationType.LINEAR);
+        easeKeys(scale, scale.numKeys, scale.numKeys, 80, 33);
 
-        var rot = tr.property("ADBE Rotate Z");
-        setKeys(rot, CONFIG.popRotation, s0, fps, function (v) { return v; });
-        easeKeys(rot, 1, rot.numKeys, 60, 10);
-
+        // 不透明度: フェードイン → 表示 → フェードアウト
         var opa = tr.property("ADBE Opacity");
-        setKeys(opa, [[0, 0], [2, 100]], s0, fps, function (v) { return v; });
+        var outRel = line.outFrame - s0;
+        setKeys(opa, [[0, 0], [CONFIG.fadeInFrames, 100], [outRel, 100], [outRel + CONFIG.outFrames, 0]],
+            s0, fps, function (v) { return v; });
 
-        // 着地シェイク（位置にエクスプレッション。数値はここで調整可）
+        // 着地シェイク（amount が 0 なら付けない）
         var sh = CONFIG.shake;
-        tr.property("ADBE Position").expression =
+        if (sh.amount > 0) tr.property("ADBE Position").expression =
             '// 着地シェイク\n' +
             'var startF = ' + sh.startFrame + ';  // レイヤー開始から何フレーム後に揺らすか\n' +
             'var lenF = ' + sh.frames + ';     // 揺れの長さ（フレーム）\n' +

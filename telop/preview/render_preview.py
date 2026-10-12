@@ -18,20 +18,20 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H, FPS, FRAMES = 1920, 1080, 30, 120
 
 # ---- 見た目（JSX の CONFIG と合わせる） ----
-FILL_TOP = (255, 70, 40)
-FILL_BOTTOM = (170, 0, 12)
-WHITE = (255, 255, 255)
-OUTER = (45, 8, 4)
-WHITE_STROKE_RATIO = 0.16   # 白フチの線幅 / 文字サイズ（AE の線幅＝見える太さ×2）
-OUTER_STROKE_RATIO = 0.34   # 外側の濃いフチ
-SHADOW_OFFSET = 10
-SHADOW_BLUR = 6
-SHADOW_ALPHA = 0.7
+FILL_TOP = (162, 66, 40)
+FILL_BOTTOM = (146, 58, 36)
+WHITE = (246, 236, 230)
+OUTER = (22, 14, 12)
+WHITE_STROKE_RATIO = 0.08   # 白フチの線幅 / 文字サイズ（AE の線幅＝見える太さ×2）
+OUTER_STROKE_RATIO = 0.18   # 外側の黒フチ
+SHADOW_OFFSET = 2
+SHADOW_BLUR = 8
+SHADOW_ALPHA = 0.8
 
 LINES = [
     # text, font size, center position, start frame, out start frame
-    ("激ヤバドリンクを", 120, (960, 760), 0, 102),
-    ("飲んでみる", 160, (960, 915), 9, 104),
+    ("激ヤバドリンクを", 120, (960, 770), 0, 110),
+    ("飲んでみる", 160, (960, 920), 6, 110),
 ]
 
 SS = 2  # スプライトのスーパーサンプリング倍率
@@ -100,13 +100,13 @@ def line_state(f, start, out):
     lf = f - start
     if lf < 0:
         return None
-    scale = interp([(0, 380, "out"), (5, 92, "inout"), (8, 106, "inout"), (11, 100, "lin"),
-                    (out - start, 103, "in"), (out - start + 6, 0, "lin")], lf)
-    rot = interp([(0, -10, "out"), (5, 0, "lin")], lf)
-    opa = interp([(0, 0, "lin"), (2, 100, "lin")], lf)
-    # 着地時のシェイク（JSX の position エクスプレッションと同じ考え方）
+    o = out - start
+    scale = interp([(0, 120, "out"), (5, 100, "lin")], lf)
+    rot = 0
+    opa = interp([(0, 0, "lin"), (4, 100, "lin"), (o, 100, "lin"), (o + 5, 0, "lin")], lf)
+    # 着地時のシェイク（JSX と同じく既定は 0 = 揺らさない）
     dx = dy = 0.0
-    t0, dur, amp = 5, 9, 22
+    t0, dur, amp = 5, 6, 0
     if t0 <= lf < t0 + dur:
         rnd = random.Random(start * 1000 + lf)
         decay = 1 - (lf - t0) / dur
@@ -133,7 +133,7 @@ def main():
             frame = bg.copy().convert("RGBA")
             for (text, size, pos, start, out), (spr, c) in zip(LINES, sprites):
                 st = line_state(f, start, out)
-                if st is None or st[0] <= 0.001:
+                if st is None or st[0] <= 0.001 or st[2] <= 0.001:
                     continue
                 sc, rot, opa, dx, dy = st
                 k = sc / SS
